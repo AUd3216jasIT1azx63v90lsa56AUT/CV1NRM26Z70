@@ -1,0 +1,415 @@
+{
+  "protocol": {
+    "name": "Morpho Midnight",
+    "type": "EVM non-custodial fixed-rate fixed-maturity lending protocol",
+    "repo_focus": "Solidity protocol with core contract, interfaces, libraries, periphery, and ratifiers",
+    "core_contracts_or_dirs": [
+      "src/Midnight.sol",
+      "src/interfaces",
+      "src/libraries",
+      "src/periphery",
+      "src/ratifiers"
+    ],
+    "main_design": [
+      "isolated immutable markets",
+      "permissionless market creation",
+      "fixed maturity per market",
+      "arbitrary loan token",
+      "single or multi-collateral markets",
+      "credit units for lenders",
+      "debt units for borrowers",
+      "offer-based trading instead of pooled liquidity",
+      "makers do not lock capital when publishing offers",
+      "takers execute offers onchain",
+      "ratifier validates offer authority",
+      "optional maker callback can source funds during take",
+      "optional market gates restrict entry or liquidation"
+    ]
+  },
+  "audit_mode": {
+    "attacker_model": [
+      "unprivileged borrower",
+      "unprivileged lender",
+      "maker",
+      "taker",
+      "liquidator",
+      "market creator",
+      "callback receiver",
+      "authorized operator",
+      "signature user",
+      "router/composer using multicall"
+    ],
+    "do_not_rely_on": [
+      "admin key compromise",
+      "governance capture",
+      "leaked private keys",
+      "malicious maintainer",
+      "pure external oracle failure",
+      "impossible oracle values",
+      "user mistake only",
+      "gas-only optimizations",
+      "style or docs-only issues"
+    ],
+    "best_bug_classes": [
+      "direct loss of user funds",
+      "protocol insolvency",
+      "bad debt creation",
+      "unauthorized collateral withdrawal",
+      "unauthorized collateral seizure",
+      "permanent or long-term fund freeze",
+      "liquidation bypass",
+      "healthy-account liquidation",
+      "offer replay or overfill",
+      "gate or ratifier bypass",
+      "credit/debt accounting corruption",
+      "callback or multicall state corruption"
+    ]
+  },
+  "whitepaper_constants_and_rules": {
+    "markets": {
+      "market_config_is_immutable_after_creation": true,
+      "market_has_loan_token": true,
+      "market_has_maturity": true,
+      "market_has_accepted_collateral_set": true,
+      "market_can_have_multiple_collateral_assets": true
+    },
+    "units": {
+      "one_debt_unit": "obligation to repay one loan token before maturity",
+      "one_credit_unit": "claim on repaid loan tokens",
+      "buying_units": "increases credit or reduces existing debt first",
+      "selling_units": "increases debt or reduces existing credit first",
+      "positions_are_market_level_fungible": true,
+      "positions_are_not_bilateral": true
+    },
+    "maturity": {
+      "trading_after_maturity_allowed": true,
+      "debt_increase_after_maturity_forbidden": true,
+      "post_maturity_trading_purpose": "facilitate unwinding when liquidations are unprofitable",
+      "overdue_debt_after_maturity_is_liquidatable_even_if_healthy": true
+    },
+    "offers": {
+      "offers_are_not_protocol_broadcasted": true,
+      "offers_can_be_distributed_offchain": true,
+      "partial_fills_allowed": true,
+      "offer_can_be_filled_multiple_times_until_exhausted": true,
+      "settlement_is_atomic": true,
+      "offer_ratifier_called_at_take_time": true,
+      "ratifier_may_validate_signature_or_custom_logic": true,
+      "ratifier_may_support_merkle_root_offer_sets": true
+    },
+    "callbacks": {
+      "maker_callback_optional": true,
+      "callback_executes_at_take_time": true,
+      "callback_can_source_funds_or_collateral_at_execution": true,
+      "callback_can_roll_exposure_between_maturities": true
+    },
+    "multi_market_offers": {
+      "offers_can_share_consumption_group": true,
+      "executing_one_offer_decreases_group_remaining_budget": true,
+      "group_budget_prevents_total_exposure_exceeding_budget": true
+    },
+    "routing": {
+      "routing_is_off_protocol": true,
+      "no_protocol_orderbook_queue": true,
+      "no_protocol_price_time_priority": true,
+      "no_protocol_capital_reservation": true
+    },
+    "ticks": {
+      "discrete_price_tick_grid": true,
+      "initial_relative_tick_increment": "2%",
+      "possible_tick_increment_reductions": [
+        "1%",
+        "0.5%"
+      ],
+      "finer_ticks_keep_previous_ticks_valid": true,
+      "price_quantization_near_maturity": "1e-6",
+      "ties_round_down": true
+    },
+    "liquidation": {
+      "max_debt_formula": "sum(collateral_amount_i * oracle_price_i * LLTV_i)",
+      "healthy_if_max_debt_not_below_debt": true,
+      "unhealthy_positions_liquidatable_before_and_after_maturity": true,
+      "liquidator_repays_debt_and_seizes_collateral": true,
+      "repay_amount_capped_by_recovery_close_factor": true,
+      "full_liquidation_allowed_if_residual_collateral_below_dust": true,
+      "liquidation_cursor_gamma_values": [
+        "0.25",
+        "0.5"
+      ],
+      "lif_max_formula": "1 / (1 - gamma * (1 - LLTV))",
+      "post_maturity_liquidation_incentive_starts_at": "1",
+      "post_maturity_liquidation_incentive_ramps_to": "LIFmax",
+      "post_maturity_liquidation_ramp_window": "15 minutes"
+    },
+    "bad_debt": {
+      "bad_debt_reduces_lenders_credit_proportionally": true,
+      "bad_debt_realized_during_liquidation": true,
+      "excess_debt_realized_immediately_regardless_of_collateral_chosen_to_seize": true
+    },
+    "gates": {
+      "up_to_two_optional_gate_contracts_per_market": true,
+      "gates_fixed_at_market_creation": true,
+      "enter_gate_restricts_credit_or_debt_increase": true,
+      "enter_gate_must_not_block_exit": true,
+      "users_can_exit_even_if_enter_gate_reverts": true,
+      "liquidator_gate_restricts_who_may_liquidate": true
+    },
+    "authorization": {
+      "authorization_is_coarse_grained": true,
+      "authorization_not_scoped_by_action": true,
+      "authorization_not_scoped_by_market": true,
+      "authorized_address_has_full_control_over_authorizer_midnight_state": true,
+      "authorized_address_can_add_or_remove_authorizations": true
+    },
+    "fees": {
+      "settlement_fee_charged_at_take_time": true,
+      "settlement_fee_depends_on_time_to_maturity": true,
+      "settlement_fee_inserts_spread_between_buyer_and_seller_prices": true,
+      "settlement_fee_breakpoints_days": [
+        0,
+        1,
+        7,
+        30,
+        90,
+        180,
+        360
+      ],
+      "settlement_fee_constant_after_maturity_and_above_360_days": true,
+      "settlement_fee_annualized_cap": "50 bps",
+      "settlement_fee_ttm_zero_cap": "0.14 bps",
+      "continuous_fee_accrues_each_second_on_outstanding_credit": true,
+      "continuous_fee_borne_by_lenders": true,
+      "continuous_fee_crystallized_when_credit_increases": true,
+      "continuous_fee_cap": "1% annualized"
+    }
+  },
+  "core_invariants": {
+    "solvency": [
+      "contract token balances must cover withdrawable assets, collateral claims, credit redemptions, and accrued fees",
+      "total claimable credit must not exceed repaid loan assets plus valid recoverable debt after loss accounting",
+      "bad debt must reduce lender credit exactly once and proportionally"
+    ],
+    "credit_debt": [
+      "every credit increase must correspond to valid debt creation, debt reduction, or settled repayment state",
+      "every debt increase must pass collateral and gate checks",
+      "buying units must reduce existing debt before increasing credit",
+      "selling units must reduce existing credit before increasing debt",
+      "debt must not increase after maturity"
+    ],
+    "offers": [
+      "offer fill amount cannot exceed remaining offer capacity",
+      "consumption group budget cannot be exceeded across offers",
+      "cancelled, expired, invalid, or already-consumed offers cannot be filled",
+      "ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group",
+      "partial fills must update consumed state before any exploitable reentry point"
+    ],
+    "collateral": [
+      "collateral cannot be withdrawn if it would make debt unhealthy",
+      "collateral cannot be seized unless liquidation rules allow it",
+      "collateral bitmap/list state must match actual deposited collateral",
+      "multi-collateral valuation must not skip or double count collateral"
+    ],
+    "liquidation": [
+      "healthy positions cannot be health-liquidated before maturity",
+      "unhealthy positions must remain liquidatable",
+      "overdue debt after maturity must be liquidatable",
+      "repay amount, seize amount, LIF, close factor, dust, and bad-debt realization must be mutually consistent",
+      "liquidation must not leave accounting desynced between borrower debt, lender credit, protocol balances, and seized collateral"
+    ],
+    "maturity": [
+      "pre-maturity and post-maturity paths must not be composable to bypass debt repayment",
+      "maturity boundary must not allow debt increase by rounding, timestamp equality, or callback sequencing",
+      "post-maturity unwinding must not mint free credit or erase debt incorrectly"
+    ],
+    "auth_and_gates": [
+      "authorization must only allow intended account delegation",
+      "gate checks must apply to all entry paths",
+      "exit paths must remain available even when enter gate reverts",
+      "liquidator gate must not be bypassed through alternate liquidation or callback paths"
+    ],
+    "external_calls": [
+      "callbacks must not corrupt partial state through reentrancy",
+      "ERC20 transfer deltas must match accounting deltas",
+      "fee-on-transfer, rebasing, false-return, ERC777-like hooks, and non-standard decimals should be tested if not explicitly excluded",
+      "multicall must not bypass per-action invariants"
+    ]
+  },
+  "high_value_attack_flows": [
+    {
+      "name": "deposit_take_withdraw_same_tx",
+      "sequence": [
+        "deposit collateral",
+        "take offer to borrow",
+        "callback or multicall tries to withdraw collateral",
+        "assert health and balance conservation"
+      ]
+    },
+    {
+      "name": "partial_fill_over_consumption",
+      "sequence": [
+        "create/sign offer with max amount",
+        "fill partially",
+        "fill again through same or related offer",
+        "assert consumed amount and group budget cannot exceed cap"
+      ]
+    },
+    {
+      "name": "callback_reentrancy_take",
+      "sequence": [
+        "take offer with maker callback",
+        "callback reenters take/withdraw/repay/liquidate/authorize",
+        "assert no partial state can be reused"
+      ]
+    },
+    {
+      "name": "maturity_boundary_trade",
+      "sequence": [
+        "open position before maturity",
+        "warp to maturity - 1",
+        "take/repay/settle",
+        "warp to maturity",
+        "try debt-increasing trade",
+        "assert debt cannot increase after maturity"
+      ]
+    },
+    {
+      "name": "healthy_to_liquidatable_rounding",
+      "sequence": [
+        "create near-threshold multi-collateral position",
+        "fuzz decimals/prices/LLTV/rounding",
+        "liquidate",
+        "assert healthy position cannot be liquidated"
+      ]
+    },
+    {
+      "name": "bad_debt_double_realization",
+      "sequence": [
+        "create undercollateralized debt",
+        "liquidate partially",
+        "liquidate again or settle",
+        "assert lender credit loss is not double-counted or skipped"
+      ]
+    },
+    {
+      "name": "gate_bypass_entry",
+      "sequence": [
+        "create gated market",
+        "attempt direct entry and indirect entry via callback/multicall/authorization",
+        "assert every credit/debt increase hits enter gate"
+      ]
+    },
+    {
+      "name": "liquidator_gate_bypass",
+      "sequence": [
+        "create market with liquidator gate",
+        "attempt liquidation through alternate actor/callback/authorized address",
+        "assert only approved liquidator can liquidate"
+      ]
+    },
+    {
+      "name": "coarse_authorization_abuse",
+      "sequence": [
+        "user authorizes operator",
+        "operator performs unexpected market/action/authorization mutation",
+        "assert behavior matches documented full-control model and cannot be confused by integrations"
+      ]
+    },
+    {
+      "name": "fee_crystallization_edge",
+      "sequence": [
+        "increase credit",
+        "change/override fee if allowed",
+        "reduce credit later",
+        "assert old credit fee terms are crystallized and not retroactively changed"
+      ]
+    }
+  ],
+  "audit_priority": {
+    "highest_priority_files_or_modules": [
+      "src/Midnight.sol",
+      "src/libraries/* accounting/math libraries",
+      "src/ratifiers/*",
+      "src/periphery/* callback or helper contracts",
+      "src/interfaces/* for exact external-call expectations"
+    ],
+    "highest_priority_questions": [
+      "Can credit/debt/collateral accounting desync from actual ERC20 balances?",
+      "Can callback or multicall observe and reuse partial state?",
+      "Can an offer or consumption group be overfilled across multiple markets?",
+      "Can maturity boundary allow debt increase or invalid settlement?",
+      "Can liquidation seize too much, too little, or realize bad debt incorrectly?",
+      "Can gates or ratifiers be bypassed through alternate entry paths?",
+      "Can rounding near LLTV/LIF/dust/tick/fee boundaries create extractable value?",
+      "Can non-standard token behavior break accounting assumptions?"
+    ]
+  },
+  "recommended_fuzz_axes": {
+    "amounts": [
+      "0",
+      "1 wei",
+      "dust - 1",
+      "dust",
+      "dust + 1",
+      "max uint bounds where safe",
+      "near offer remaining amount",
+      "near debt amount",
+      "near collateral threshold"
+    ],
+    "time": [
+      "maturity - 1",
+      "maturity",
+      "maturity + 1",
+      "maturity + 15 minutes",
+      "fee breakpoint days: 0, 1, 7, 30, 90, 180, 360"
+    ],
+    "prices_and_risk": [
+      "near health threshold",
+      "LLTV finite allowed values",
+      "gamma 0.25",
+      "gamma 0.5",
+      "LIFmax boundary",
+      "multi-collateral mixed decimals",
+      "oracle price rounding boundaries"
+    ],
+    "offer_state": [
+      "first fill",
+      "partial fill",
+      "exact full fill",
+      "overfill by 1",
+      "shared consumption group exhausted",
+      "cancel then fill",
+      "deadline boundary",
+      "same signature different market",
+      "same signature different taker"
+    ],
+    "external_behavior": [
+      "callback reverts",
+      "callback reenters",
+      "token returns false",
+      "token charges fee",
+      "token rebases",
+      "token has 6/8/18/27 decimals",
+      "receiver is contract",
+      "payer is different from msg.sender"
+    ]
+  },
+  "reporting_bias": {
+    "valid_finding_requires": [
+      "exact reachable code path",
+      "attacker-controlled input or timing",
+      "broken invariant",
+      "existing checks shown insufficient",
+      "concrete scoped impact",
+      "Foundry PoC or stateful fuzz reproduction"
+    ],
+    "likely_invalid_if": [
+      "requires admin misuse only",
+      "requires oracle compromise only",
+      "requires malicious token owner only",
+      "only causes failed transaction for attacker",
+      "only affects offchain routing quality",
+      "only proves integration misuse without protocol-level bug",
+      "matches documented coarse authorization behavior without additional confusion bug"
+    ]
+  }
+}
