@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / HashLib.isLeaf] Can an unprivileged TAKER cause a single-offer tree take to fail by supplying leafIndex == 0 and proof.length == 0 but with a root that does not equal HashLib.hashOffer(offer) under the precondition that the offer is otherwise valid, causing scoped impact: isLeaf returns false (currentHash != root), take reverts with InvalidProof, and the maker's offer is unfillable with this ratifierData? Proof idea: unit test with wrong root for single-leaf tree, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f999863f-8b22-47af-a5e6-02aabfef4315?mode=deep",
+    "timestamp": "2026-05-31 21:23:12.179849",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: MidnightBundles / IRatifier.isRatified] Can an unprivileged ATTACKER cause a user loss in MidnightBundles.supplyCollateralAndSellWithAssetsTarget by supplying a takes array where all offers use a ratifier that reverts (e.g., due to malformed ratifierData) under the precondition that the attacker controls the takes array passed to the bundler, causing scoped impact: all takes fail silently via try/catch, filledSellerAssets == 0, the require(filledSellerAssets == targetFilledSellerAssets) reverts with OutOfOffers, but collateral has already been supplied and is now locked in Midnight? Proof idea: unit test where all takes revert in ratifier, assert OutOfOffers revert with collateral deposited.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c05b948-34b5-44dd-bcc2-88b86b4e8693?mode=deep",
+    "timestamp": "2026-05-31 21:23:24.106375",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged TAKER cause a take to succeed with a signature where ecrecover returns address(0) due to invalid (v, r, s) values under the precondition that the maker is address(0) (which is impossible per addressZeroCantAuthorize invariant), causing scoped impact: the require(_signer != address(0)) check prevents this, but a custom ratifier that omits this check could allow address(0) as a valid signer, enabling unauthorized fills? Proof idea: unit test with (v=0, r=0, s=0) ratifierData, assert InvalidSignature revert in EcrecoverRatifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ffcec30-a65b-4abd-95a0-b2f056cbf71f?mode=deep",
+    "timestamp": "2026-05-31 21:23:36.593233",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: Midnight.take / EcrecoverRatifier.isRatified] Can an unprivileged TAKER cause a take to fail by passing an offer struct where offer.ratifier != address(ecrecoverRatifier) but the ratifierData is valid for ecrecoverRatifier under the precondition that the maker has authorized a different ratifier, causing scoped impact: Midnight calls the wrong ratifier contract, which may revert or return wrong value, blocking the fill and causing user loss? Proof idea: unit test where offer.ratifier is set to a different contract than the one that signed the ratifierData, assert take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d0998bf-7682-401c-8391-1e9075012134?mode=deep",
+    "timestamp": "2026-05-31 21:23:49.499122",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.maker is different from the maker who signed the root under the precondition that the taker constructs an offer with a different maker address but the same other fields, causing scoped impact: HashLib.hashOffer includes offer.maker, so the hash differs, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have wasted gas and the bundler silently skips the offer? Proof idea: unit test where offer.maker is changed after signing, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c53edb4-7dd5-49b9-8752-61fdfa25457b?mode=deep",
+    "timestamp": "2026-05-31 21:24:03.442467",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged TAKER cause a take to succeed with a signature that was signed for a tree of height H but is presented with a proof of height H' != H under the precondition that the root matches, causing scoped impact: the offerTreeTypeHash uses proof.length to determine the type hash, so a different proof length produces a different type hash and a different digest, causing the signature to be invalid and the take to revert with Unauthorized? Proof idea: sign root with height 2 proof, present with height 1 proof, assert Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5878c28a-3f71-4cba-b6e8-e09a2bf693a5?mode=deep",
+    "timestamp": "2026-05-31 21:24:16.145054",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / ConsumableUnitsLib.consumableUnits] Can an unprivileged ATTACKER cause a user to receive fewer units than targetUnits in MidnightBundles by front-running the bundle and setting consumed[maker][group] = type(uint256).max via Midnight.setConsumed under the precondition that the attacker is authorized by the maker, causing scoped impact: ConsumableUnitsLib.consumableUnits returns 0 for all offers in the group, all takes are skipped, and the bundle reverts with OutOfOffers? Proof idea: unit test where authorized attacker calls setConsumed(group, type(uint256).max, maker) before bundle, assert OutOfOffers revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a65d9dd-3f93-45bb-8058-da00fe24db99?mode=deep",
+    "timestamp": "2026-05-31 21:24:29.559401",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing ratifierData where the encoded proof array has length exactly 21 under the precondition that the offer is otherwise valid and the proof is correct for a 21-level tree, causing scoped impact: HashLib.offerTreeTypeHash reverts with TreeTooHigh for height == 21, making the take permanently revert and the maker's offer unfillable? Proof idea: unit test with proof.length == 21, assert TreeTooHigh revert propagates through take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_08f34824-b985-4788-a2da-9f8e8bf7d58b?mode=deep",
+    "timestamp": "2026-05-31 21:24:43.781280",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: SetterRatifier.isRatified / SetterRatifier.setIsRootRatified] Can an unprivileged OPERATOR authorized by a maker call SetterRatifier.setIsRootRatified(maker, root, false) and then setIsRootRatified(maker, root, true) in the same block under the precondition that the operator is authorized, causing scoped impact: the operator can toggle ratification state atomically, potentially front-running a take to disable and re-enable ratification, causing the take to fail mid-execution if the toggle happens between the isRatified check and the state update? Proof idea: unit test with multicall toggling ratification state, assert take behavior is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d6686a1-b7c9-421d-9c1a-9a59c6a79c84?mode=deep",
+    "timestamp": "2026-05-31 21:24:58.074004",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to succeed with a ratifierData that contains a valid signature for a root that includes the offer, but the root has been canceled by the maker, under the precondition that the maker calls cancelRoot after distributing ratifierData to takers, causing scoped impact: all takers who received valid ratifierData can no longer fill the offer, causing user loss for takers who expected to fill? Proof idea: distribute valid ratifierData, maker calls cancelRoot, assert all subsequent takes revert with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44bc51a5-f35b-4862-8819-6cfe2af79e84?mode=deep",
+    "timestamp": "2026-05-31 21:25:11.725516",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.expiry has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.expiry), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have wasted gas? Proof idea: unit test where taker modifies offer.expiry before calling take, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c890169e-57d4-44ba-9ca9-7bb7390cf484?mode=deep",
+    "timestamp": "2026-05-31 21:25:26.414463",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.tick has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.tick), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have received a worse price than expected? Proof idea: unit test where taker modifies offer.tick to a lower value, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_13bdcb1f-3edf-4022-8d90-1b25efb6b451?mode=deep",
+    "timestamp": "2026-05-31 21:25:40.729756",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.maxUnits has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.maxUnits), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, potentially blocking a fill that the maker intended? Proof idea: unit test where taker modifies offer.maxUnits, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e8bf585e-d29a-4bf8-bb99-924a0c525f80?mode=deep",
+    "timestamp": "2026-05-31 21:25:54.936854",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.group has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.group), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the consumed state for the original group is not updated, potentially allowing the offer to be replayed with the correct group? Proof idea: unit test where taker modifies offer.group, assert InvalidProof revert and consumed state unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23de3576-fc70-496e-a51b-aa53f957e4c8?mode=deep",
+    "timestamp": "2026-05-31 21:26:09.737767",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.reduceOnly has been flipped from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.reduceOnly), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to reduce their position? Proof idea: unit test where taker flips offer.reduceOnly, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d8bf6ff5-26f7-4303-856d-fc48e579154a?mode=deep",
+    "timestamp": "2026-05-31 21:26:24.393829",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.buy has been flipped from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.buy), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to take the opposite side of the trade? Proof idea: unit test where taker flips offer.buy, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_47af8ba5-4cad-4028-83ff-b237d45f073e?mode=deep",
+    "timestamp": "2026-05-31 21:26:37.602393",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.start has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.start), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected the offer to be active? Proof idea: unit test where taker modifies offer.start, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_41aa34ab-cab6-441b-884e-f80590ecec82?mode=deep",
+    "timestamp": "2026-05-31 21:26:50.850870",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.callback has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.callback), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected the maker's callback to execute? Proof idea: unit test where taker modifies offer.callback, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4c0d21a2-a5ab-44fb-b4bf-268c0dd17214?mode=deep",
+    "timestamp": "2026-05-31 21:27:04.548723",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.receiverIfMakerIsSeller has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.receiverIfMakerIsSeller), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected the seller's assets to go to a different receiver? Proof idea: unit test where taker modifies offer.receiverIfMakerIsSeller, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_172fa955-abae-4075-911f-4779de8b1846?mode=deep",
+    "timestamp": "2026-05-31 21:27:17.483390",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.maxAssets has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes offer.maxAssets), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to fill up to a different asset cap? Proof idea: unit test where taker modifies offer.maxAssets, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3393f197-308b-43a0-a0b3-212b1fb0326d?mode=deep",
+    "timestamp": "2026-05-31 21:27:30.708804",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.market.maturity has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes hashMarket which includes market.maturity), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to fill in a different maturity market? Proof idea: unit test where taker modifies offer.market.maturity, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_461dc421-cc08-4d11-82f2-f553d0360437?mode=deep",
+    "timestamp": "2026-05-31 21:27:44.331151",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.market.enterGate has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes hashMarket which includes market.enterGate), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to fill in a market with different gate restrictions? Proof idea: unit test where taker modifies offer.market.enterGate, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98c8e314-7c03-4269-a3e7-cb2747c842cc?mode=deep",
+    "timestamp": "2026-05-31 21:27:59.186369",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.market.rcfThreshold has been modified from the signed value under the precondition that the ratifier validates the offer hash (which includes hashMarket which includes market.rcfThreshold), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but the taker may have expected to fill in a market with different RCF settings? Proof idea: unit test where taker modifies offer.market.rcfThreshold, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f305f5d5-845f-4453-a354-e1ac39a666a2?mode=deep",
+    "timestamp": "2026-05-31 21:28:14.331466",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where one of the offer.market.collateralParams entries has been modified (e.g., lltv changed) from the signed value under the precondition that the ratifier validates the offer hash (which includes hashMarket which includes hashCollateralParams for each entry), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts? Proof idea: unit test where taker modifies collateralParams[0].lltv, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e3f1a761-fb7c-42f5-8299-d2939970d2c4?mode=deep",
+    "timestamp": "2026-05-31 21:28:27.322273",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged TAKER cause a take to fail by passing an offer where offer.market.collateralParams has been reordered (different sort order) from the signed value under the precondition that the ratifier validates the offer hash (which includes hashMarket which hashes the collateralParams array in order), causing scoped impact: HashLib.hashOffer produces a different hash, the Merkle proof fails with InvalidProof, and the take reverts, but Midnight.touchMarket would also revert with CollateralParamsNotSorted? Proof idea: unit test where taker reorders collateralParams, assert CollateralParamsNotSorted or InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25eb8a19-e3c7-4d14-b1a8-b9dacd017be1?mode=deep",
+    "timestamp": "2026-05-31 21:28:41.188354",
+    "report_generated": false
+  }
+]
