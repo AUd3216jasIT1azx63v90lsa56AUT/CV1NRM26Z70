@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: TakeAmountsLib.buyerAssetsToUnits / sellerAssetsToUnits] Can an attacker exploit the fact that TakeAmountsLib reads settlementFee from Midnight using the offer.market.maturity field (not the canonical market maturity stored in Midnight) under the precondition that the offer.market.maturity differs from the canonical market maturity (e.g., due to a crafted offer), causing TakeAmountsLib to compute a different TTM than Midnight.take, triggering a sequence of [buyerAssetsToUnits(crafted_maturity) -> wrong_ttm -> wrong_fee -> wrong_units -> take(wrong_units) -> gate check fires with wrong unit count], violating the invariant that id and offer.market must match, causing scoped impact: crafted maturity causes incorrect unit computation, gate check fires with wrong unit count? Proof idea: unit test with crafted offer.market.maturity and assert gate check fires correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65d4cd48-ebd5-473b-9e6b-62681829b582?mode=deep",
+    "timestamp": "2026-05-31 20:50:14.167607",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take / ILiquidatorGate.canLiquidate] Can an attacker exploit the liquidationLocked transient storage to prevent a whitelisted liquidator from liquidating a borrower under the precondition that the borrower is being taken in a callback (liquidation locked), triggering a sequence of [take(offer) -> seller locked -> whitelisted liquidator calls liquidate(borrower) -> liquidationLocked(id, borrower) returns true -> NotLiquidatable revert], violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: liquidation lock prevents whitelisted liquidator from liquidating unhealthy borrower during take callback? Proof idea: reentrancy test with whitelisted liquidator and locked borrower and assert NotLiquidatable fires.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fab17a7e-f62b-488f-aa12-fc536bd4d50b?mode=deep",
+    "timestamp": "2026-05-31 20:50:26.435257",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: MidnightBundles.supplyCollateralAndSellWithAssetsTarget / TakeAmountsLib.sellerAssetsToUnits] Can an attacker exploit the fact that the bundler calls touchMarket before TakeAmountsLib but the settlement fee can change between touchMarket and the actual take under the precondition that the fee setter calls setMarketSettlementFee between touchMarket and take, causing TakeAmountsLib to compute units based on the old fee but take() to use the new fee, triggering a sequence of [touchMarket -> setMarketSettlementFee -> sellerAssetsToUnits(old_fee) -> take(new_fee, wrong_units) -> sellerDebtIncrease != expected -> gate check fires unexpectedly], violating the invariant that gate checks must apply to all debt increases, causing scoped impact: fee change between computation and execution causes unexpected debt increase in gated market? Proof idea: state test with fee change between touchMarket and take and assert gate check fires correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f33c1061-3972-4959-b242-6de87b3bdda5?mode=deep",
+    "timestamp": "2026-05-31 20:50:39.759426",
+    "report_generated": false
+  }
+]
