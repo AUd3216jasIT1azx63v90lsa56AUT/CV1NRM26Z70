@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / callback reentrancy into take] Can an unprivileged taker, acting as the seller callback (sellerCallback), reenter Midnight.take() for the same offer during the onSell() callback, causing a second fill to execute while the first fill's consumed update has already been applied, and determine whether the reentered take correctly sees the updated consumed value or the pre-fill value, violating the invariant that reentrancy must not allow double-fills or consumed bypass, causing scoped impact: offer overfilled via seller callback reentrancy? Proof idea: implement sellerCallback that reenters take with same offer, assert consumed after both fills equals sum of both units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e175cbbf-59fe-43a7-abb7-d331ccf4cd7f?mode=deep",
+    "timestamp": "2026-05-31 22:12:53.507508",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / maxAssets mode with price=WAD] Can an unprivileged taker, given a buy offer with maxAssets = X and tick=0 (price=WAD=1e18), observe that buyerAssets = units.mulDivDown(WAD, WAD) = units exactly, so consumed tracks units directly in assets mode, and then compare this to maxUnits mode where consumed also tracks units, and determine whether switching between modes for the same group creates any accounting inconsistency when one offer uses maxAssets and another uses maxUnits with the same group, violating the invariant that group budget must be consistently tracked regardless of mode, causing scoped impact: cross-mode group budget inconsistency? Proof idea: create two offers same group, one maxAssets one maxUnits, fill both, assert consumed is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_12a6c584-dc6c-4bab-b3a0-3704225386a2?mode=deep",
+    "timestamp": "2026-05-31 22:13:05.587241",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: EcrecoverRatifier.isRatified / Midnight.take / isAuthorized coarse granularity] Can an unprivileged attacker who has been authorized by maker (isAuthorized[maker][attacker]=true) sign a new Merkle root containing offers with different terms (different tick, maxUnits, group) than the maker intended, and submit these offers for filling, causing consumed[maker][group] to be updated under attacker-controlled offer terms, violating the invariant that only the maker should control which offers are fillable, causing scoped impact: attacker creates and fills unauthorized offers under maker's authorization? Proof idea: authorize attacker, attacker signs root with modified offer terms, fill, assert consumed updated under attacker's terms.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68ee52c7-650f-4da2-b019-ebdfb93ec4f0?mode=deep",
+    "timestamp": "2026-05-31 22:13:17.981724",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / offer with maxUnits=type(uint256).max] Can an unprivileged taker observe that an offer with maxUnits = type(uint256).max effectively has unlimited capacity (consumed can never reach max since consumed += units would overflow before reaching type(uint256).max), and determine whether this creates any overflow risk in the consumed accounting (consumed[maker][group] += units could overflow uint256), violating the invariant that consumed must not overflow, causing scoped impact: consumed overflow enabling wrap-around and offer reuse? Proof idea: fuzz large units values, assert consumed += units does not overflow uint256.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8554298f-e16f-4413-bfad-64547f2d8616?mode=deep",
+    "timestamp": "2026-05-31 22:13:31.053291",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer with same hash in different trees] Can an unprivileged taker observe that the same offer (identical Offer struct) can appear as a leaf in multiple different Merkle trees signed by the maker, and that filling the offer via tree A increments consumed[maker][group] which then affects the remaining capacity when filling via tree B, and determine whether this cross-tree consumption sharing is correctly accounted for or creates unexpected overfill/underfill, violating the invariant that consumed must accurately track total fills across all trees, causing scoped impact: cross-tree consumed accounting inconsistency? Proof idea: sign same offer in two trees, fill via tree A, assert tree B fill sees correct remaining capacity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3d637fe-6a16-44fc-8de9-760159109be6?mode=deep",
+    "timestamp": "2026-05-31 22:13:44.405008",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / post-maturity fill] Can an unprivileged taker fill a buy offer (offer.buy=true, maker is lender) after market maturity (block.timestamp > offer.market.maturity), where sellerDebtIncrease=0 is required (CannotIncreaseDebtPostMaturity), but the taker has existing debt that gets reduced, causing consumed[maker][group] to increase while the economic effect is debt reduction rather than new debt creation, and determine whether the consumed accounting correctly reflects the maker's post-maturity exposure, violating the invariant that consumed must track economic exposure accurately post-maturity, causing scoped impact: consumed accounting misaligned with post-maturity economic reality? Proof idea: warp past maturity, fill buy offer with taker having existing debt, assert consumed and debt changes are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4926d49-54ee-4325-b580-82f2e53c75f0?mode=deep",
+    "timestamp": "2026-05-31 22:13:58.417652",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: EcrecoverRatifier.isRatified / ecrecover / address(0) signer] Can an unprivileged taker craft a signature (v, r, s) such that ecrecover returns address(0), and observe that the check require(_signer != address(0), InvalidSignature()) correctly rejects it, but then determine whether there exists any (v, r, s) combination that causes ecrecover to return a non-zero address that happens to equal offer.maker or an authorized address without knowledge of the private key, violating the invariant that only the maker or authorized signer can produce a valid signature, causing scoped impact: signature forgery enabling unauthorized offer fills? Proof idea: fuzz (v, r, s) values, assert ecrecover never returns maker's address without valid private key.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0fc0c324-5d41-438f-85d7-ce0efc5dd160?mode=deep",
+    "timestamp": "2026-05-31 22:14:12.204687",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / flashLoan reentrancy] Can an unprivileged taker use flashLoan() within a take() callback to temporarily borrow loan tokens, use them to fill another offer in the same group, incrementing consumed[maker][group] beyond the intended cap, and then repay the flash loan, causing the maker's group budget to be exhausted in a single transaction without the taker providing their own capital, violating the invariant that consumed must reflect genuine fills not flash-loan-assisted fills, causing scoped impact: group budget exhaustion via flash loan griefing? Proof idea: implement callback that calls flashLoan and uses proceeds to fill same-group offer, assert consumed reaches max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e56477f2-35a9-42db-b50a-60d4c8772243?mode=deep",
+    "timestamp": "2026-05-31 22:14:27.019480",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer.group in hashOffer] Can an unprivileged taker observe that offer.group is included in hashOffer() (and thus in the Merkle leaf), meaning a signature for an offer with group=G cannot be used to fill an offer with group=G', and confirm that the consumed mapping key is (maker, group) not (maker, offerHash), and determine whether a maker who signs two offers with different groups but same maxUnits can have their total exposure exceed maxUnits if both groups are filled independently, violating the invariant that a maker's total exposure across all groups is unbounded by any single offer's maxUnits, causing scoped impact: maker's total exposure exceeds per-offer cap via multi-group fills? Proof idea: sign two offers with different groups, fill both to maxUnits, assert total exposure is 2*maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c566e43-3217-496a-b2ea-bed1d4812ed5?mode=deep",
+    "timestamp": "2026-05-31 22:14:40.937119",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / Merkle tree with duplicate leaves] Can an unprivileged taker construct a Merkle tree where the same offer appears as two different leaves (duplicate leaf hashes), sign the root, and use the proof for leaf index 0 to fill the offer, then use the proof for leaf index 1 to fill the same offer again, causing consumed[maker][group] to be incremented twice for the same logical offer, violating the invariant that each offer in a Merkle tree should be fillable only once per its maxUnits/maxAssets cap, causing scoped impact: offer overfilled via duplicate Merkle leaves? Proof idea: build tree with duplicate leaves, fill via both leaf indices, assert consumed equals 2*units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_584205ca-782c-4941-b74a-4cc8eb1999fe?mode=deep",
+    "timestamp": "2026-05-31 22:14:54.871370",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer.group shared across buy and sell offers] Can an unprivileged taker observe that a maker signs both a buy offer and a sell offer with the same group bytes32, intending them as mutually exclusive (One Cancels the Other), and that filling the buy offer increments consumed[maker][group] by buyerAssets (in maxAssets mode), while filling the sell offer increments consumed[maker][group] by sellerAssets, and determine whether the mixed-mode consumption (assets from buy + assets from sell) correctly enforces the group budget, violating the invariant that group budget must be consistently enforced across buy and sell offers, causing scoped impact: group budget bypass via mixed buy/sell offer fills? Proof idea: create buy and sell offers with same group and maxAssets, fill both, assert total consumed does not exceed maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_91aaaec7-62f3-4d0c-bf44-90214218c7f8?mode=deep",
+    "timestamp": "2026-05-31 22:15:08.800172",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / authorized signer revocation mid-fill] Can an unprivileged taker observe that EcrecoverRatifier.isRatified() checks isAuthorized[offer.maker][_signer] at call time, and that if the maker revokes the signer's authorization between two partial fills (via setIsAuthorized), the second fill will revert with Unauthorized from the ratifier, leaving consumed at the partial fill value and the offer permanently stuck at partial consumption (since the root is not canceled and the signer is no longer authorized), violating the invariant that partial fills must be completable or cleanly cancelable, causing scoped impact: offer stuck at partial fill due to authorization revocation? Proof idea: partial fill, revoke signer authorization, attempt second fill, assert revert and consumed is stuck.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_07ce0fdb-6dc9-4d0b-9fb1-c24c0377b765?mode=deep",
+    "timestamp": "2026-05-31 22:15:21.845526",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer with callback that calls setConsumed to reset] Can an unprivileged maker, acting as their own callback, call setConsumed(group, consumed_before_fill, maker) during the onBuy/onSell callback to reset consumed back to its pre-fill value, effectively undoing the consumed increment from the current fill, and then observe whether the take() still succeeds (since the consumed check happens before the callback), causing the offer to be fillable indefinitely without consuming any budget, violating the invariant that consumed must be monotonically non-decreasing, causing scoped impact: offer reused indefinitely via callback-based consumed reset? Proof idea: implement callback that calls setConsumed to pre-fill value, fill repeatedly, assert consumed never reaches maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9945d6a2-447e-421a-95a2-09002218e76d?mode=deep",
+    "timestamp": "2026-05-31 22:15:36.246693",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer.maker == address(0)] Can an unprivileged taker craft an offer with offer.maker = address(0) and a signature that ecrecover returns address(0) for, observe that the check require(_signer != address(0)) rejects it, but then determine whether there is any path where offer.maker = address(0) passes all checks (isAuthorized[address(0)][ratifier], isRatified, SelfTake check with taker != address(0)), causing consumed[address(0)][group] to be incremented, violating the invariant that offers must have a valid non-zero maker, causing scoped impact: consumed accounting for zero-address maker? Proof idea: craft offer with maker=address(0), attempt take, assert all checks correctly reject.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_817ccd1f-0ed0-4960-87b2-282d1d5d8474?mode=deep",
+    "timestamp": "2026-05-31 22:15:49.586343",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / Merkle tree height 0 single leaf] Can an unprivileged taker observe that a Merkle tree of height 0 (single leaf, proof.length=0) has root = hashOffer(offer), and that the signature covers keccak256(abi.encode(offerTreeTypeHash(0), root)) where offerTreeTypeHash(0) is a fixed constant, and determine whether this single-leaf tree provides the same security guarantees as a multi-leaf tree, or whether the fixed typehash for height 0 creates any signature malleability, violating the invariant that single-offer trees must be as secure as multi-offer trees, causing scoped impact: signature malleability in single-leaf Merkle tree? Proof idea: sign single-leaf tree, attempt to use signature for different offer with same hash, assert rejection.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f603196c-c89b-4f55-8904-04b3c08c9b0c?mode=deep",
+    "timestamp": "2026-05-31 22:16:03.423606",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer.group = keccak256(offer fields)] Can an unprivileged taker observe that if a maker sets offer.group = keccak256(abi.encode(offer fields)) (i.e., the group is derived from the offer itself), the group is unique per offer and consumed tracking is per-offer, and determine whether this pattern correctly isolates consumption per offer or whether it creates any hash collision risk with other offers, violating the invariant that unique groups must provide isolated consumption tracking, causing scoped impact: group collision enabling cross-offer consumption sharing? Proof idea: fuzz offer fields, assert no two distinct offers produce the same group when group is derived from offer hash.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6e474ff5-cb44-43c2-bdba-1a23522f7067?mode=deep",
+    "timestamp": "2026-05-31 22:16:18.080062",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / partial fill then setConsumed decrease attempt] Can an unprivileged taker observe that setConsumed() requires amount >= consumed[onBehalf][group] (AlreadyConsumed check), preventing any decrease of consumed, and determine whether this means a partially-filled offer can never have its consumed counter reduced even if the fill was erroneous, and whether this creates any permanent accounting inconsistency, violating the invariant that consumed must accurately reflect actual fills, causing scoped impact: irrecoverable consumed state after partial fill? Proof idea: partial fill, attempt setConsumed to lower value, assert AlreadyConsumed revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a73061ee-4cf7-4b9b-aa27-ba9512a104fc?mode=deep",
+    "timestamp": "2026-05-31 22:16:32.663642",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer with maxAssets in sell mode rounding] Can an unprivileged taker, given a sell offer (offer.buy=false) with maxAssets = X, observe that consumed tracks sellerAssets = units.mulDivUp(sellerPrice, WAD) (rounded up), and craft a sequence of fills where each fill's sellerAssets rounds up by 1, causing consumed to reach maxAssets after fewer units than the maker intended to sell, effectively underutilizing the maker's offer capacity, violating the invariant that maxAssets should represent the exact maximum seller asset exposure, causing scoped impact: maker's sell offer capacity underutilized due to rounding-up in assets mode? Proof idea: fill sell offer with units chosen to maximize rounding-up, assert total units filled is less than maxAssets/sellerPrice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d7e5ef40-d511-4eb6-b566-2881b9507ede?mode=deep",
+    "timestamp": "2026-05-31 22:16:46.394359",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer expiry = type(uint256).max] Can an unprivileged taker observe that an offer with expiry = type(uint256).max never expires, and that the consumed counter for such an offer's group accumulates indefinitely across all fills, and determine whether the consumed counter can overflow uint256 if enough fills are made over time, causing the overflow to wrap around and allow the offer to appear unconsumed, violating the invariant that consumed must be monotonically non-decreasing and never wrap, causing scoped impact: consumed overflow enabling offer reuse after wrap-around? Proof idea: fill offer with large units repeatedly, assert consumed never overflows uint256.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3376eccc-1356-467c-ba1e-6a1d45cc38d3?mode=deep",
+    "timestamp": "2026-05-31 22:16:59.414717",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / multicall with setConsumed between takes] Can an unprivileged taker use multicall() to batch: (1) take() for partial fill, (2) setConsumed(group, type(uint256).max, maker) if taker is authorized by maker, (3) observe that the second take() in the same multicall would revert, and determine whether the multicall atomicity correctly handles this sequence, violating the invariant that multicall must not enable consumed manipulation between fills, causing scoped impact: consumed griefing via multicall-batched setConsumed? Proof idea: multicall [take, setConsumed(max), take], assert second take reverts and first take's consumed is preserved.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a78ccff5-47c6-4c2b-9313-db79d3f35f92?mode=deep",
+    "timestamp": "2026-05-31 22:17:13.708448",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: EcrecoverRatifier.isRatified / EIP712_DOMAIN_TYPEHASH / verifyingContract] Can an unprivileged taker observe that the EIP-712 domain separator uses address(this) (the EcrecoverRatifier contract address) as verifyingContract, and that if a different EcrecoverRatifier instance is deployed (e.g., for a different Midnight deployment), signatures from one instance cannot be replayed on another, and determine whether the MIDNIGHT immutable correctly prevents cross-ratifier replay, violating the invariant that signatures must be bound to a specific ratifier instance, causing scoped impact: cross-ratifier signature replay? Proof idea: deploy two EcrecoverRatifier instances, sign for one, attempt replay on other, assert domain separator mismatch.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06f0e346-610c-4272-9cd0-3f735d345fb4?mode=deep",
+    "timestamp": "2026-05-31 22:17:28.740905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer with both maxAssets and maxUnits nonzero] Can an unprivileged taker craft an offer where both maxAssets > 0 and maxUnits > 0, observe that take() reverts with MultipleNonZero (from atMostOneNonZero check), and determine whether this check happens before or after the consumed update, and whether a revert at this point leaves consumed unchanged, violating the invariant that invalid offers must not modify consumed, causing scoped impact: consumed state corruption on MultipleNonZero revert? Proof idea: craft offer with both maxAssets and maxUnits nonzero, call take, assert consumed unchanged after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8bbe166b-c16c-47a6-8a17-ffed217a3e8d?mode=deep",
+    "timestamp": "2026-05-31 22:17:41.908345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer.group shared between markets with different loan tokens] Can an unprivileged taker observe that consumed[maker][group] is shared across all markets (since it's not keyed by market or loan token), and that a maker who creates offers in markets with different loan tokens but the same group has their consumption budget shared across those markets, causing a fill in a USDC market to deplete the budget for a WETH market offer with the same group, violating the invariant that group budgets should be isolated by loan token unless explicitly shared, causing scoped impact: cross-loan-token group budget depletion? Proof idea: create two markets with different loan tokens, same maker group, fill one market's offer, assert other market's offer sees reduced capacity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f136d352-bb0f-4887-9223-da00734ff626?mode=deep",
+    "timestamp": "2026-05-31 22:17:56.572416",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / offer signed for market A used in market B via modified ratifierData] Can an unprivileged taker take an offer signed for market A and attempt to use it in market B by modifying the offer.market field in the calldata (since Offer is memory, not calldata-validated), observe that hashOffer() includes the market hash so the Merkle proof would fail, and confirm that the isRatified check correctly prevents cross-market offer reuse, violating the invariant that offers must be bound to their signed market, causing scoped impact: cross-market offer reuse attempt and its effect on consumed? Proof idea: sign offer for market A, modify market field to B, call take, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68a5d646-60f2-40e2-a249-629693e704d3?mode=deep",
+    "timestamp": "2026-05-31 22:18:09.695383",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take / consumed / EcrecoverRatifier / stateful fuzz: partial fill sequence] Can a stateful fuzz test with arbitrary sequences of take(), setConsumed(), cancelRoot(), and setIsAuthorized() calls demonstrate that consumed[maker][group] ever exceeds offer.maxUnits (or offer.maxAssets) for any offer that has been successfully filled, violating the invariant that consumed must never exceed the offer's cap after any sequence of valid protocol interactions, causing scoped impact: offer overfilled under any reachable state? Proof idea: Foundry stateful fuzz with arbitrary call sequences, assert consumed[maker][group] <= max after every take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a86af7a-9ee4-452c-b794-5bfdb643c031?mode=deep",
+    "timestamp": "2026-05-31 22:18:23.194554",
+    "report_generated": false
+  }
+]
