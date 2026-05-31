@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (bad debt double realization)] Can an unprivileged liquidator, under the precondition that liquidate() with seizedAssets=0 and repaidUnits=0 realizes bad debt by reducing position.debt and updating lossFactor, compose a multicall of [liquidate(borrower, seizedAssets=0, repaidUnits=0), liquidate(borrower, seizedAssets=0, repaidUnits=0)] where the first call realizes all bad debt (position.debt reduced to 0) and the second call reverts with NotBorrower (debt==0), violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: accounting corruption — if the second liquidate does not revert correctly, bad debt is realized twice, over-slashing lender credit? Proof idea: assert that a second zero-input liquidate on a borrower with debt=0 reverts with NotBorrower in any multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ff8fe1ad-26f9-44da-9b63-346c3d5d7a84?mode=deep",
+    "timestamp": "2026-05-31 23:01:15.075158",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (market creation + immediate take)] Can an unprivileged market creator, under the precondition that touchMarket creates a market with DEFAULT_TICK_SPACING=4 and sets settlement fees from defaultSettlementFeeCbp, compose a multicall of [touchMarket(market), take(offer_at_tick_4)] where the market is created and immediately taken in the same transaction, and the settlement fee is 0 (defaultSettlementFeeCbp not yet set for this loanToken), violating the invariant that settlement fee accounting is correct, causing scoped impact: fee underclaim — settlement fee is 0 for the first take on a newly created market in the same multicall, allowing takers to avoid fees? Proof idea: assert settlementFee(id, timeToMaturity) > 0 for any take on a market created in the same multicall when defaultSettlementFeeCbp is non-zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90849988-48f3-40bb-a060-ecac0731a1e9?mode=deep",
+    "timestamp": "2026-05-31 23:01:27.057596",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (liquidation lock transient storage)] Can an unprivileged attacker, under the precondition that liquidationLocked uses tstore/tload (transient storage, EIP-1153) which persists within a transaction but resets between transactions, compose a multicall of [take(sell_offer_with_sellerCallback)] where the sellerCallback calls liquidate(seller) and liquidationLocked(id, seller) returns true (lock is set), then after the callback the lock is cleared by !wasLocked check, and a second multicall call [liquidate(seller)] succeeds because the lock is now false, violating the invariant that healthy accounts must not become liquidatable due to rounding, oracle, bitmap, or maturity edge cases, causing scoped impact: unauthorized seizure — seller is liquidated in the same multicall as their take, after the lock is released? Proof idea: assert liquidationLocked(id, seller) is false after take() returns; assert liquidate reverts if seller is healthy after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43935d91-5486-4ff8-b42f-ebf274e7dfc3?mode=deep",
+    "timestamp": "2026-05-31 23:01:38.602995",
+    "report_generated": false
+  }
+]
