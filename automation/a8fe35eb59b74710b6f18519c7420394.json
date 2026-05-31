@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an authorized operator call setIsAuthorized(authorized, false, victim) to revoke victim's own self-authorization (isAuthorized[victim][victim]), under the precondition that victim has set isAuthorized[victim][victim] = true for some integration purpose, causing victim to lose the ability to perform actions that rely on that self-authorization, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: fund freeze where victim cannot manage their own position? Proof idea: unit test; victim sets isAuthorized[victim][victim]=true, attacker (authorized) calls setIsAuthorized(victim, false, victim), assert victim's self-authorization is revoked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c810cc8f-cd6f-4a13-9654-abaf1b4cf621?mode=deep",
+    "timestamp": "2026-05-31 18:53:12.315014",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee / updatePosition] Can the feeClaimer call claimContinuousFee(market, amount, receiver) before any lender calls updatePosition, under the precondition that continuousFeeCredit has accrued but lenders' pendingFee has not been crystallized, causing the claimed amount to exceed what lenders have actually been charged (since updatePosition crystallizes the fee), violating the invariant that total claimable credit must not exceed repaid loan assets plus valid recoverable debt, causing scoped impact: protocol insolvency where fee claim exceeds actual fee accrual? Proof idea: invariant test; assert claimContinuousFee(amount) where amount <= sum of all lenders' accrued pendingFee increments.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e2c9455c-4493-4c8e-ac64-40e7aa2b799f?mode=deep",
+    "timestamp": "2026-05-31 18:53:24.368102",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can the tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) where newTickSpacing is not a divisor of the current tickSpacing but the modulo check passes due to integer overflow in the expression marketState[id].tickSpacing % newTickSpacing, under the precondition that tickSpacing is stored as uint8 and newTickSpacing is passed as uint256, causing an invalid tick spacing to be set, violating the invariant that tick spacing must only decrease to valid divisors, causing scoped impact: offer placement at invalid ticks breaking price quantization? Proof idea: fuzz newTickSpacing values near uint8 boundary; assert InvalidTickSpacing() reverts for all non-divisors.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_46e81ce7-2a10-4622-b437-63f5b7f02e48?mode=deep",
+    "timestamp": "2026-05-31 18:53:36.994571",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / take (as maker via ratifier)] Can an authorized operator call setIsAuthorized(maliciousRatifier, true, victim) where maliciousRatifier is a contract that returns CALLBACK_SUCCESS for any offer signed by victim, under the precondition that victim's offers use the EcrecoverRatifier and attacker replaces it via authorization, causing attacker to fill victim's offers at any price and any amount, violating the invariant that ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group, causing scoped impact: offer overfill and direct loss of victim's assets? Proof idea: deploy malicious ratifier returning true always; authorize it via setIsAuthorized; fill victim's offer at 0 price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_55fbecff-3841-4078-822a-b56a44507e34?mode=deep",
+    "timestamp": "2026-05-31 18:53:49.701490",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee] Can the feeSetter call setDefaultSettlementFee(loanToken, index, newFee) for a loanToken that is address(0), under the precondition that no validation prevents address(0) as a loanToken, causing defaultSettlementFeeCbp[address(0)][index] to be set, which would be inherited by any market created with loanToken=address(0), violating the invariant that market config must be valid, causing scoped impact: market parameter setter access-control failure where fee is set for a non-existent token? Proof idea: unit test setDefaultSettlementFee(address(0), 0, CBP); assert the mapping is set and a market with loanToken=address(0) inherits it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad686562-897d-4c4f-b042-2a028d7131ee?mode=deep",
+    "timestamp": "2026-05-31 18:54:03.295838",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / multicall] Can an attacker use multicall to atomically call [setIsAuthorized(attacker, true, attacker), withdrawCollateral(market, 0, maxAmount, attacker, attacker)] where the second call relies on the first having set authorization, under the precondition that attacker already has some collateral deposited and msg.sender == attacker throughout delegatecall, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: collateral withdrawal in a single atomic transaction that bypasses any external authorization check? Proof idea: multicall test with self-authorization followed by withdrawCollateral; assert health check still applies.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a0dbada-8f88-4c94-8ec4-aaf39f945f5a?mode=deep",
+    "timestamp": "2026-05-31 18:54:16.733122",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can the feeClaimer call claimSettlementFee(token, amount, receiver) where token is a rebasing ERC20 that increases balances after transfer, under the precondition that claimableSettlementFee[token] was computed based on pre-rebase amounts, causing the claimed amount to be less than the actual token balance increase, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: unclaimable excess fees permanently locked in the contract? Proof idea: deploy rebasing token; execute takes to accrue fees; rebase upward; assert claimableSettlementFee[token] < actual token balance increase from fees.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_69ce5d6d-12b6-40ca-b36c-15d1c9f6d18e?mode=deep",
+    "timestamp": "2026-05-31 18:54:30.524978",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee / claimContinuousFee] Can the feeSetter call setMarketContinuousFee(id, 0) to zero out the continuous fee for a market, then the feeClaimer call claimContinuousFee(market, continuousFeeCredit, receiver) to claim all previously accrued credit, under the precondition that lenders have not yet called updatePosition to crystallize their pendingFee, causing the claimed amount to exceed what lenders have been charged, violating the invariant that continuous fee borne by lenders must equal fees claimed by feeClaimer, causing scoped impact: protocol insolvency where fee claim exceeds lender charges? Proof idea: invariant test; assert sum(lender pendingFee increments) >= claimContinuousFee amount at all times.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_10fb99ff-d941-40a2-b655-76c82eee0630?mode=deep",
+    "timestamp": "2026-05-31 18:54:44.102519",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / repay] Can an authorized operator call repay(market, type(uint128).max, victim, address(0), '') to repay victim's entire debt, under the precondition that isAuthorized[victim][attacker] == true and attacker wants to force victim to lose their debt position (e.g., to prevent victim from profiting from a favorable rate), causing victim's debt to be fully repaid without consent and attacker paying the loan tokens, violating the invariant that user funds must not be seized outside valid protocol rules, causing scoped impact: forced position closure that denies victim their expected yield? Proof idea: unit test; authorize attacker, attacker calls repay on victim's behalf with full debt amount; assert victim's debt is zeroed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9b37aa8b-e7c1-4221-b1fa-b24398f1400f?mode=deep",
+    "timestamp": "2026-05-31 18:54:57.422546",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can the feeSetter call setMarketSettlementFee(id, index, newFee) for a market that has already matured (block.timestamp > market.maturity), under the precondition that post-maturity settlement fee is always the 0d breakpoint value, causing the fee change to affect post-maturity takes even though the market is in settlement mode, violating the invariant that settlement fee must be constant after maturity, causing scoped impact: fee manipulation during post-maturity unwinding that extracts value from lenders or borrowers? Proof idea: warp past maturity, call setMarketSettlementFee(id, 0, maxFee), execute post-maturity take, assert fee is applied at the new 0d rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4168a64f-31af-479e-a9c6-298c708bec71?mode=deep",
+    "timestamp": "2026-05-31 18:55:11.408071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / flashLoan] Can an authorized operator use flashLoan to borrow tokens and within the onFlashLoan callback call setIsAuthorized(attacker, true, victim) on behalf of victim (if victim previously authorized the flash loan contract), under the precondition that the flash loan callback contract is authorized by victim, causing attacker to gain permanent authorization over victim's position, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized seizure of victim's collateral and credit post-flashloan? Proof idea: deploy flash loan callback that calls setIsAuthorized; authorize it as victim; execute flashLoan; assert attacker is now authorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de06fcd8-261a-4bfa-b8e0-d39457644728?mode=deep",
+    "timestamp": "2026-05-31 18:55:24.039727",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setTickSpacingSetter / setMarketTickSpacing] Can the roleSetter set tickSpacingSetter to a contract that automatically reduces all market tick spacings to 1 when called, under the precondition that the tickSpacingSetter contract has no access controls and any caller can trigger it, causing all markets to have tick spacing 1 simultaneously, violating the invariant that tick spacing reduction must be a deliberate governance action, causing scoped impact: offer placement at all integer ticks enabling price manipulation at fine granularity? Proof idea: deploy auto-reducer contract as tickSpacingSetter; call it as unprivileged user; assert all market tick spacings become 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1e3376e-78e5-4277-a681-8c5bb4d37f7f?mode=deep",
+    "timestamp": "2026-05-31 18:55:37.861051",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / setConsumed] Can an authorized operator call setConsumed(group, 0, victim) when consumed[victim][group] > 0, under the precondition that setConsumed requires amount >= consumed[victim][group] (AlreadyConsumed check), causing the call to revert, but if the check is bypassed via a different code path, allowing offer replay, violating the invariant that cancelled, expired, or already-consumed offers cannot be filled, causing scoped impact: offer replay enabling double-fill of victim's offers? Proof idea: unit test setConsumed(group, 0, victim) when consumed > 0; assert AlreadyConsumed() revert; then verify no alternate path allows decreasing consumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63c66e33-a74e-44d4-8fbd-c4030ebd8d24?mode=deep",
+    "timestamp": "2026-05-31 18:55:51.929718",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can the feeSetter call setMarketContinuousFee(id, newFee) for a market where continuousFeeCredit > 0 and lenders have lastAccrual set, under the precondition that the fee change takes effect immediately for new credit accrual but existing lenders' pendingFee is not retroactively updated, causing a lender who entered at fee=0 to have pendingFee=0 while new lenders at fee=MAX_CONTINUOUS_FEE have high pendingFee, violating the invariant that continuous fee is fixed for a lender at position entry, causing scoped impact: fee accounting desync where old lenders pay less than new lenders for the same credit? Proof idea: differential test; lender A enters at fee=0, fee changed to MAX, lender B enters; assert A.pendingFee growth rate != B.pendingFee growth rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a26a15f-1aff-4148-a192-72556d43b044?mode=deep",
+    "timestamp": "2026-05-31 18:56:06.283229",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can the feeClaimer call claimContinuousFee(market, amount, receiver) where the market struct passed does not match the stored market (different collateralParams but same id due to hash collision or wrong id derivation), under the precondition that toId(market) returns the same bytes32 for two different Market structs, causing the fee claim to operate on the wrong market's state, violating the invariant that market identity must be unique and immutable, causing scoped impact: fee claim from wrong market draining another market's withdrawable balance? Proof idea: attempt to find two Market structs with same toId(); assert IdLib.toId() is collision-resistant.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_963133fe-e093-4bc4-877b-0301a2367333?mode=deep",
+    "timestamp": "2026-05-31 18:56:19.396038",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / take (taker authorization)] Can an attacker call take(offer, ratifierData, units, victim, receiver, takerCallback, takerCallbackData) where taker=victim and isAuthorized[victim][attacker] == true, under the precondition that the offer is a buy offer that increases victim's credit but also charges victim's pendingFee, causing victim to accumulate credit at an unfavorable rate without consent, violating the invariant that every lend/take must create correct credit and asset transfer with user consent, causing scoped impact: unauthorized credit creation with fee burden imposed on victim? Proof idea: unit test; authorize attacker, attacker calls take with victim as taker on a buy offer; assert victim's credit and pendingFee increased without victim's direct action.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3dbbd737-6f54-494f-9279-cdae9eb2550d?mode=deep",
+    "timestamp": "2026-05-31 18:56:32.331766",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee / setMarketSettlementFee] Can the feeSetter call setMarketSettlementFee(id, index, newFee) where newFee % CBP != 0 but the check newFee % CBP == 0 passes due to CBP being 0 (if CBP constant is ever 0), under the precondition that CBP == 0 causes division by zero or modulo-by-zero, causing the fee to be stored as an arbitrary value, violating the invariant that settlement fees must be multiples of CBP, causing scoped impact: fee accounting corruption with non-CBP-aligned fee values? Proof idea: unit test with CBP=1 (minimum); assert FeeNotMultipleOfFeeCbp() reverts for newFee=1 when CBP=2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de63fb93-4a7d-4461-ae08-7905656057b4?mode=deep",
+    "timestamp": "2026-05-31 18:56:45.649340",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / withdrawCollateral (health check bypass)] Can an authorized operator call withdrawCollateral(market, collateralIndex, assets, victim, receiver) where the health check isHealthy(market, id, victim) passes because the oracle for a different collateral reverts, under the precondition that isAuthorized[victim][attacker] == true and one oracle is reverting causing isHealthy to revert, causing the withdrawCollateral call to revert (not bypass), but if the oracle returns a stale high price, the health check passes incorrectly, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy, causing scoped impact: unauthorized collateral withdrawal leaving position undercollateralized? Proof idea: mock oracle returning inflated price; authorize attacker; call withdrawCollateral; assert position remains healthy post-withdrawal.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_145d5ea7-5385-4871-b82f-7ceb3050d8fb?mode=deep",
+    "timestamp": "2026-05-31 18:56:59.857579",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee / take] Can the feeSetter call setMarketSettlementFee(id, index, newFee) between the signing of an offer and its execution, under the precondition that the offer's ratifier validates the offer struct which does not include the settlement fee, causing the taker to pay a different fee than expected at offer signing time, violating the invariant that ratifier approval must bind correct market terms, causing scoped impact: taker pays higher fees than agreed upon in the off-chain offer negotiation? Proof idea: sign offer, change settlement fee, execute take; assert buyerAssets - sellerAssets reflects new fee not old fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_55697f9a-3185-4a92-b44b-4e02ccf36d39?mode=deep",
+    "timestamp": "2026-05-31 18:57:14.561897",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / repay (callback)] Can an authorized operator call repay(market, units, victim, maliciousCallback, data) where maliciousCallback is attacker-controlled, under the precondition that isAuthorized[victim][attacker] == true and the callback is called before the token transfer, causing the callback to observe victim's reduced debt state and re-enter take to increase victim's debt again before the repay token transfer, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: debt accounting corruption where victim's debt is reduced then re-increased in the same transaction? Proof idea: reentrancy test in onRepay calling take to re-increase debt; assert final debt == original debt - repaidUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e864437e-56c9-4ae0-82d7-f744b9b7112f?mode=deep",
+    "timestamp": "2026-05-31 18:57:28.704989",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter] Can the roleSetter call setFeeSetter(address(0)) to permanently disable fee setting, under the precondition that there are markets with suboptimal fees that need adjustment, causing all future setMarketSettlementFee, setDefaultSettlementFee, setMarketContinuousFee, and setDefaultContinuousFee calls to revert with OnlyFeeSetter(), violating the invariant that protocol parameters must remain configurable by authorized roles, causing scoped impact: permanent fund freeze of fee configuration preventing protocol from adjusting to market conditions? Proof idea: unit test setFeeSetter(address(0)); assert all fee setter functions revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_343adbed-4a25-4167-92c0-86a819ca3eb5?mode=deep",
+    "timestamp": "2026-05-31 18:57:41.845103",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee / IERC20.transfer] Can the feeClaimer call claimSettlementFee(token, amount, receiver) where the token's transfer function returns false (non-reverting failure), under the precondition that SafeTransferLib.safeTransfer does not check the return value of IERC20.transfer, causing claimableSettlementFee[token] to be decremented but no tokens actually transferred to receiver, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: fee accounting corruption where claimableSettlementFee is reduced but feeClaimer receives nothing? Proof idea: deploy token returning false on transfer; call claimSettlementFee; assert claimableSettlementFee decreased but receiver balance unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_838bed27-e417-4826-8b63-616f2817b001?mode=deep",
+    "timestamp": "2026-05-31 18:57:55.880687",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / setIsAuthorized (recursive)] Can an authorized operator call setIsAuthorized(newOperator, true, victim) to grant a new operator, then newOperator calls setIsAuthorized(attacker, true, victim) to grant attacker, creating an unbounded authorization chain, under the precondition that isAuthorized[victim][operator] == true and the protocol has no depth limit on authorization chains, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized seizure of victim's funds by an address victim never directly authorized? Proof idea: chain 3+ authorization grants; assert each level can perform withdrawCollateral on victim's behalf.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ecb1741-ed34-4172-835c-657a5080f147?mode=deep",
+    "timestamp": "2026-05-31 18:58:10.575125",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee / claimContinuousFee] Can the feeSetter call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) and then the feeClaimer immediately call claimContinuousFee(market, continuousFeeCredit, receiver) before any lender's updatePosition is called, under the precondition that continuousFeeCredit reflects accrual at the old lower rate, causing the claimed amount to be less than what will eventually be charged to lenders at the new higher rate, violating the invariant that continuous fee borne by lenders must equal fees claimed, causing scoped impact: fee accounting desync where future lender charges exceed claimable fee balance? Proof idea: invariant test; assert continuousFeeCredit >= sum of future pendingFee increments for all lenders at new rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9d43013-7bf8-4767-81ee-8904b7972873?mode=deep",
+    "timestamp": "2026-05-31 18:58:24.566513",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / supplyCollateral (collateral poisoning)] Can an authorized operator call supplyCollateral(market, collateralIndex, 1, victim) to activate a new collateral slot for victim, under the precondition that isAuthorized[victim][attacker] == true and victim already has MAX_COLLATERALS_PER_BORROWER - 1 active collaterals, causing victim's collateralBitmap to reach the maximum and preventing victim from activating any new collateral, violating the invariant that user funds must not be frozen outside valid protocol rules, causing scoped impact: collateral slot DoS where victim cannot add new collateral types? Proof idea: unit test; authorize attacker, attacker supplies 1 wei of 16th collateral for victim; assert victim cannot supply a 17th collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd0dda04-aad3-4248-8a92-b52838d328e9?mode=deep",
+    "timestamp": "2026-05-31 18:58:37.883328",
+    "report_generated": false
+  }
+]
