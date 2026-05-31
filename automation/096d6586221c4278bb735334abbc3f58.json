@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer confusion with bad debt market] Can an unprivileged attacker, under the precondition that the market has a high lossFactor (near type(uint128).max) and takerCallback=victimContract, cause take() to revert with MarketLossFactorMaxedOut before the callback is called, so that the victim is not drained, but verify that if lossFactor is just below the max, the take proceeds and victim pays, violating the invariant that markets near insolvency should not enable payer confusion, causing scoped impact: victim pays into an insolvent market? Proof idea: fuzz (lossFactor near type(uint128).max) and assert take reverts before callback when lossFactor == type(uint128).max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31fcd405-a7e5-4feb-b40a-4b996388d9b8?mode=deep",
+    "timestamp": "2026-05-31 20:22:54.245884",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.repay / payer confusion with onBehalf != msg.sender] Can an unprivileged caller, under the precondition that onBehalf has authorized msg.sender on Midnight and a victim contract implements IRepayCallback and has approved Midnight, call repay(market, units, onBehalf, victimContract, data) where payer=victimContract, causing the victim to pay units of loan tokens to reduce onBehalf's debt, while msg.sender (the authorized agent) pays nothing, violating the invariant that the repaying party (msg.sender or onBehalf) must supply the tokens, causing scoped impact: victim's tokens used to repay another user's debt? Proof idea: assert victim.loanToken decreases by units while onBehalf.debt decreases by units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bc6e0ac2-a34e-4c1f-ba4d-19b663e13a56?mode=deep",
+    "timestamp": "2026-05-31 20:23:06.248272",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.liquidate / payer confusion with post-maturity mode] Can an unprivileged liquidator, under the precondition that block.timestamp > market.maturity and a victim contract implements ILiquidateCallback and has approved Midnight, call liquidate(market, collateralIndex, seizedAssets, 0, borrower, true, receiver, victimContract, data) in post-maturity mode, causing payer=victimContract to pay repaidUnits while the liquidator receives seizedAssets collateral, violating the invariant that the liquidator must supply repayment tokens, causing scoped impact: liquidator profits from post-maturity liquidation at victim's expense? Proof idea: advance time past maturity; assert liquidator receives collateral while victim pays loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_716fd8b4-345f-452c-af50-cecdf207b752?mode=deep",
+    "timestamp": "2026-05-31 20:23:18.716772",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: TakeAmountsLib.buyerAssetsToUnits / offer.buy=true path] Can an unprivileged attacker, under the precondition that offer.buy=true and the settlement fee is nonzero, cause TakeAmountsLib.buyerAssetsToUnits to compute buyerPrice = sellerPrice + settlementFee = (offerPrice - settlementFee) + settlementFee = offerPrice, and verify that for buy offers buyerPrice = offerPrice (not offerPrice + settlementFee), so that the units computation is different from sell offers, and confirm that the bundler's supplyCollateralAndSellWithAssetsTarget correctly uses this path, violating the invariant that buyerAssetsToUnits must mirror the exact computation in take() for buy offers, causing scoped impact: payer overpays or underpays if buyerPrice computation diverges from take()? Proof idea: differential test between TakeAmountsLib.buyerAssetsToUnits and take() for buy offers across all valid (tick, settlementFee) pairs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0322b671-b6f0-4fc9-a45d-2d1cb0c08ae7?mode=deep",
+    "timestamp": "2026-05-31 20:23:31.696264",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer confusion with gate-restricted market] Can an unprivileged taker, under the precondition that the market has an enterGate that blocks the taker from increasing credit, and takerCallback=victimContract, cause take() to revert with BuyerGatedFromIncreasingCredit after the callback has already been called (since the gate check occurs after the callback), so that the victim's onBuy callback executes but the take reverts, violating the invariant that gate checks should occur before any callbacks or token pulls, causing scoped impact: victim's callback invoked but take reverts, leaving victim in inconsistent state? Proof idea: assert gate check order relative to callback invocation in take(); verify no state changes persist if take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_67d8b3ba-999b-47af-96f4-efdcbbec1338?mode=deep",
+    "timestamp": "2026-05-31 20:23:45.233734",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer confusion with self-referential callback] Can an unprivileged taker, under the precondition that takerCallback=address(midnight) (Midnight itself as the callback), cause take() to call IBuyCallback(midnight).onBuy(...) which would call an unknown function on Midnight (since Midnight does not implement IBuyCallback), causing a revert with WrongBuyCallbackReturnValue, but verify that if Midnight's fallback or a matching selector exists, the callback could succeed and payer=midnight, causing Midnight to pay from its own balance, violating the invariant that Midnight should never be the payer for a take, causing scoped impact: Midnight's token balance drained? Proof idea: assert take reverts when takerCallback=address(midnight) due to missing IBuyCallback implementation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c6e323d0-3ebd-448e-b45b-f766e22398be?mode=deep",
+    "timestamp": "2026-05-31 20:23:59.584166",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles / try-catch swallowing payer confusion] Can an unprivileged attacker, under the precondition that a take with takerCallback=victimContract would succeed (victim implements IBuyCallback and has approval), cause the bundler's try-catch block to swallow a revert from the take (e.g., if the victim's onBuy reverts), so that the bundler skips the offer and continues to the next, but the victim's callback was partially executed before the revert, violating the invariant that a reverted take should have no side effects, causing scoped impact: partial callback execution with no token transfer? Proof idea: implement onBuy that reverts after emitting an event; assert no state changes in Midnight after bundler skips the offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_504234b2-a045-444f-a22f-19604a06d53b?mode=deep",
+    "timestamp": "2026-05-31 20:24:13.451604",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer confusion with maxAssets-based offer overfill] Can an unprivileged attacker, under the precondition that offer.maxAssets > 0 and offer.buy=true with offer.callback=victimContract, cause the consumed tracking to use buyerAssets (since `consumed[offer.maker][offer.group] += offer.buy ? buyerAssets : sellerAssets`), and TakeAmountsLib.buyerAssetsToUnits to compute units such that the actual buyerAssets from take equals exactly offer.maxAssets - consumed, so that the offer is exactly filled, but due to rounding in buyerAssetsToUnits, the actual buyerAssets could be 1 wei less, leaving the offer underfilled and allowing another take to pull from victimContract again, violating the invariant that an assets-based offer should be exactly filled in one take, causing scoped impact: victim pays twice for a single offer fill? Proof idea: fuzz (maxAssets, consumed, tick) and assert offer is exactly consumed after one take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36e7cec4-dbec-47a8-9d43-c4a7d9e7686f?mode=deep",
+    "timestamp": "2026-05-31 20:24:28.075380",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer confusion with group shared across markets] Can an unprivileged maker, under the precondition that the same group is used across two different markets (market A and market B) with different loan tokens, and offer.callback=victimContract for a buy offer in market A, cause the consumed[maker][group] to be shared, so that taking the offer in market A increments consumed for market B's offer too, and if victimContract has approved both loan tokens, the attacker can drain victimContract for both markets using a single group, violating the invariant that group-based consumed tracking should not enable cross-market payer confusion, causing scoped impact: victim drained across multiple markets via shared group? Proof idea: create two markets with same group; assert consumed tracking correctly limits total fills across markets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eae47002-ef59-4a27-98b2-33a0a5570ec8?mode=deep",
+    "timestamp": "2026-05-31 20:24:41.520594",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: TakeAmountsLib / differential test against Midnight.take] Can an unprivileged attacker, under the precondition that TakeAmountsLib.buyerAssetsToUnits and TakeAmountsLib.sellerAssetsToUnits are used to compute units for the bundler, cause a divergence between the asset amounts computed by TakeAmountsLib and the actual asset amounts returned by Midnight.take for any valid (tick, settlementFee, units, offer.buy) combination, violating the invariant that TakeAmountsLib must exactly mirror Midnight's asset computation, causing scoped impact: payer pays wrong amount due to TakeAmountsLib divergence from Midnight? Proof idea: differential fuzz test comparing TakeAmountsLib output with actual take() return values across all valid parameter ranges.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af8913b8-8dc8-4f4a-a009-dd595b18dbcc?mode=deep",
+    "timestamp": "2026-05-31 20:24:55.162922",
+    "report_generated": false
+  }
+]
