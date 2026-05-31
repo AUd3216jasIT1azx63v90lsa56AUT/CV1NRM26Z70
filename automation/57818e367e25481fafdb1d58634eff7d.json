@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a price such that units.mulDivDown(buyerPrice, WAD) == 0 (buyerPrice < WAD and units small), call take() repeatedly with nonzero units without advancing consumed[offer.maker][offer.group], violating the invariant that consumed must increase by the assets charged per fill, causing scoped impact: offer overfilled with zero asset charge per fill? Proof idea: fuzz units in [1, WAD/buyerPrice - 1] with buyerPrice < WAD and assert consumed delta == 0 while credit increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36534fe9-cb45-4b4b-8833-71b7f85b2532?mode=deep",
+    "timestamp": "2026-05-31 23:27:06.803453",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxAssets > 0, exploit the fact that consumed tracks sellerAssets = units.mulDivUp(sellerPrice, WAD) while the actual units transferred are uncapped by assets, to fill more units than the maker intended by choosing units such that mulDivUp rounding causes consumed to advance slower than actual exposure, violating the invariant that consumed[maker][group] <= offer.maxAssets implies total units filled <= intended cap, causing scoped impact: maker undercharged and overfilled? Proof idea: fuzz (units, sellerPrice) pairs and assert sum(units_filled) * sellerPrice / WAD <= offer.maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7d13923-937f-4203-b11a-df7c741101e0?mode=deep",
+    "timestamp": "2026-05-31 23:27:18.879036",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and buyerPrice < WAD, call take() with units > 0 after consumed[maker][group] >= offer.maxAssets (fully consumed in assets mode), because the protocol comment states 'It is possible to give units to a fully consumed assets-based buy offer with price < 1', violating the invariant that a fully consumed offer admits only no-op takes, causing scoped impact: offer reused after full consumption, maker receives unexpected credit? Proof idea: set consumed = maxAssets via setConsumed, then call take with units > 0 and buyerPrice < WAD, assert credit increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_370ad749-7477-4648-bd02-7757c17ff77b?mode=deep",
+    "timestamp": "2026-05-31 23:27:31.431478",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given two offers sharing the same group (offer.group) but in different markets with different loan tokens, fill both offers independently up to their individual maxUnits while the shared consumed[maker][group] counter only reflects one market's fills, violating the invariant that the group budget prevents total exposure exceeding the budget across all offers in the group, causing scoped impact: maker's total exposure across markets exceeds intended group cap? Proof idea: create two markets with same maker and group, fill each to maxUnits, assert consumed[maker][group] == 2 * maxUnits > intended single-market cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b39f539b-6da1-4101-984a-5dcf31abe2d4?mode=deep",
+    "timestamp": "2026-05-31 23:27:44.814624",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0, exploit the asymmetry that consumed tracks buyerAssets = units.mulDivDown(buyerPrice, WAD) while the gate check for canIncreaseCredit fires only when buyerCreditIncrease > 0, to fill the offer without triggering the enter gate by choosing units <= buyerPos.debt (so buyerCreditIncrease == 0), advancing consumed without gate validation, violating the invariant that gate checks must apply to all entry paths that consume offer capacity, causing scoped impact: gate bypass with consumed advancing? Proof idea: set buyer debt >= units, call take on gated market, assert gate not called but consumed increased.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b1bff80-3080-44e0-91ee-ab8fa09e6de1?mode=deep",
+    "timestamp": "2026-05-31 23:27:58.913996",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxUnits > 0, exploit the fact that consumed[maker][group] is updated at line 371 before the gate check at lines 402-406, to cause a griefing scenario where a malicious taker calls take() with units that would pass the consumed check but fail the gate check, burning the maker's remaining offer capacity via the revert, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: maker's offer griefed by forcing reverts that waste no attacker funds? Proof idea: set up gated market, call take with units that pass ConsumedUnits but fail canIncreaseDebt, verify consumed is NOT permanently advanced (revert rolls back), but measure gas cost of griefing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06b252ac-db34-4374-829a-37c3e79c0e94?mode=deep",
+    "timestamp": "2026-05-31 23:28:12.996036",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a settlement fee that changes between partial fills (fee setter increases fee), cause the consumed accounting to desync from actual asset exposure because consumed tracks buyerAssets computed at fill time while the offer's maxAssets was set assuming a different fee, violating the invariant that offer fill amount cannot exceed remaining offer capacity in economic terms, causing scoped impact: maker undercharged relative to intended exposure cap after fee increase? Proof idea: partial fill at low fee, increase fee, fill remainder, assert total buyerAssets paid < offer.maxAssets but total units > intended.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9bd9522d-a3a4-4f3e-9fc1-6d110ef7ff83?mode=deep",
+    "timestamp": "2026-05-31 23:28:28.177307",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits == 0 and offer.maxAssets == 0 (both zero, meaning no cap), call take() with arbitrarily large units, violating the invariant that at most one of maxAssets or maxUnits can be nonzero per offer (the MultipleNonZero check only fires when both are nonzero), causing scoped impact: offer with no cap is unlimited and maker is exposed to unbounded fill? Proof idea: create offer with maxUnits=0 and maxAssets=0, call take with type(uint128).max units, assert consumed stays 0 and no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c1fbfb88-a21c-4938-8513-17adb34a65bf?mode=deep",
+    "timestamp": "2026-05-31 23:28:43.752139",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / setConsumed] Can an authorized operator of a maker, by calling setConsumed(group, type(uint256).max, maker) to cancel all offers in a group, then immediately calling take() on an offer in that group with units=0 (no-op take), trigger the maker's callback without any consumed check, violating the invariant that cancelled offers cannot be filled, causing scoped impact: maker callback invoked on cancelled offer, potential state manipulation via callback? Proof idea: cancel group via setConsumed(max), call take with units=0, assert callback fires and consumed stays at max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d28d9af-8b08-40a7-a7dd-7f01f36fe882?mode=deep",
+    "timestamp": "2026-05-31 23:29:00.727246",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0, exploit the rounding in consumed tracking (consumed += units.mulDivDown(buyerPrice, WAD)) by making many small fills each rounding down to the same consumed increment, to fill more total units than a single fill of the same total units would allow, violating the invariant that N partial fills of size k must consume the same as one fill of size N*k, causing scoped impact: offer overfilled via rounding accumulation? Proof idea: fuzz N fills of size k vs one fill of N*k, assert sum(mulDivDown(k, price, WAD) * N) <= mulDivDown(N*k, price, WAD) does not always hold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e33d6d3-64b0-403f-8e92-f3c263f96d2e?mode=deep",
+    "timestamp": "2026-05-31 23:29:14.735796",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer (offer.buy=false) with offer.maxAssets > 0, exploit the fact that consumed tracks sellerAssets = units.mulDivUp(sellerPrice, WAD) (rounds UP for sell offers) while the actual debt created is exactly units, to cause the consumed counter to advance faster than actual debt, effectively griefing the maker by exhausting their offer capacity with fewer actual units than intended, violating the invariant that consumed accurately reflects economic exposure, causing scoped impact: maker's sell offer capacity exhausted prematurely? Proof idea: fuzz units near WAD/sellerPrice boundary, assert consumed/sellerPrice > units_filled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4f113499-2049-4a63-ab50-006665716588?mode=deep",
+    "timestamp": "2026-05-31 23:29:28.903448",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and a maker who has existing debt (buyerPos.debt > 0), call take() with units <= buyerPos.debt so that buyerCreditIncrease == 0 and the enter gate's canIncreaseCredit is never called, while consumed[maker][group] still advances by units, violating the invariant that gate checks must apply to all entry paths that advance consumed, causing scoped impact: consumed advances on gated market without gate validation? Proof idea: give maker existing debt, call take on gated market with units <= debt, assert gate not called but consumed increased.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23894c98-6010-4809-a5c7-7157e4c1cee8?mode=deep",
+    "timestamp": "2026-05-31 23:29:43.004010",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxUnits > 0 and a seller who has existing credit (sellerPos.credit >= units), call take() so that sellerDebtIncrease == 0 and the enter gate's canIncreaseDebt is never called, while consumed[maker][group] still advances by units, violating the invariant that gate checks must apply to all entry paths that advance consumed, causing scoped impact: consumed advances on gated market without gate validation for debt increase path? Proof idea: give seller existing credit >= units, call take on gated market, assert canIncreaseDebt not called but consumed increased.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1112044-d24e-41a3-a4dc-35582738c16d?mode=deep",
+    "timestamp": "2026-05-31 23:29:56.689980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a buyerCallback that reenters take() on the same offer before the outer take's consumed check is finalized, cause the inner take to see the pre-outer-take consumed value and fill the offer beyond maxAssets, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: offer overfilled via reentrant take through buyerCallback? Proof idea: deploy reentrant buyerCallback that calls take() again, assert consumed[maker][group] > offer.maxAssets after outer take completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_031af057-5b33-45d9-afb0-0d58e0d72572?mode=deep",
+    "timestamp": "2026-05-31 23:30:11.137076",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxAssets > 0 and a sellerCallback that reenters take() on the same offer, cause the inner take to see the already-updated consumed value (consumed is updated before callbacks) but the outer take's position state is not yet finalized, allowing the inner take to pass the consumed check and create additional debt, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: offer overfilled via reentrant take through sellerCallback? Proof idea: deploy reentrant sellerCallback, assert total debt > intended after nested take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4df4a923-29f4-4d21-ad88-807ac09bb3c4?mode=deep",
+    "timestamp": "2026-05-31 23:30:27.280654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given two offers from the same maker sharing the same group with offer.maxUnits > 0, call take() on both offers in the same multicall() transaction such that the consumed check for the second offer sees the consumed value already advanced by the first offer's fill, but the ratifier for the second offer was signed assuming consumed == 0, violating the invariant that ratifier approval must bind correct consumed state, causing scoped impact: second offer filled under wrong consumed precondition, maker's intent violated? Proof idea: multicall two takes on same group, assert second take's ratifier sees post-first-fill consumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53f626e7-4ff3-41d2-8ebf-f025718cd795?mode=deep",
+    "timestamp": "2026-05-31 23:30:44.371581",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 where the offer is in assets mode and the market's settlement fee is zero, exploit the fact that buyerAssets = units.mulDivDown(buyerPrice, WAD) with buyerPrice == WAD means consumed advances by exactly units, but if the fee is later increased the same offer's remaining capacity is computed differently by off-chain routers using ConsumableUnitsLib.consumableUnits(), causing the router to underestimate remaining capacity and the on-chain fill to succeed with more units than the router expected, violating the invariant that consumed accurately reflects remaining capacity, causing scoped impact: offer overfilled relative to off-chain routing estimate? Proof idea: fill partially at zero fee, increase fee, fill remainder, assert total units > ConsumableUnitsLib estimate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5da78786-c02d-4426-9dd4-6ad7636053f9?mode=deep",
+    "timestamp": "2026-05-31 23:31:00.586705",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and a market at maturity boundary (block.timestamp == offer.market.maturity), call take() with units that would increase sellerDebtIncrease > 0 at timestamp T but not at T+1, exploiting the CannotIncreaseDebtPostMaturity check timing relative to consumed update, to advance consumed without creating debt, violating the invariant that every debt increase must correspond to valid consumed accounting, causing scoped impact: consumed advances without corresponding debt creation at maturity boundary? Proof idea: warp to maturity, call take with sellerDebtIncrease > 0, assert revert rolls back consumed, then warp to maturity+1 and verify behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f6e2ef3-07be-4786-a767-f1c305b3d7e3?mode=deep",
+    "timestamp": "2026-05-31 23:31:14.873303",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a market where the tick spacing has been reduced (finer ticks unlocked), call take() with the same offer at a tick that was previously inaccessible (not a multiple of old spacing but multiple of new spacing), causing the consumed accounting to advance for fills that the maker did not anticipate when signing the offer at the original tick spacing, violating the invariant that ratifier approval must bind correct market, offer, and price, causing scoped impact: offer filled at unintended tick, maker undercharged? Proof idea: sign offer at tick T, reduce tick spacing, fill at tick T' < T with same group, assert consumed advances at unexpected price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3cdffc5f-bcb8-43be-aaa8-a1091c8d07dc?mode=deep",
+    "timestamp": "2026-05-31 23:31:30.367153",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and offer.reduceOnly = true, call take() with units such that buyerCreditIncrease > 0 (buyer has no existing debt), causing the MakerCreditOrDebtIncreased revert AFTER consumed has already been incremented, and then repeat this pattern to grief the maker by exhausting their offer capacity via reverts, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: maker's reduceOnly offer griefed by repeated reverts that advance consumed? Proof idea: call take with units > buyerPos.debt on reduceOnly offer, verify revert rolls back consumed, measure griefing cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5bd50b5-ea11-46a7-bbf5-116427c0c99d?mode=deep",
+    "timestamp": "2026-05-31 23:31:45.871888",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxAssets > 0 and a market where the loss factor is near type(uint128).max, call take() such that the MarketLossFactorMaxedOut check fires AFTER consumed has been incremented, causing a revert that rolls back consumed but leaves the market in a state where the offer cannot be filled, violating the invariant that offer capacity is not consumed by failed fills, causing scoped impact: offer griefed by loss factor boundary? Proof idea: set lossFactor to max-1, call take, assert revert rolls back consumed correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b553a72c-ce5c-47d6-b756-191e38f8e323?mode=deep",
+    "timestamp": "2026-05-31 23:32:01.494553",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a buyerCallback that calls setConsumed(group, 0, maker) (attempting to reset consumed), fail because setConsumed only allows increasing consumed, but instead call setConsumed(group, consumed + delta, maker) to advance consumed beyond the fill amount, causing the outer take's ConsumedAssets check to see an inflated consumed value and revert, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker's offer griefed by authorized operator advancing consumed during callback? Proof idea: authorize callback as operator, have callback call setConsumed to advance consumed, assert outer take reverts with ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e6342f3-1e65-4b44-a57a-24ba77365ad6?mode=deep",
+    "timestamp": "2026-05-31 23:32:17.932000",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given two offers from the same maker in the same group but with different offer.buy directions (one buy, one sell), fill both offers such that the shared consumed[maker][group] counter is advanced by both fills, but the group invariant assumes all offers in a group have the same direction, violating the invariant that group budget prevents total exposure exceeding budget, causing scoped impact: maker's group budget exceeded by mixing buy and sell offers in same group? Proof idea: create buy and sell offers with same group, fill both, assert consumed > max of either offer's cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f44fc34-9725-4bd3-b526-94ea81a8c2db?mode=deep",
+    "timestamp": "2026-05-31 23:32:33.749099",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a market where the settlement fee breakpoint changes between partial fills, cause the consumed accounting to be inconsistent because consumed tracks buyerAssets at fill-time fee while the offer's maxAssets was set assuming a fixed fee schedule, violating the invariant that offer fill amount cannot exceed remaining offer capacity in economic terms, causing scoped impact: offer overfilled in units terms when fee decreases between fills? Proof idea: partial fill at high fee (high buyerAssets per unit), decrease fee, fill remainder, assert total units > intended.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4a1858f0-f406-46f7-87d9-1206ac0c1236?mode=deep",
+    "timestamp": "2026-05-31 23:32:47.743289",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and a market with a liquidator gate, call take() as a taker who is also a liquidator, where the liquidator gate's canLiquidate check is not called during take(), allowing the taker to fill the offer and create credit without the liquidator gate being consulted, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: liquidator gate bypassed via take path? Proof idea: create market with liquidator gate blocking taker, call take, assert fill succeeds without liquidator gate check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7289d61a-bf67-43d9-96e9-cfd7c926ef6c?mode=deep",
+    "timestamp": "2026-05-31 23:33:01.667140",
+    "report_generated": false
+  }
+]
