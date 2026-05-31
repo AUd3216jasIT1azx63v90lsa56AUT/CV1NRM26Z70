@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: buyerAssetsToUnits] Can an unprivileged taker be blocked from using buyWithAssetsTargetAndWithdrawCollateral for a sell offer in a market where the seller (offer.maker) is unhealthy and Midnight.take() reverts with SellerIsLiquidatable(), but TakeAmountsLib.buyerAssetsToUnits does not check the seller's health and returns a nonzero units value, causing the bundle to attempt the take, fail (caught by try/catch), and then revert with OutOfOffers() if no other offers are available, violating the invariant that unhealthy-seller offers must be gracefully skipped, causing scoped impact: fund freeze — bundles with unhealthy-seller sell offers revert instead of skipping? Proof idea: create sell offer from an unhealthy borrower, include it as the only offer in takes array, call buyWithAssetsTargetAndWithdrawCollateral, assert bundle reverts with OutOfOffers().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ca4ca21-55b6-4b38-b5e8-64cccd90cc50?mode=deep",
+    "timestamp": "2026-05-31 23:16:33.533342",
+    "report_generated": false
+  }
+]
