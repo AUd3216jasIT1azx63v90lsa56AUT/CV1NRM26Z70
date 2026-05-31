@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that TakeAmountsLib assumes `id` and `offer.market` match but does not enforce it call buyerAssetsToUnits(midnight, id_of_market_A, offer_with_market_B, target) where market_B has maturity=0 and market_A has maturity=block.timestamp+100, causing settlementFee to be fetched for market_A while TTM is computed from market_B.maturity=0 (always post-maturity fee), violating the invariant that settlement fee spread must correspond to the actual market's TTM, causing scoped impact: accounting corruption where units returned are computed with mismatched fee/price, leading to taker overpaying or underpaying? Proof idea: fuzz id and offer.market independently, assert that buyerAssetsToUnits(id_A, offer_with_market_B) != buyerAssetsToUnits(id_B, offer_with_market_B) when market_A and market_B have different maturities, and verify the returned units cause take() to transfer wrong amounts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_69b42f24-1676-42be-ba69-f12699e97f7e?mode=deep",
+    "timestamp": "2026-05-31 19:17:55.767796",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that offer.market.maturity is set to type(uint256).max (far future) call buyerAssetsToUnits where zeroFloorSub(type(uint256).max, block.timestamp) returns a very large TTM, causing settlementFee(id, very_large_ttm) to return the 360-day cap fee, violating the invariant that TTM computation must not overflow or produce incorrect fee tier selection, causing scoped impact: wrong unit count returned, leading to taker receiving more units than paid for or bundler logic failing? Proof idea: unit test with offer.market.maturity = type(uint256).max, assert settlementFee call receives TTM > 360 days and returns the 360d breakpoint fee, then verify units returned match expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7b461db8-6473-46d2-963c-ab994dc31b87?mode=deep",
+    "timestamp": "2026-05-31 19:18:08.163732",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: sellerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maturity = block.timestamp (TTM=0 at creation) call sellerAssetsToUnits where zeroFloorSub(offer.market.maturity, block.timestamp) = 0, causing settlementFee(id, 0) to return the 0-day breakpoint fee (MAX_SETTLEMENT_FEE_0_DAYS = 0.000014e18), violating the invariant that a newly created market should use the creation-time TTM fee not the post-maturity fee, causing scoped impact: incorrect sellerPrice computation leading to wrong units returned and accounting mismatch in MidnightBundles? Proof idea: create market with maturity=block.timestamp, call sellerAssetsToUnits, assert sellerPrice = offerPrice (since offer.buy=false, sellerPrice=offerPrice), verify units = targetSellerAssets.mulDivDown(WAD, offerPrice) is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d170245-5203-49cd-a92e-98825c22496f?mode=deep",
+    "timestamp": "2026-05-31 19:18:20.621025",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged caller under the precondition that id corresponds to a market that has NOT been created (tickSpacing=0, all settlementFeeCbp fields = 0) call buyerAssetsToUnits(midnight, uncreated_id, offer, target), causing settlementFee(uncreated_id, ttm) to return 0 (all cbp fields are 0), violating the invariant that TakeAmountsLib must only be used with created markets, causing scoped impact: units computed with zero settlement fee diverge from what take() would actually charge once the market is created, leading to MidnightBundles overfilling or underfilling? Proof idea: call buyerAssetsToUnits with a random bytes32 id that has no market state, assert settlementFee returns 0, then create the market and compare the result.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad358dbc-9305-49d3-8cc4-dd8b9d3f33dc?mode=deep",
+    "timestamp": "2026-05-31 19:18:34.189972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: sellerAssetsToUnits] Can an unprivileged attacker under the precondition that offer.buy=true and offerPrice < settlementFee (e.g., tick near MAX_TICK with high settlement fee) call sellerAssetsToUnits where sellerPrice = offerPrice - settlementFee underflows (Solidity 0.8 reverts on underflow), violating the invariant that sellerAssetsToUnits must revert consistently with take() when offerPrice < settlementFee for buy offers, causing scoped impact: MidnightBundles supplyCollateralAndSellWithAssetsTarget reverts unexpectedly, freezing the bundler flow? Proof idea: fuzz tick and settlementFee such that tickToPrice(tick) < settlementFee, call sellerAssetsToUnits with offer.buy=true, assert it reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7c7e0302-a736-4841-89a0-208955f35f61?mode=deep",
+    "timestamp": "2026-05-31 19:18:47.393272",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maturity = block.timestamp + 1 (1 second TTM) call buyerAssetsToUnits one second later (post-maturity), causing zeroFloorSub(maturity, block.timestamp) = 0 and settlementFee to use the 0-day breakpoint, violating the invariant that post-maturity fee must equal the 0-day breakpoint fee and units must be computed consistently with take(), causing scoped impact: if the 0-day fee is nonzero, buyerPrice may exceed WAD for high-tick offers, causing PriceGreaterThanOne revert in the periphery but not in take()? Proof idea: set 0-day fee to MAX_SETTLEMENT_FEE_0_DAYS, create market with maturity=block.timestamp+1, warp 1 second, call buyerAssetsToUnits with tick near MAX_TICK, assert revert condition matches take() behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_982285d8-4818-4078-9a93-8f465aadc482?mode=deep",
+    "timestamp": "2026-05-31 19:19:00.943713",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that offer.market.maturity is set to a value less than block.timestamp (already expired market) call buyerAssetsToUnits where zeroFloorSub returns 0 regardless of actual block.timestamp, causing the function to always use the 0-day settlement fee even for markets with TTM > 0 in their actual state, violating the invariant that TTM must be derived from the market's actual maturity, causing scoped impact: units returned are computed with wrong fee, leading to taker overpaying in MidnightBundles? Proof idea: create market with maturity=block.timestamp+1000, but pass offer.market.maturity=0 to buyerAssetsToUnits, assert TTM=0 is used, compare with correct TTM=1000 result.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5fa2273e-34bb-4fdf-9f2c-6a8ae6df3dea?mode=deep",
+    "timestamp": "2026-05-31 19:19:15.571259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged market creator under the precondition that two distinct markets M1 and M2 have the same toId() hash (collision via crafted collateral token addresses) call TakeAmountsLib with id=toId(M1) and offer.market=M2, causing settlementFee to be fetched for M1 while TTM is computed from M2.maturity, violating the invariant that id and offer.market must correspond to the same market, causing scoped impact: wrong units returned, leading to MidnightBundles transferring wrong amounts? Proof idea: differential test - compute toId for two markets with different maturities but same hash, assert TakeAmountsLib returns different results depending on which market struct is passed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_507dbac9-f5f1-48a9-bd41-e4a4d785dc21?mode=deep",
+    "timestamp": "2026-05-31 19:19:30.300830",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged caller under the precondition that targetBuyerAssets = 0 call buyerAssetsToUnits(midnight, id, offer, 0), causing mulDivUp(0, WAD, buyerPrice) = 0 or mulDivDown(0, WAD, buyerPrice) = 0, violating the invariant that zero-asset input must return zero units without reverting, causing scoped impact: MidnightBundles no-op take with 0 units may still consume offer capacity via take() if units=0 is passed? Proof idea: unit test buyerAssetsToUnits with targetBuyerAssets=0, assert returns 0, then verify take(0 units) is a no-op in Midnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9adcfbe4-ddb9-4b2d-bf66-d31462622522?mode=deep",
+    "timestamp": "2026-05-31 19:19:44.112522",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with LLTV = WAD (special case, no overcollateralization) and maxLif = WAD (no liquidation incentive) call buyerAssetsToUnits where the settlement fee computation is unaffected by LLTV/maxLif but the resulting units allow a borrower to take with zero collateral, violating the invariant that LLTV=WAD markets must still enforce health checks, causing scoped impact: bad debt creation if oracle price drops after take? Proof idea: create market with LLTV=WAD, call buyerAssetsToUnits to compute units, take the offer, assert health check passes with zero collateral, then verify liquidation behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4313815f-84b4-4216-bed2-a9302e94239f?mode=deep",
+    "timestamp": "2026-05-31 19:19:57.349926",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: sellerAssetsToUnits] Can an unprivileged taker under the precondition that offer.buy=false and sellerPrice = offerPrice (no settlement fee subtracted for sell offers) call sellerAssetsToUnits where targetSellerAssets is very large (near type(uint256).max), causing mulDivDown(type(uint256).max, WAD, offerPrice) to overflow in Solidity 0.8 (since x*y overflows uint256), violating the invariant that sellerAssetsToUnits must not overflow for any valid input, causing scoped impact: MidnightBundles reverts unexpectedly, freezing the sell flow? Proof idea: fuzz targetSellerAssets near type(uint256).max with small offerPrice, assert overflow revert occurs, verify MidnightBundles handles this.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b11dc37-6318-4bf0-99c4-98a239691ce3?mode=deep",
+    "timestamp": "2026-05-31 19:20:12.008240",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maturity = block.timestamp + 100*365 days (maximum allowed) call buyerAssetsToUnits where TTM = 100*365 days, causing settlementFee(id, 100*365 days) to return the 360-day cap fee (MAX_SETTLEMENT_FEE_360_DAYS = 0.005e18), violating the invariant that TTM > 360 days must use the 360-day breakpoint fee, causing scoped impact: units computed correctly but taker may be surprised by higher-than-expected fee for very long maturities? Proof idea: create market with max maturity, call buyerAssetsToUnits, assert settlementFee = 360-day cap, verify units match expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c6e9cd2a-c418-4301-ae40-acab8e0c0db7?mode=deep",
+    "timestamp": "2026-05-31 19:20:26.192511",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with collateralParams containing address(0) as the first token (which is less than any nonzero address, so previousCollateralToken=address(0) and require(collateralToken > previousCollateralToken) passes for address(0) only if the check is strict greater-than) call touchMarket, violating the invariant that createdMarketsHaveNonZeroCollaterals (address(0) collateral must be rejected), causing scoped impact: market created with address(0) collateral allows supplyCollateral to transfer from address(0), potentially minting free collateral? Proof idea: attempt touchMarket with collateralParams[0].token = address(0), assert CollateralParamsNotSorted revert since address(0) is not > address(0) (previousCollateralToken starts at address(0)).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d050ce7-da38-415d-a38f-a8e68f383234?mode=deep",
+    "timestamp": "2026-05-31 19:20:40.286228",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with two collateral entries having the same token address (duplicate) call touchMarket, violating the invariant that collateral list must have no duplicates (strict ascending sort enforces this), causing scoped impact: if duplicates were allowed, collateral bitmap would map two indices to the same token, double-counting collateral value in health checks and enabling undercollateralized borrowing? Proof idea: attempt touchMarket with collateralParams[0].token = collateralParams[1].token, assert CollateralParamsNotSorted revert since equal addresses fail strict greater-than.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f0f5c1b-26fa-43ca-a6fa-ba7a9bc29eae?mode=deep",
+    "timestamp": "2026-05-31 19:20:54.505201",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with collateralParams in descending order (e.g., token[0] > token[1]) call touchMarket, violating the invariant that collateral list must be sorted ascending, causing scoped impact: if unsorted list were accepted, collateral index 0 would map to a higher-address token, breaking any off-chain tooling that assumes sorted order and potentially causing collateralIndex mismatches in supplyCollateral/liquidate calls? Proof idea: attempt touchMarket with reversed collateral list, assert CollateralParamsNotSorted revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_20adbfb8-0391-4dad-9101-a7bb88e54910?mode=deep",
+    "timestamp": "2026-05-31 19:21:08.984070",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with LLTV = 0.5e18 (not in the allowed tier set) call touchMarket, violating the invariant that only allowed LLTV tiers are accepted, causing scoped impact: if an arbitrary LLTV were accepted, health checks would use an unvalidated ratio, potentially allowing undercollateralized borrowing or preventing valid liquidations? Proof idea: fuzz lltv over all uint256 values, assert touchMarket reverts with LltvNotAllowed for any lltv not in {0.385e18, 0.625e18, 0.77e18, 0.86e18, 0.915e18, 0.945e18, 0.965e18, 0.98e18, 1e18}.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f5880b78-5f1c-4272-b53b-75289a656b1b?mode=deep",
+    "timestamp": "2026-05-31 19:21:22.295034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maxLif = maxLif(lltv, 0.3e18) (a cursor value not equal to LIQUIDATION_CURSOR_LOW=0.25e18 or LIQUIDATION_CURSOR_HIGH=0.5e18) call touchMarket, violating the invariant that only two allowed maxLif values per LLTV are accepted, causing scoped impact: if arbitrary maxLif were accepted, liquidation incentive could be set too high (enabling over-seizure) or too low (making liquidations unprofitable), leading to bad debt accumulation? Proof idea: fuzz maxLif for each allowed LLTV, assert touchMarket reverts with InvalidMaxLif for any value not equal to maxLif(lltv, 0.25e18) or maxLif(lltv, 0.5e18).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aae64131-6c6b-471a-9a08-45d69b43166e?mode=deep",
+    "timestamp": "2026-05-31 19:21:36.047881",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maturity = block.timestamp + 100*365 days + 1 (one second beyond the maximum) call touchMarket, violating the invariant that maturity must not exceed block.timestamp + 100*365 days, causing scoped impact: if an unsafe maturity were accepted, the market would have a TTM beyond the protocol's design range, potentially causing settlement fee computation to use the 360-day cap for an extremely long period, distorting pricing? Proof idea: fuzz maturity in range [block.timestamp + 100*365 days + 1, type(uint256).max], assert touchMarket reverts with MaturityTooFar.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2cb64abd-deb9-48d0-912a-9a2770db25f2?mode=deep",
+    "timestamp": "2026-05-31 19:21:49.317748",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maturity = 0 (already expired at creation) call touchMarket (which only checks maturity <= block.timestamp + 100*365 days, so maturity=0 passes), then call buyerAssetsToUnits where zeroFloorSub(0, block.timestamp) = 0 always, causing settlementFee to always use the 0-day breakpoint fee, violating the invariant that a market with maturity=0 should behave as permanently post-maturity, causing scoped impact: debt cannot be increased (CannotIncreaseDebtPostMaturity), but TakeAmountsLib still computes units as if trading is possible, misleading bundler callers? Proof idea: create market with maturity=0, call buyerAssetsToUnits, assert it returns nonzero units, then verify take() reverts with CannotIncreaseDebtPostMaturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fdd61d84-3ae6-4518-be7c-d53d41a1290f?mode=deep",
+    "timestamp": "2026-05-31 19:22:03.230924",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral is called with takes[0].offer.market having valid params but takes[i].offer.market (i>0) having a different maturity (same id due to toId check passing) call TakeAmountsLib.buyerAssetsToUnits with the wrong offer.market.maturity, causing TTM to be computed from the wrong maturity, violating the invariant that all offers in a bundle must use the same market params, causing scoped impact: wrong units computed for subsequent takes, leading to overfill or underfill of the bundle? Proof idea: construct two offers with same market id but different maturity values, verify toId check in MidnightBundles catches this, assert InconsistentMarket revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6491378-4c5d-4e07-8fb4-0676259bcc87?mode=deep",
+    "timestamp": "2026-05-31 19:22:16.469972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with collateralParams.length = 0 call touchMarket, violating the invariant that markets must have at least one collateral, causing scoped impact: if an empty collateral list were accepted, health checks would always return maxDebt=0, making any borrower immediately liquidatable, enabling unauthorized seizure of any deposited collateral? Proof idea: call touchMarket with empty collateralParams array, assert NoCollateralParams revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_462c7018-fa96-4cba-91c0-21000e30e916?mode=deep",
+    "timestamp": "2026-05-31 19:22:29.288026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with collateralParams.length = MAX_COLLATERALS + 1 (129) call touchMarket, violating the invariant that markets must have at most MAX_COLLATERALS (128) collaterals, causing scoped impact: if too many collaterals were accepted, the collateral bitmap (uint128) would overflow, causing collateral at index >= 128 to be silently ignored in health checks and liquidations? Proof idea: call touchMarket with 129 collateral entries, assert TooManyCollateralParams revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_060b8187-42b8-4b6b-9e67-28f1738871ae?mode=deep",
+    "timestamp": "2026-05-31 19:22:42.443482",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maxLif = 0 (below WAD) call touchMarket, violating the invariant that maxLif >= WAD (proven in ExactMath.spec), causing scoped impact: if maxLif=0 were accepted, the liquidation seize computation seizedAssets = repaidUnits.mulDivDown(0, WAD) = 0 would allow liquidators to repay debt and seize nothing, or the bad debt computation would be corrupted? Proof idea: attempt touchMarket with maxLif=0 for any allowed LLTV, assert InvalidMaxLif revert since 0 != maxLif(lltv, 0.25e18) and 0 != maxLif(lltv, 0.5e18).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc44eb21-148a-45ba-80ec-90439ef265a2?mode=deep",
+    "timestamp": "2026-05-31 19:22:55.937985",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with maxLif = type(uint256).max (above 2*WAD) call touchMarket, violating the invariant that maxLif <= 2*WAD (proven in ExactMath.spec for valid cursors), causing scoped impact: if maxLif=type(uint256).max were accepted, the LIF ramp computation WAD + (maxLif - WAD) * elapsed / TIME_TO_MAX_LIF would overflow, corrupting post-maturity liquidation incentive? Proof idea: attempt touchMarket with maxLif=type(uint256).max, assert InvalidMaxLif revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_05b50f2e-9f53-4bb9-b6bd-829b7e35f989?mode=deep",
+    "timestamp": "2026-05-31 19:23:09.683597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: buyerAssetsToUnits] Can an unprivileged market creator under the precondition that a market is created with loanToken = address(0) call touchMarket (no loanToken validation in touchMarket), causing defaultSettlementFeeCbp[address(0)] to be used (all zeros if never set), violating the invariant that markets must have a valid loan token, causing scoped impact: TakeAmountsLib.buyerAssetsToUnits returns units computed with zero settlement fee, but take() would attempt safeTransferFrom(address(0), ...) which reverts, freezing all takes on this market? Proof idea: create market with loanToken=address(0), call buyerAssetsToUnits, assert it returns nonzero units, then verify take() reverts on token transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec0a451c-522f-4a6a-aa18-c13ec4a723f4?mode=deep",
+    "timestamp": "2026-05-31 19:23:22.596962",
+    "report_generated": false
+  }
+]
