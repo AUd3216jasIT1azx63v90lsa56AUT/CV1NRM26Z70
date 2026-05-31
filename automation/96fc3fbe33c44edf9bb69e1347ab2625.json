@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker, under a buy offer (offer.buy=true) with maxAssets > 0 (tracking sellerAssets), trigger consumableUnits to call sellerAssetsToUnits with targetSellerAssets = offer.maxAssets.zeroFloorSub(consumed), where sellerPrice = offerPrice - settlementFee is very small (close to 0), causing mulDivUp(targetSellerAssets, WAD, sellerPrice) to return a very large unit count that exceeds the borrower's available collateral, causing take to revert with an arithmetic overflow or UnhealthyBorrower, violating the invariant that consumableUnits must return a safe unit count, causing scoped impact: bundler silently skips the offer? Proof idea: fuzz (sellerPrice close to 0, targetSellerAssets large) and assert the returned unit count is safe.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9236e89-e538-4f0c-985d-b2e985d5f128?mode=deep",
+    "timestamp": "2026-05-31 20:00:58.635367",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker, by constructing a takes array where all offers share the same group (offer.group = G) and the maker has setConsumed(G, X, maker) to a value X close to maxAssets, cause consumableUnits to return a very small unit count for each offer (since maxAssets - X is small), causing the bundler to fill each offer with a tiny amount, resulting in the borrower's debt being much less than targetUnits, causing the bundler to revert with OutOfOffers(), violating the invariant that a valid set of offers must be fillable to the target, causing scoped impact: valid borrower is blocked from borrowing? Proof idea: unit test with shared group and pre-consumed amount, assert OutOfOffers() revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77195709-81c9-4504-b858-9c602270a46c?mode=deep",
+    "timestamp": "2026-05-31 20:01:10.585778",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / settlementFee] Can an unprivileged taker, by calling MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral where consumableUnits is called for each offer in the loop, cause the settlement fee to change between iterations (due to block.timestamp advancing in a multi-block scenario or a fee setter action), resulting in different unit counts being computed for different offers in the same bundle, causing the total filled units to be inconsistent with the target, violating the invariant that the bundle must fill exactly targetBuyerAssets, causing scoped impact: borrower receives incorrect credit amount? Proof idea: state-transition test with fee change between iterations, assert filledBuyerAssets == targetFilledBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2fa57920-5b5e-4db8-8925-8f73e1c434bb?mode=deep",
+    "timestamp": "2026-05-31 20:01:22.922768",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / isHealthy] Can an unprivileged borrower, by activating collateral at index I with a very large amount (close to type(uint128).max) and an oracle price close to ORACLE_PRICE_SCALE (1e36), cause isHealthy's maxDebt computation to overflow uint256 in the intermediate step collateral[I] * price (before dividing by ORACLE_PRICE_SCALE), since collateral[I] is uint128 and price is uint256, and collateral[I] * price can be up to ~1e38 * 1e36 = 1e74 which overflows uint256 (max ~1.15e77), violating the invariant that isHealthy must not revert for valid inputs, causing scoped impact: isHealthy reverts, blocking withdrawCollateral and liquidate? Proof idea: fuzz (collateral close to type(uint128).max, price close to ORACLE_PRICE_SCALE) and assert no overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_581857d9-064a-42c9-879c-35465101bf41?mode=deep",
+    "timestamp": "2026-05-31 20:01:35.623041",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has bad debt (badDebt > 0) and the liquidated collateral oracle returns a price P such that seizedAssets * P / ORACLE_PRICE_SCALE * WAD / lif rounds up to more than the borrower's remaining debt after bad debt realization, cause liquidate to revert with an arithmetic underflow in _position.debt -= repaidUnits, violating the invariant that liquidation must always succeed for unhealthy positions, causing scoped impact: liquidation of a position with bad debt reverts unexpectedly? Proof idea: fuzz (debt, badDebt, seizedAssets, price, lif) and assert no underflow in debt subtraction.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b689fb16-2837-4bbf-a152-a15e5dd769cb?mode=deep",
+    "timestamp": "2026-05-31 20:01:49.376175",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker, under a sell offer (offer.buy=false) with maxAssets > 0, trigger consumableUnits to return U = mulDivDown(maxAssets - consumed, WAD, buyerPrice) units, and then take those U units causes buyerAssets = mulDivUp(U, buyerPrice, WAD) = maxAssets - consumed + 1 (due to rounding), causing take to revert with ConsumedAssets(), while the correct answer should be U-1 units, violating the invariant that consumableUnits must return the largest safe unit count, causing scoped impact: bundler silently skips the offer, leaving the borrower unable to fill their position? Proof idea: find (maxAssets, consumed, buyerPrice) such that floor((maxAssets-consumed) * WAD / buyerPrice) * buyerPrice / WAD rounded up > maxAssets - consumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31f2073d-a34b-4fb9-a603-dbc63a3f0efa?mode=deep",
+    "timestamp": "2026-05-31 20:02:02.787882",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / isHealthy] Can an unprivileged borrower, by activating collateral at index I with a non-zero amount and then having the oracle for index I return a price such that the collateral bitmap bit for I is set but collateral[I] = 0 (which should be impossible per the nonZeroCollateralsAreActivated invariant, but could occur if the invariant is violated), cause isHealthy to compute maxDebt += 0 * price / ORACLE_PRICE_SCALE * lltv / WAD = 0 for that collateral, making the borrower appear unhealthy, violating the invariant that the bitmap must accurately reflect non-zero collateral, causing scoped impact: valid borrower becomes liquidatable due to bitmap desync? Proof idea: invariant test asserting collateral[I] != 0 iff bit I is set in collateralBitmap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f77000bc-716f-49ed-9b44-ff51083eb3ab?mode=deep",
+    "timestamp": "2026-05-31 20:02:17.687268",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has multiple activated collaterals and the liquidated collateral (at collateralIndex) has its oracle return a price P such that seizedAssets = repaidUnits * lif / WAD * ORACLE_PRICE_SCALE / P rounds down to 0 (for very small repaidUnits and large P), cause liquidate to succeed with seizedAssets=0 and repaidUnits>0, reducing the borrower's debt without seizing any collateral, violating the invariant that liquidation must seize collateral proportional to repaid debt, causing scoped impact: liquidator repays debt for free, draining the market? Proof idea: fuzz (repaidUnits=1, price=ORACLE_PRICE_SCALE, lif=WAD) and assert seizedAssets > 0 when repaidUnits > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce6f50c2-903f-49f2-b973-7336a3b3feb3?mode=deep",
+    "timestamp": "2026-05-31 20:02:32.040392",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / MidnightBundles.supplyCollateralAndSellWithUnitsTarget] Can an unprivileged borrower, by calling supplyCollateralAndSellWithUnitsTarget where consumableUnits returns U units for a buy offer (offer.buy=true) with maxAssets > 0, and take succeeds with U units but the actual sellerAssets received is less than expected (due to mulDivDown rounding in take for buy offers), cause the borrower's debt to increase by U units but their loan token receipt to be less than U * sellerPrice / WAD, violating the invariant that the borrower must receive fair value for their debt, causing scoped impact: borrower is underpaid for their debt obligation? Proof idea: fuzz (units, sellerPrice) and assert sellerAssets >= units * sellerPrice / WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4495f65e-4be6-498c-a89a-da918c730ec9?mode=deep",
+    "timestamp": "2026-05-31 20:02:46.419772",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / settlementFee] Can an unprivileged taker, by calling consumableUnits for a sell offer (offer.buy=false) with maxAssets > 0 at a time when block.timestamp is exactly at a settlement fee breakpoint boundary (e.g., block.timestamp = offer.market.maturity - 1 days, TTM = 1 day exactly), cause the settlement fee to be computed using the breakpoint value (settlementFeeCbp1 * CBP) rather than the interpolated value, and then take at TTM = 1 day - 1 second uses a slightly different interpolated fee, causing a unit count mismatch, violating the invariant that consumableUnits must be consistent with take's fee computation, causing scoped impact: bundler silently skips the offer or overfills it? Proof idea: unit test at TTM = 1 day exactly vs 1 day - 1 second, assert fee consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0e1ed47-9653-4ba8-af4b-17d2745591f2?mode=deep",
+    "timestamp": "2026-05-31 20:03:00.048792",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has a single activated collateral at index I and the oracle returns a price P such that collateral[I] * P / ORACLE_PRICE_SCALE * lltv / WAD = debt - 1 (one unit below the health threshold), cause liquidate to proceed (since debt > maxDebt), but the RCF check (maxRepaid = (debt - maxDebt) * WAD^2 / (WAD^2 - lif * lltv)) rounds up to 1, allowing only 1 unit to be repaid, while the liquidator passes repaidUnits = 2, causing liquidate to revert with RecoveryCloseFactorConditionsViolated(), violating the invariant that a liquidator must be able to liquidate at least enough to restore health, causing scoped impact: liquidation is blocked by RCF rounding? Proof idea: fuzz (debt, maxDebt, lif, lltv) at the RCF boundary and assert liquidation succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79810f8a-afaf-4691-8b43-9db0dd2712bb?mode=deep",
+    "timestamp": "2026-05-31 20:03:13.785798",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker, under a sell offer (offer.buy=false) with maxAssets > 0 and consumed = 0, trigger consumableUnits to call buyerAssetsToUnits with targetBuyerAssets = maxAssets, which returns mulDivDown(maxAssets, WAD, buyerPrice) units, and then take those units causes buyerAssets = mulDivUp(units, buyerPrice, WAD) which may be strictly greater than maxAssets (due to rounding), causing take to revert with ConsumedAssets(), while the correct behavior is to return units - 1, violating the invariant that consumableUnits must return the largest safe unit count, causing scoped impact: the offer cannot be fully consumed via the bundler? Proof idea: differential fuzz test comparing consumableUnits output against the maximum units that take would accept.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4790247-4a4e-4482-a4dc-78d9a7c29ea5?mode=deep",
+    "timestamp": "2026-05-31 20:03:27.888018",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / isHealthy] Can an unprivileged borrower, by activating collateral at index I with a price oracle that returns ORACLE_PRICE_SCALE (1e36, i.e., 1:1 price), and having debt = collateral[I] * lltv / WAD (exactly at the health boundary), cause isHealthy to return false due to mulDivDown rounding (maxDebt = floor(collateral[I] * ORACLE_PRICE_SCALE / ORACLE_PRICE_SCALE) * lltv / WAD = floor(collateral[I] * lltv / WAD) which may be < debt if debt = ceil(collateral[I] * lltv / WAD)), violating the invariant that a borrower at the exact health boundary must be considered healthy, causing scoped impact: valid borrower becomes liquidatable due to rounding in isHealthy? Proof idea: fuzz (collateral, lltv) at the exact health boundary and assert isHealthy rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fb75cbe7-7fa3-4737-8a42-80ee144d72fa?mode=deep",
+    "timestamp": "2026-05-31 20:03:42.269143",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has bad debt and the market's lossFactor is close to type(uint128).max, cause the lossFactor update in liquidate (_marketState.lossFactor = type(uint128).max - (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits)) to overflow or produce an incorrect value, causing the market's lossFactor to be set incorrectly, violating the invariant that lossFactor must accurately reflect the proportion of bad debt realized, causing scoped impact: lenders' credit is incorrectly slashed, leading to insolvency? Proof idea: fuzz (lossFactor close to type(uint128).max, totalUnits, badDebt) and assert lossFactor update correctness.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b32b6d82-5565-4540-9bf1-5a2ff5547c5a?mode=deep",
+    "timestamp": "2026-05-31 20:03:57.886963",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker, by calling MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral with a takes array where offer[0] has maxUnits > 0 (units mode) and offer[1] has maxAssets > 0 (assets mode) and both share the same group, cause consumableUnits to return incorrect values for offer[1] because consumed[maker][group] was incremented by units (not assets) from offer[0]'s take, while offer[1]'s maxAssets is compared against the units-denominated consumed value, violating the invariant that consumed tracking must be consistent within a group, causing scoped impact: offer[1] is prematurely blocked or overfilled? Proof idea: unit test with mixed-mode offers in the same group, assert consumableUnits correctness.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d8709d2e-b328-4f4b-bd8b-796498957c28?mode=deep",
+    "timestamp": "2026-05-31 20:04:13.601374",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / withdrawCollateral] Can an unprivileged borrower, after taking a sell offer via MidnightBundles where the borrower's debt increases by U units, attempt to call withdrawCollateral where isHealthy iterates over the collateral bitmap and the oracle for one collateral returns a price that causes collateral[I] * price / ORACLE_PRICE_SCALE to overflow uint256 (since collateral[I] is up to type(uint128).max ≈ 3.4e38 and price is up to type(uint256).max), causing isHealthy to revert, violating the invariant that withdrawCollateral must not revert for valid inputs, causing scoped impact: valid withdrawal is permanently blocked? Proof idea: fuzz (collateral close to type(uint128).max, price close to type(uint256).max) and assert no overflow in isHealthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cd0b440f-3a66-4d90-9634-7032f536d1b9?mode=deep",
+    "timestamp": "2026-05-31 20:04:29.118954",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has activated collateral at index I with a non-zero amount but the oracle for index I is not in the market's collateralParams array (because the market was passed with a different collateralParams than the one used to create the market), cause liquidate to access market.collateralParams[I] with an out-of-bounds index, reverting with an array index out-of-bounds error, violating the invariant that liquidation must succeed for valid market parameters, causing scoped impact: liquidation of an unhealthy position reverts unexpectedly? Proof idea: unit test with a market passed to liquidate that has fewer collateralParams than the borrower's activated collateral indices.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3645c67d-de64-4f1e-a515-35d98ceed768?mode=deep",
+    "timestamp": "2026-05-31 20:04:45.543274",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker, under a sell offer (offer.buy=false) with maxAssets > 0, trigger consumableUnits to return U units where U = 0 (because mulDivDown(targetBuyerAssets, WAD, buyerPrice) = 0 for targetBuyerAssets < buyerPrice / WAD), causing MidnightBundles to pass 0 units to take, which is a no-op, but the bundler still counts this as a successful fill (filledUnits += 0), causing the loop to continue to the next offer, potentially causing the bundler to fill more offers than necessary, violating the invariant that the bundler must fill exactly targetUnits, causing scoped impact: borrower's debt is incorrect? Proof idea: unit test with targetBuyerAssets < buyerPrice / WAD, assert bundler behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_376e4cad-f424-4299-9277-6b4ea020dffa?mode=deep",
+    "timestamp": "2026-05-31 20:05:00.975413",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / isHealthy] Can an unprivileged borrower, by activating collateral at index I with a price oracle that returns a price P such that collateral[I] * P / ORACLE_PRICE_SCALE * lltv / WAD = 0 (due to mulDivDown rounding with very small collateral, price, or lltv), cause isHealthy to compute maxDebt = 0 even though the borrower has non-zero collateral, making the borrower appear unhealthy and liquidatable, violating the invariant that a borrower with sufficient collateral must be healthy, causing scoped impact: valid borrower becomes liquidatable due to dust-level rounding? Proof idea: fuzz (collateral=1, price=1, lltv=0.385e18) and assert isHealthy returns true when collateral * price * lltv / (ORACLE_PRICE_SCALE * WAD) >= debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d4a77e5-93f1-4897-83b0-79ab3a18bcd2?mode=deep",
+    "timestamp": "2026-05-31 20:05:16.114371",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has a single activated collateral at index I and the oracle returns a price P such that the RCF check (maxRepaid = (debt - maxDebt) * WAD^2 / (WAD^2 - lif * lltv)) overflows uint256 (since WAD^2 = 1e36 and lif * lltv can be close to WAD^2), cause liquidate to revert with an arithmetic overflow in the RCF computation, violating the invariant that liquidation must succeed for unhealthy positions, causing scoped impact: liquidation of an unhealthy position reverts unexpectedly? Proof idea: fuzz (debt, maxDebt, lif, lltv) such that WAD^2 - lif * lltv is very small and assert no overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_abd8d213-0d39-4537-81c3-ce3c0b9da0cc?mode=deep",
+    "timestamp": "2026-05-31 20:05:33.842011",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / MidnightBundles.supplyCollateralAndSellWithAssetsTarget] Can an unprivileged borrower, by calling supplyCollateralAndSellWithAssetsTarget where consumableUnits is called for each offer and the settlement fee changes between the consumableUnits call and the take call (due to a feeSetter action in the same block via multicall), cause the units computed by consumableUnits to be based on the old fee while take uses the new fee, resulting in a different sellerAssets amount than expected, causing the bundler to revert with OutOfOffers() or SellerAssetsTooLow(), violating the invariant that the bundler must fill exactly targetSellerAssets, causing scoped impact: valid borrower is blocked from borrowing? Proof idea: unit test with fee change via multicall in the same transaction, assert bundler behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a9a0628b-25aa-4580-b625-e9b4825889ff?mode=deep",
+    "timestamp": "2026-05-31 20:05:47.744452",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / isHealthy] Can an unprivileged borrower, by activating collateral at index I with a price oracle that returns a price P such that collateral[I] * P overflows uint256 in the intermediate computation (before dividing by ORACLE_PRICE_SCALE), cause isHealthy to revert with an arithmetic overflow, blocking withdrawCollateral and making the borrower's position permanently frozen, violating the invariant that isHealthy must not revert for valid inputs, causing scoped impact: valid borrower's collateral is permanently frozen? Proof idea: fuzz (collateral, price) such that collateral * price > type(uint256).max and assert isHealthy reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5e0b3547-f20c-4e73-97b5-4d90bd0631ec?mode=deep",
+    "timestamp": "2026-05-31 20:06:02.527572",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has bad debt and the market's totalUnits = badDebt (all units are bad debt), cause the lossFactor update to compute (type(uint128).max - _lossFactor).mulDivDown(0, totalUnits) = 0, setting lossFactor = type(uint128).max, and then the continuousFeeCredit update to compute continuousFeeCredit.mulDivDown(type(uint128).max - type(uint128).max, type(uint128).max - _lossFactor) = 0 (division by zero if _lossFactor = type(uint128).max), causing liquidate to revert, violating the invariant that liquidation must succeed for unhealthy positions, causing scoped impact: liquidation of a position with total bad debt reverts unexpectedly? Proof idea: unit test with totalUnits = badDebt and lossFactor = type(uint128).max - 1, assert no division by zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2684e93-036d-424b-9975-f662113c2a66?mode=deep",
+    "timestamp": "2026-05-31 20:06:17.125452",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker, under a buy offer (offer.buy=true) with maxAssets > 0 (tracking sellerAssets) and a settlement fee equal to offerPrice - 1 (so sellerPrice = 1), trigger consumableUnits to call sellerAssetsToUnits with targetSellerAssets = maxAssets - consumed, returning mulDivUp(targetSellerAssets, WAD, 1) = targetSellerAssets * WAD units, which is an astronomically large unit count that causes take to revert with an arithmetic overflow or CastOverflow in toUint128, violating the invariant that consumableUnits must return a safe unit count, causing scoped impact: bundler reverts unexpectedly? Proof idea: unit test with sellerPrice=1 and large targetSellerAssets, assert consumableUnits returns a safe value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80e6179f-6030-4772-9828-1dd2ad752088?mode=deep",
+    "timestamp": "2026-05-31 20:06:31.978566",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: consumableUnits / liquidate] Can an unprivileged liquidator, when the borrower has activated collateral at index I and the oracle for index I returns a price P such that the badDebt computation (badDebt = originalDebt - sum(collateral[i] * price[i] / ORACLE_PRICE_SCALE * WAD / maxLif[i] rounded up)) underflows uint256 (since zeroFloorSub is used), cause badDebt to be 0 even though the position has actual bad debt, violating the invariant that bad debt must be correctly realized, causing scoped impact: bad debt is not socialized among lenders, leading to insolvency? Proof idea: fuzz (debt, collateral, price, maxLif) and assert badDebt computation correctness.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_db110ba1-8f39-4bea-8969-8f608b72dcb2?mode=deep",
+    "timestamp": "2026-05-31 20:06:45.711679",
+    "report_generated": false
+  }
+]
