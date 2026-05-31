@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take] Can an unprivileged taker, under a buy-offer with units and buyerPrice chosen so that units * buyerPrice is just below a WAD multiple, trigger take() where buyerAssets = units.mulDivDown(buyerPrice, WAD) and sellerAssets = units.mulDivDown(sellerPrice, WAD) both truncate such that buyerAssets - sellerAssets < floor(units * settlementFee / WAD), violating the invariant that claimableSettlementFee[loanToken] increases by at least floor(units * fee / WAD) per take, causing scoped impact: systematic settlement fee undercollection that accumulates across many small trades? Proof idea: fuzz (units, tick, settlementFee) with buy=true and assert claimableSettlementFee delta >= mulDivDown(units, settlementFee(id, ttm), WAD).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56d4ac3d-6441-4dcf-9711-1bf0646a79c6?mode=deep",
+    "timestamp": "2026-05-31 22:33:19.800614",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / take] Can an unprivileged taker, under a sell-offer with units and sellerPrice chosen so that units * buyerPrice and units * sellerPrice both round up to the same value, trigger take() where buyerAssets = units.mulDivUp(buyerPrice, WAD) == units.mulDivUp(sellerPrice, WAD) = sellerAssets, making buyerAssets - sellerAssets == 0 and claimableSettlementFee[loanToken] += 0, violating the invariant that a nonzero settlement fee always produces nonzero fee revenue, causing scoped impact: zero-fee trades on sell offers when units * fee < WAD? Proof idea: unit test with units=1, sellerPrice=WAD-1, fee=1 and assert claimableSettlementFee delta == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_689eb1e6-2e94-43d2-9a51-4b139c24f51b?mode=deep",
+    "timestamp": "2026-05-31 22:33:31.903099",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown (double) / isHealthy] Can an unprivileged liquidator, against a borrower whose position satisfies collateral * price / ORACLE_PRICE_SCALE * lltv / WAD == debt exactly in real arithmetic, trigger liquidate() where the double mulDivDown in maxDebt += collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD) underestimates maxDebt by up to 1 wei per collateral, making maxDebt < debt and the position appear unhealthy, violating the invariant that a position healthy in real arithmetic must not be liquidatable, causing scoped impact: unauthorized seizure of a healthy borrower's collateral? Proof idea: fuzz (collateral, price, lltv) with collateral * price % ORACLE_PRICE_SCALE != 0 and assert isHealthy returns true before liquidate reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f321ecc9-281d-4ad9-85a6-ac0fdbf4a445?mode=deep",
+    "timestamp": "2026-05-31 22:33:44.358147",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown (double, 16 collaterals) / isHealthy] Can an unprivileged liquidator, against a borrower with MAX_COLLATERALS_PER_BORROWER (16) activated collaterals each contributing a 1-wei rounding loss from double mulDivDown in maxDebt, trigger liquidate() where the accumulated 16-wei underestimate of maxDebt makes a position with real maxDebt == debt appear unhealthy by up to 16 wei, violating the invariant that healthy positions cannot be liquidated, causing scoped impact: unauthorized seizure of a healthy multi-collateral borrower's collateral? Proof idea: invariant fuzz test with 16 collaterals at boundary prices and assert liquidate reverts when real maxDebt >= debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be4d3815-9088-4305-a57c-080afc122d19?mode=deep",
+    "timestamp": "2026-05-31 22:33:57.403829",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp (double) / liquidate (seizedAssets input)] Can an unprivileged liquidator, specifying seizedAssets as input to liquidate(), trigger the path repaidUnits = seizedAssets.mulDivUp(price, ORACLE_PRICE_SCALE).mulDivUp(WAD, lif) where two rounds-up overestimate repaidUnits by up to 2 wei, causing the liquidator to repay more debt than the oracle-fair value of seized collateral, violating the invariant that liquidation profit is bounded by maxLif, causing scoped impact: liquidator value leakage making dust liquidations unprofitable and potentially blocking bad-debt resolution? Proof idea: fuzz (seizedAssets, price, lif) and assert seizedAssets * price * WAD >= repaidUnits * ORACLE_PRICE_SCALE * lif - 2 * ORACLE_PRICE_SCALE * WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ea11be8-de9c-48ad-8615-619c1b8d7586?mode=deep",
+    "timestamp": "2026-05-31 22:34:10.104866",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown (double) / liquidate (repaidUnits input)] Can an unprivileged liquidator, specifying repaidUnits as input to liquidate(), trigger the path seizedAssets = repaidUnits.mulDivDown(lif, WAD).mulDivDown(ORACLE_PRICE_SCALE, price) where two rounds-down underestimate seizedAssets by up to 2 wei, causing the liquidator to receive less collateral than the oracle-fair value of repaid debt times lif, violating the invariant that liquidation incentive equals lif, causing scoped impact: systematic liquidator value leakage making liquidations unprofitable at dust amounts? Proof idea: fuzz (repaidUnits, price, lif) and assert seizedAssets * price >= repaidUnits * lif * ORACLE_PRICE_SCALE / WAD - 2 * price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ed023221-c245-4123-aa57-ef513aaa270c?mode=deep",
+    "timestamp": "2026-05-31 22:34:23.292096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: integer division / liquidate (post-maturity LIF ramp)] Can an unprivileged liquidator, calling liquidate() in post-maturity mode at timestamp = market.maturity + t where t < TIME_TO_MAX_LIF, trigger the LIF computation lif = WAD + (maxLif - WAD) * t / TIME_TO_MAX_LIF where integer division truncates the ramp, making lif slightly lower than the exact linear value, causing the liquidator to receive slightly less collateral than the exact ramp formula, violating the invariant that the post-maturity LIF ramp is exactly linear, causing scoped impact: systematic liquidator value leakage during the 15-minute ramp window? Proof idea: differential test comparing lif at t and t+1 and assert lif(t+1) - lif(t) is either 0 or 1 (not fractional).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9093f4aa-dfd8-452f-98d1-f091bc75fdb9?mode=deep",
+    "timestamp": "2026-05-31 22:34:37.269599",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: integer division / settlementFee] Can an unprivileged taker, calling take() at a TTM that is not a breakpoint, trigger settlementFee() where the interpolation (feeLower * (end - ttm) + feeUpper * (ttm - start)) / (end - start) truncates by up to (end - start - 1) / (end - start) < 1 WAD unit per call, causing the protocol to collect less fee than the exact linear interpolation, violating the invariant that settlement fee revenue equals the exact piecewise-linear schedule, causing scoped impact: systematic settlement fee undercollection across all non-breakpoint trades? Proof idea: fuzz (ttm, feeLower, feeUpper, start, end) and assert settlementFee(ttm) >= feeLower * (end - ttm) / (end - start) + feeUpper * (ttm - start) / (end - start) - 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59532e98-e5cf-462f-8ad0-c4482b327979?mode=deep",
+    "timestamp": "2026-05-31 22:34:51.123413",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (buyerPendingFeeIncrease)] Can an unprivileged taker, taking a buy offer with buyerCreditIncrease and continuousFee * timeToMaturity chosen so that the product is just below a WAD multiple, trigger take() where buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) truncates by up to 1 wei, causing the buyer to crystallize less continuous fee obligation than the exact formula, violating the invariant that pendingFee accurately represents the total continuous fee owed over TTM, causing scoped impact: systematic continuous fee underpayment by buyers across many takes? Proof idea: fuzz (buyerCreditIncrease, continuousFee, ttm) and assert pendingFee increase == floor(buyerCreditIncrease * continuousFee * ttm / WAD).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f0c119b-dce4-4ad1-a011-f6ed24e09175?mode=deep",
+    "timestamp": "2026-05-31 22:35:05.452767",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / take (sellerPendingFeeDecrease)] Can an unprivileged taker, taking a sell offer where the seller has credit=1 and pendingFee=1, trigger take() where sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit) = 1.mulDivUp(1, 1) = 1, zeroing the seller's pendingFee even when sellerCreditDecrease < credit, violating the invariant that pendingFee decreases proportionally to credit decrease, causing scoped impact: seller's continuous fee obligation is wiped out on a partial credit reduction? Proof idea: unit test with credit=2, pendingFee=1, sellerCreditDecrease=1 and assert pendingFee after = ceil(1 * 1 / 2) = 1, not 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b44b03e9-bf36-4465-9e64-0b17efec0948?mode=deep",
+    "timestamp": "2026-05-31 22:35:20.578717",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / withdraw (pendingFeeDecrease)] Can an unprivileged lender, calling withdraw() with units chosen so that pendingFee * units + (credit - 1) is just above a credit multiple, trigger pendingFeeDecrease = pendingFee.mulDivUp(units, credit) rounding up by 1 wei, causing the lender's pendingFee to decrease by more than the proportional share, violating the invariant that pendingFee decreases proportionally to credit withdrawn, causing scoped impact: lender's continuous fee obligation is systematically over-reduced on partial withdrawals, leaking fee revenue? Proof idea: fuzz (credit, pendingFee, units) with pendingFee <= credit and units <= credit and assert pendingFee_after >= pendingFee - pendingFee * units / credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a3250e4-72f1-4b0e-9de3-ef240fd74ecb?mode=deep",
+    "timestamp": "2026-05-31 22:35:36.924651",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / updatePositionView (postSlashCredit)] Can an unprivileged actor calling updatePosition() on a lender after a bad debt realization, trigger postSlashCredit = credit.mulDivDown(type(uint128).max - lossFactor, type(uint128).max - lastLossFactor) rounding down by up to 1 wei, causing the lender to lose 1 extra wei of credit beyond the exact proportional bad debt share, violating the invariant that credit loss equals exactly badDebt * credit / totalUnits, causing scoped impact: systematic 1-wei-per-lender-per-slash credit leakage that accumulates with many bad debt events? Proof idea: fuzz (credit, lossFactor, lastLossFactor) and assert postSlashCredit >= credit * (MAX_UINT128 - lossFactor) / (MAX_UINT128 - lastLossFactor).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e0fc4f1-43cb-4b31-a446-50d7d8696755?mode=deep",
+    "timestamp": "2026-05-31 22:35:52.158816",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / updatePositionView (postSlashPendingFee)] Can an unprivileged actor calling updatePosition() on a lender after a bad debt realization, trigger postSlashPendingFee = pendingFee - pendingFee.mulDivUp(credit - postSlashCredit, credit) where mulDivUp rounds up the subtracted amount, causing postSlashPendingFee to decrease by more than the proportional slash, violating the invariant that pendingFee/credit ratio is preserved across slashes, causing scoped impact: lender's continuous fee obligation is over-reduced after bad debt, leaking fee revenue to the lender? Proof idea: fuzz (credit, pendingFee, lossFactor) and assert postSlashPendingFee / postSlashCredit >= pendingFee / credit - epsilon.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82ad9eae-6fae-43ca-9839-33e582e11331?mode=deep",
+    "timestamp": "2026-05-31 22:36:06.463651",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / updatePositionView (fee accrual)] Can an unprivileged actor calling updatePosition() on a lender at time t, trigger fee = postSlashPendingFee.mulDivDown(accrualEnd - lastAccrual, maturity - lastAccrual) rounding down by up to 1 wei per accrual, causing the protocol to collect less continuous fee than the exact linear accrual formula, violating the invariant that total accrued fees equal pendingFee * elapsed / TTM, causing scoped impact: systematic continuous fee undercollection that grows with the number of accrual events? Proof idea: fuzz (pendingFee, elapsed, ttm) and assert fee == floor(pendingFee * elapsed / ttm).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7d48037-0cc8-4ee0-bf08-a1aaa6b4c62f?mode=deep",
+    "timestamp": "2026-05-31 22:36:21.325518",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown (multiple accruals) / updatePositionView] Can an unprivileged actor, by calling updatePosition() N times over a total elapsed period T instead of once, trigger N separate mulDivDown truncations in fee = pendingFee.mulDivDown(elapsed_i, remaining_ttm_i) that accumulate to a total fee up to N wei less than a single accrual over T, violating the invariant that total fee is path-independent (single vs multiple accruals), causing scoped impact: lenders can reduce their continuous fee burden by triggering frequent updatePosition calls? Proof idea: differential fuzz test comparing single vs N-step accrual and assert |creditSingle - creditMulti| <= N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e63735e3-67a8-430c-8e36-04e3a578a3f6?mode=deep",
+    "timestamp": "2026-05-31 22:36:37.108235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / liquidate (lossFactor update)] Can an unprivileged liquidator, realizing bad debt in liquidate() where badDebt < totalUnits, trigger lossFactor = type(uint128).max - (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits) where mulDivDown rounds down the complement, causing lossFactor to be overestimated by up to 1 unit, making lenders collectively lose slightly more than the exact bad debt proportion, violating the invariant that credit loss equals exactly badDebt / totalUnits per lender, causing scoped impact: systematic 1-unit-per-slash lender credit leakage beyond actual bad debt? Proof idea: fuzz (totalUnits, badDebt, lossFactor) and assert new lossFactor <= exact value + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c22681e-deec-44f1-9cb6-9e6bd311ce90?mode=deep",
+    "timestamp": "2026-05-31 22:36:53.125686",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / liquidate (continuousFeeCredit update)] Can an unprivileged liquidator, realizing bad debt in liquidate(), trigger continuousFeeCredit = continuousFeeCredit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - oldLossFactor) rounding down by up to 1 wei, causing the protocol's continuousFeeCredit to be underestimated after each bad debt event, violating the invariant that continuousFeeCredit tracks the exact proportional share of continuous fees owed to the protocol, causing scoped impact: fee claimer loses up to 1 wei of continuous fee credit per bad debt realization? Proof idea: fuzz (continuousFeeCredit, oldLossFactor, newLossFactor) and assert result >= exact proportional value - 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7767b9b-3998-4976-a6dc-f1e09ce3ebf4?mode=deep",
+    "timestamp": "2026-05-31 22:37:10.710372",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp (double) / liquidate (badDebt computation)] Can an unprivileged liquidator, calling liquidate() on a borrower with a single collateral whose real value at maxLif exactly equals the debt, trigger badDebt = debt.zeroFloorSub(collateral.mulDivUp(price, ORACLE_PRICE_SCALE).mulDivUp(WAD, maxLif)) where double mulDivUp overestimates the collateral value by up to 2 wei, causing badDebt = 0 when it should be positive, violating the invariant that bad debt is realized whenever collateral value at maxLif is less than debt, causing scoped impact: bad debt not socialized among lenders, leaving them with uncollectable credit? Proof idea: fuzz (collateral, price, maxLif, debt) at boundary and assert badDebt > 0 when collateral * price / ORACLE_PRICE_SCALE / maxLif * WAD < debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1d1f516-9b15-4574-b403-9ee016258b56?mode=deep",
+    "timestamp": "2026-05-31 22:37:27.771693",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / liquidate (maxRepaid RCF)] Can an unprivileged liquidator, calling liquidate() in normal mode with repaidUnits = maxRepaid + 1 where maxRepaid = (debt - maxDebt).mulDivUp(WAD * WAD, WAD * WAD - lif * lltv) rounds up by 1 wei, trigger a liquidation that repays slightly more than the exact RCF formula allows, causing the post-liquidation position to be slightly healthy (debt < maxDebt), violating the invariant that normal-mode liquidations leave the position at or above the health boundary, causing scoped impact: over-liquidation beyond the recovery close factor? Proof idea: fuzz (debt, maxDebt, lif, lltv) and assert post-liquidation debt >= post-liquidation maxDebt - 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ef7f0d2e-14d2-496d-84f2-11e43943568d?mode=deep",
+    "timestamp": "2026-05-31 22:37:44.430892",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: zeroFloorSub / liquidate (RCF dust bypass)] Can an unprivileged liquidator, calling liquidate() in normal mode with a collateral whose mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(WAD, lif) < maxRepaid, trigger zeroFloorSub returning 0 which is always < rcfThreshold, bypassing the RCF cap and allowing full liquidation of a position that should only be partially liquidated, violating the invariant that the RCF limits liquidation to what is needed to restore health, causing scoped impact: over-liquidation of a borrower whose residual collateral value is below the dust threshold? Proof idea: unit test with collateral value at lif just below maxRepaid and assert full liquidation is allowed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f41df4a-2f2a-479a-b256-2b3b223a49ae?mode=deep",
+    "timestamp": "2026-05-31 22:37:59.810622",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (consumed tracking, buy offer)] Can an unprivileged taker, filling a buy offer with maxAssets set, trigger consumed[maker][group] += buyerAssets = units.mulDivDown(buyerPrice, WAD) where rounding down makes consumed increase by less than the actual assets transferred, causing the offer to be fillable for slightly more total units than the maker intended, violating the invariant that consumed[maker][group] <= maxAssets implies total assets transferred <= maxAssets, causing scoped impact: offer overfill by up to 1 wei per fill, allowing the maker's capital to be exceeded? Proof idea: fuzz (units, buyerPrice) and assert sum of consumed increments >= sum of actual buyerAssets transferred.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68ee3ccd-e18d-4881-843e-ed6316a980d8?mode=deep",
+    "timestamp": "2026-05-31 22:38:13.938490",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivUp / take (consumed tracking, sell offer)] Can an unprivileged taker, filling a sell offer with maxAssets set, trigger consumed[maker][group] += sellerAssets = units.mulDivUp(sellerPrice, WAD) where rounding up makes consumed increase by more than the actual assets received by the seller, causing the offer to exhaust its maxAssets cap before the maker's intended total is reached, violating the invariant that a sell offer with maxAssets allows exactly maxAssets worth of seller receipts, causing scoped impact: sell offer capacity is underutilized due to rounding, reducing maker's effective liquidity? Proof idea: fuzz (units, sellerPrice) and assert consumed increment == actual sellerAssets received.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65a8a06a-1060-466f-afb4-3595b9c47c87?mode=deep",
+    "timestamp": "2026-05-31 22:38:28.748636",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: toUint128 / take (totalUnits overflow)] Can an unprivileged taker, in a market where totalUnits is near type(uint128).max, trigger take() where _marketState.totalUnits = toUint128(totalUnits + buyerCreditIncrease - sellerCreditDecrease) reverts with CastOverflow when the sum exceeds uint128.max, causing a DoS on all future takes in the market, violating the invariant that valid takes must always succeed when accounting is consistent, causing scoped impact: permanent DoS on take() for a market with high credit utilization? Proof idea: fuzz totalUnits near uint128.max and assert take reverts only when the sum genuinely exceeds uint128.max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ec6d6c0-c587-4c9b-8941-01a27023a94e?mode=deep",
+    "timestamp": "2026-05-31 22:38:43.222222",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (units=1, low price)] Can an unprivileged taker, taking a buy offer with units=1 and buyerPrice < WAD, trigger buyerAssets = 1.mulDivDown(buyerPrice, WAD) = 0 and sellerAssets = 0, causing a take that transfers 0 assets to both buyer and seller while still updating credit/debt accounting, violating the invariant that every take must transfer a positive amount of loan tokens, causing scoped impact: zero-cost credit/debt creation allowing free position manipulation? Proof idea: unit test with units=1, buyerPrice=WAD-1 and assert buyerAssets > 0 or take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c2e2440-ccd3-4786-83f1-84f93f5abcea?mode=deep",
+    "timestamp": "2026-05-31 22:38:57.998474",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: integer division / settlementFee (TTM=0 post-maturity)] Can an unprivileged taker, calling take() post-maturity (block.timestamp > market.maturity), trigger zeroFloorSub(market.maturity, block.timestamp) = 0 and settlementFee(id, 0) = settlementFeeCbp0 * CBP, causing the settlement fee to be the 0-day breakpoint value (max 0.14 bps) rather than a higher value, allowing post-maturity trades at a lower fee than pre-maturity trades near maturity, violating the invariant that settlement fee is monotonically non-decreasing as TTM decreases toward 0, causing scoped impact: extractable value from fee arbitrage around the maturity boundary? Proof idea: compare settlementFee(id, 1) vs settlementFee(id, 0) and assert fee(0) <= fee(1).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c72e4ec-16d6-4efd-b05b-829dcfc35d88?mode=deep",
+    "timestamp": "2026-05-31 22:39:13.561246",
+    "report_generated": false
+  }
+]
