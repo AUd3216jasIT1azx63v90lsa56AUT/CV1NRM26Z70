@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_060adce7-264f-48ff-b3da-d3e5bb7cfd5f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_29849a5f-2c50-41d2-ac12-990e094941e0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4c6e6105-b03f-46ff-8236-4e04d2546414?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3448ced3-393b-4e73-9047-328bffb986c2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_07265512-e0c8-4799-bec4-ea8cc27dfc9d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_35a94e77-defa-41c5-a5a3-a9ff6e516772?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_27301874-e41d-4b15-8654-057f7b0cd0f8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_85d4132a-0fcc-489c-b77c-dd30730076c8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a6eb5bcb-ba26-48a7-9e97-feb3f12fe8e4?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_28e291d2-b563-4c93-92d5-4c5b9eb322e6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c3fccc7f-ec9a-4493-a338-aa6d5dc2e6d5?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_78fa6186-648d-4c6f-8308-a2a0bfdc8fc1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d38c6841-ec9e-49af-b0b8-65a9989d060c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_22622bd3-8259-46cd-bfff-15a9a8e672ee?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_61a8cdb9-eade-43a3-b413-f2e9ce766772?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9718d860-bcdc-4f14-81cd-206a63ea6e75?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5784382a-cdf9-43c3-84e2-c09fe3e7d1df?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_db69721c-4b93-4a84-930f-41bbc3713acb?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cd9ec07e-9987-47bd-afd3-c19dc1941b35?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8e7b2e45-0bfd-47ab-a449-6e1eccb5c32f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_39e8d1f4-ea75-49db-963f-314472c633ee?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4183fa69-69ee-4094-a951-23878b63c06b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c50fb068-06bd-4a3f-a676-f78169f4a1b6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_1a35bf9b-ebd2-4c09-9524-ab55a3becb21?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8bf95d2c-cd09-40dc-a24f-7cb13f158501?mode=deep",
+    "questions_generated": false
+  }
+]
