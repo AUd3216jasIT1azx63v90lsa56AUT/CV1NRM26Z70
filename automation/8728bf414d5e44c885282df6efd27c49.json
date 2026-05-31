@@ -1,0 +1,38 @@
+[
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: take / EventsLib.Take] Can an unprivileged taker be blocked from a valid take because the buyerAssets computation at Midnight.sol:363 overflows when units * buyerPrice exceeds type(uint256).max, under preconditions where units is near type(uint128).max and buyerPrice is near WAD, via call sequence: take(units = type(uint128).max, tick = 0) → buyerPrice = WAD → buyerAssets = units.mulDivUp(buyerPrice, WAD) = units → no overflow, but fuzz: units near type(uint256).max → overflow in x*y in mulDivUp → revert, violating the invariant that a valid take with large units must not be blocked by arithmetic overflow, causing scoped impact: fund freeze on valid take? Proof idea: fuzz units near type(uint256).max; assert overflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0509687a-a899-4f7c-a9dc-57c951d80bca?mode=deep",
+    "timestamp": "2026-05-31 21:41:58.617779",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: repay / EventsLib.Repay] Can an unprivileged borrower be blocked from a valid repayment because the Unauthorized check at Midnight.sol:505 reverts when the caller is not the onBehalf address and not authorized, under preconditions where the borrower wants to repay on behalf of another user but has not been authorized, via call sequence: repay(market, units, onBehalf, address(0), '') → require(onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], Unauthorized()) → caller not authorized → revert, violating the invariant that a valid repayment by an authorized operator must not be blocked by authorization, causing scoped impact: fund freeze on valid repay? Proof idea: fuzz caller and onBehalf combinations; assert revert when not authorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_344d2a6b-d680-4a73-a0d6-d9ae5daa1e7d?mode=deep",
+    "timestamp": "2026-05-31 21:42:10.457138",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: take / EventsLib.Take] Can an unprivileged taker be blocked from a valid take because the liquidation lock check at Midnight.sol:476 incorrectly reads a stale transient storage value when the take is called from within a liquidate callback, under preconditions where a liquidate callback calls take on the same seller, via call sequence: liquidate(borrower=seller) → liquidationLocked(id, seller) = true → onLiquidate callback → take(sell offer, seller=borrower) → isHealthy check → liquidationLocked(id, seller) = true → condition passes (locked) → no SellerIsLiquidatable revert, but fuzz: does the lock correctly prevent double-liquidation? → assert invariant, violating the invariant that the liquidation lock must correctly protect against reentrancy, causing scoped impact: accounting corruption? Proof idea: call take from within a liquidate callback; assert liquidation lock state is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09fcd0d3-ee76-4538-ac50-d9fb5c4decd7?mode=deep",
+    "timestamp": "2026-05-31 21:42:22.583478",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: take / EventsLib.Take] Can an unprivileged taker be blocked from a valid take because the consumed amount computation at Midnight.sol:368 overflows when consumed[offer.maker][offer.group] + buyerAssets exceeds type(uint256).max, under preconditions where the consumed value is near type(uint256).max and the take adds a large buyerAssets, via call sequence: setConsumed(group, type(uint256).max - 1, maker) → take (buy offer, buyerAssets = 2) → consumed += 2 → overflow → revert, violating the invariant that a valid take must not be blocked by consumed overflow, causing scoped impact: fund freeze on valid take? Proof idea: set consumed near type(uint256).max; assert overflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59994d00-1bb1-4ad4-a5a7-f553945c0720?mode=deep",
+    "timestamp": "2026-05-31 21:42:35.012691",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged liquidator be blocked from a valid liquidation because the InconsistentInput check at Midnight.sol:595 reverts when both seizedAssets and repaidUnits are non-zero, under preconditions where the liquidator passes both non-zero values, via call sequence: liquidate(seizedAssets=100, repaidUnits=50, ...) → require(atMostOneNonZero(repaidUnits, seizedAssets), InconsistentInput()) reverts, violating the invariant that a valid liquidation must not be blocked by input validation, causing scoped impact: liquidation failure? Proof idea: fuzz seizedAssets and repaidUnits combinations; assert revert when both are non-zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fb340174-e5c6-4625-b03e-e9c9926fcdbb?mode=deep",
+    "timestamp": "2026-05-31 21:42:47.491820",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: take / EventsLib.Take] Can an unprivileged taker be blocked from a valid take because the _updatePosition call at Midnight.sol:379-380 for the buyer or seller reverts due to a CastOverflow in the continuousFeeCredit accumulation at Midnight.sol:846, under preconditions where continuousFeeCredit + accruedFee exceeds type(uint128).max, via call sequence: take (large credit, high continuousFee, long time) → _updatePosition → continuousFeeCredit += toUint128(accruedFee) → overflow → CastOverflow reverts, violating the invariant that a valid take must not be blocked by fee accumulation overflow, causing scoped impact: fund freeze on valid take? Proof idea: fuzz credit, continuousFee, and time to maximize accruedFee; assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44992cb4-87c8-418c-b639-74a8c4c5bf7c?mode=deep",
+    "timestamp": "2026-05-31 21:43:00.368057",
+    "report_generated": false
+  }
+]
