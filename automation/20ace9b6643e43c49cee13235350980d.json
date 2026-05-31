@@ -1,0 +1,14 @@
+[
+  {
+    "question": "[File: 'src/libraries/IdLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization where authorization.nonce == type(uint256).max, causing nonce[authorization.authorizer]++ to overflow to 0 in unchecked arithmetic (Solidity 0.8+ checked by default), and observe whether the overflow reverts or wraps under PRECONDITIONS: nonce[victim] == type(uint256).max (requires type(uint256).max prior submissions), CALL_SEQUENCE: setIsAuthorized(auth_with_max_nonce, sig), violating INVARIANT: nonce increment must never overflow and must always produce a strictly increasing sequence, causing scoped impact: nonce overflow — if nonce wraps to 0, all previously consumed nonces become replayable? Proof idea: set nonce[victim] = type(uint256).max via repeated submissions, attempt one more, assert overflow reverts in Solidity 0.8 checked arithmetic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d66ea1f-70c0-4114-9bdb-67919213d5db?mode=deep",
+    "timestamp": "2026-05-31 20:10:31.647036",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/IdLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / EcrecoverRatifier.isRatified] Can an attacker who is authorized by a maker use EcrecoverAuthorizer to grant authorization to a new address C, then have C sign a Merkle root for the maker's EcrecoverRatifier, enabling C to authorize offer fills for the maker without the maker ever signing anything for EcrecoverRatifier under PRECONDITIONS: maker authorizes attacker A via Midnight, A uses EcrecoverAuthorizer to grant C, C signs root for EcrecoverRatifier, CALL_SEQUENCE: (1) A calls ecrecoverAuthorizer.setIsAuthorized(auth_granting_C, A_sig), (2) C signs root R, (3) taker submits take with ratifierData containing C's sig, (4) EcrecoverRatifier checks isAuthorized(maker, C)==true, violating INVARIANT: offer ratification must trace back to the maker's explicit consent, not a transitive delegation chain, causing scoped impact: transitive delegation enabling unauthorized offer fills — maker's offers are filled via a delegation chain they never explicitly created for the ratifier? Proof idea: multi-hop delegation chain, assert EcrecoverRatifier accepts C's sig for maker's offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01f4eac3-a4df-49f9-b7c6-7bc414f91304?mode=deep",
+    "timestamp": "2026-05-31 20:10:43.608036",
+    "report_generated": false
+  }
+]
