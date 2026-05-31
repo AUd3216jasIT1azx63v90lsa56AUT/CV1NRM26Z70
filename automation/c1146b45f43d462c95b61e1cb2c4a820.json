@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + setIsAuthorized + take] Can an unprivileged taker, under a multicall that first calls setIsAuthorized(attacker, true, victim) via an already-authorized operator and then immediately calls take() on a sell offer on behalf of victim, bypass the TakerUnauthorized check and open debt on victim's position without victim's per-action consent, violating the invariant that debt increases require explicit per-action authorization? Proof idea: fuzz operator authorization state before and after multicall, assert victim.debt unchanged unless victim explicitly authorized the take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_26b96d49-6bfe-4a4b-9da6-c7a38d18e3d0?mode=deep",
+    "timestamp": "2026-05-31 23:19:19.233195",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + setConsumed + take] Can an attacker who is the maker of a group-capped offer compose a multicall of setConsumed(group, 0, maker) followed immediately by take() on the same offer, resetting consumed[maker][group] to zero mid-transaction and allowing the offer to be filled beyond its original maxUnits or maxAssets cap, violating the invariant that offer fill amount cannot exceed remaining offer capacity? Proof idea: unit test with maxUnits=N, fill N units, then multicall reset+fill N more, assert consumed > maxUnits is rejected or accepted incorrectly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d736c70-99e6-4ac1-8b65-0ad91defed2d?mode=deep",
+    "timestamp": "2026-05-31 23:19:31.091826",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + withdrawCollateral] Can a borrower compose a multicall of take(sell offer, units) to increase debt and then withdrawCollateral() in the same transaction, where the health check in withdrawCollateral uses the post-take debt but the collateral bitmap was not yet updated by the take, causing isHealthy to undercount collateral and incorrectly revert a valid withdrawal or, conversely, allow an undercollateralized withdrawal? Proof idea: fuzz collateral amounts near LLTV threshold, assert withdrawCollateral post-take either correctly reverts or passes with correct health.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_926a5e82-97ab-4846-a32d-fc786a5dc076?mode=deep",
+    "timestamp": "2026-05-31 23:19:43.550529",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + repay + withdrawCollateral] Can a borrower compose a multicall of repay(market, units, onBehalf) followed by withdrawCollateral(market, index, assets, onBehalf, receiver) in the same transaction, where repay increases withdrawable and decreases debt before the collateral withdrawal health check, allowing the borrower to withdraw more collateral than would be safe if the repay had not yet settled, and does the sequencing create any window where debt and collateral are inconsistent? Proof idea: invariant test asserting that after multicall repay+withdrawCollateral, position.debt * ORACLE_PRICE_SCALE <= sum(collateral[i] * price[i] * lltv[i]) or position.debt == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7dba1082-4f97-4e05-95d0-6166a34636e5?mode=deep",
+    "timestamp": "2026-05-31 23:19:56.211111",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + flashLoan + take] Can an attacker compose a multicall of flashLoan(tokens, assets, callback, data) where the callback calls take() on a buy offer, using the flash-loaned assets as buyerAssets without repaying the flash loan before the take's token pull, causing the protocol to double-count the same tokens as both flash loan collateral and take payment, violating the solvency invariant that contract token balances must cover all claims? Proof idea: fuzz flash loan amount equal to buyerAssets, assert contract loanToken balance after multicall equals pre-multicall balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_48159616-8d49-48e6-85f2-4bc6a59534d4?mode=deep",
+    "timestamp": "2026-05-31 23:20:09.347418",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + updatePosition + take] Can an attacker compose a multicall of updatePosition(market, victim) followed by take(sell offer with victim as seller) in the same transaction, where the first call snapshots lastLossFactor and lastAccrual for victim, and the second call skips _updatePosition for the seller because hasCredit returns false after slashing, causing the seller's pendingFee to be computed incorrectly and resulting in a credit/pendingFee desync? Proof idea: fuzz lossFactor values, assert position.credit - position.pendingFee is consistent before and after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a56bf0c-3092-4670-8192-043c9d525b73?mode=deep",
+    "timestamp": "2026-05-31 23:20:22.357424",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + liquidate + take] Can a liquidator compose a multicall of liquidate(market, collateralIndex, seizedAssets, 0, borrower, false, receiver, 0, '') to realize bad debt and update lossFactor, followed immediately by take(buy offer with borrower as seller) in the same transaction, where the take's _updatePosition for the seller uses the new lossFactor but the seller's lastLossFactor was not yet updated, causing the seller's credit to be slashed twice or not at all, corrupting totalUnits accounting? Proof idea: invariant test asserting marketState.totalUnits == sum of all position.credit after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28024f17-25b4-4706-818a-3c34dbebd883?mode=deep",
+    "timestamp": "2026-05-31 23:20:36.102586",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + claimContinuousFee + withdraw] Can the feeClaimer compose a multicall of claimContinuousFee(market, amount, receiver) which decrements totalUnits and withdrawable, followed by withdraw(market, units, onBehalf, receiver) for a lender, where the lender's credit exceeds the post-claim withdrawable, causing the withdraw to underflow withdrawable or allow the lender to withdraw more than the protocol holds, violating the solvency invariant? Proof idea: fuzz claim amount near withdrawable, assert withdrawable >= 0 and loanToken balance >= withdrawable after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b28d020-eb50-483a-a3c0-593f7d6ea0e7?mode=deep",
+    "timestamp": "2026-05-31 23:20:51.260305",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + take (sell, same maker)] Can an attacker compose a multicall of take(buy offer, maker=A, units=N) followed by take(sell offer, maker=A, units=N) in the same transaction, where the first take increases A's credit and the second take reduces A's credit back to zero, but the consumed[A][group] is incremented twice without being reset, effectively consuming the group budget twice for a net-zero position change, allowing future offers in the same group to be blocked or the group budget to be exhausted without real economic activity? Proof idea: assert consumed[maker][group] after round-trip equals expected single-direction fill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f8a2b48-c123-4497-9018-70d2d51624f6?mode=deep",
+    "timestamp": "2026-05-31 23:21:06.322356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + supplyCollateral + take (sell)] Can a borrower compose a multicall of supplyCollateral(market, index, assets, onBehalf) followed by take(sell offer, taker=onBehalf) in the same transaction, where the collateral bitmap is updated by supplyCollateral but the health check in take (via isHealthy at line 476) uses the updated bitmap, and fuzz whether the ordering allows a position to pass health that would fail if take were called before supplyCollateral, creating a sequencing dependency that integrations may not respect? Proof idea: differential test: compare take-then-supply vs supply-then-take outcomes for health check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_38551820-0501-414d-a85c-fdd49ce28cb8?mode=deep",
+    "timestamp": "2026-05-31 23:21:21.230496",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + setIsAuthorized + withdrawCollateral] Can an authorized operator compose a multicall of setIsAuthorized(operator2, true, victim) followed by withdrawCollateral(market, index, assets, victim, attacker) in the same transaction, where the first call grants a second operator full control and the second call drains victim's collateral, and does the protocol's coarse-grained authorization model allow this without any per-action or per-market scope check, violating the invariant that collateral cannot be seized without valid authorization? Proof idea: unit test asserting victim's collateral balance unchanged unless victim explicitly authorized the withdrawal.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c9c05735-fcff-45c4-b047-2c38b23c337f?mode=deep",
+    "timestamp": "2026-05-31 23:21:36.403197",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (with sellCallback) + liquidate] Can an attacker compose a multicall where take() is called with a sellCallback that internally calls liquidate() on the seller (who is the borrower), and since the liquidation lock is set via tstore for the seller during the take callbacks (line 444), the liquidate call inside the callback correctly reverts with NotLiquidatable, but does the lock correctly persist if the outer multicall has already set the lock in a prior take call for the same seller in the same transaction? Proof idea: compose two takes on same seller in one multicall, assert liquidation lock state is consistent after both.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_779a270c-8c48-48f3-8a9d-2ca715d38e23?mode=deep",
+    "timestamp": "2026-05-31 23:21:52.464071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take + setConsumed(type(uint256).max)] Can a maker compose a multicall of take(offer, units) to partially fill their own offer (as taker via authorized operator) and then setConsumed(group, type(uint256).max, maker) to cancel the group, effectively using the partial fill to extract assets and then cancelling remaining capacity, and does this sequence allow the maker to receive sellerAssets from the take while simultaneously preventing any further fills that would have been valid, constituting a griefing or front-running vector? Proof idea: fuzz partial fill amount, assert group cancellation after partial fill does not allow asset extraction beyond filled amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_984ec67a-a835-4cec-9f07-eb2183e8050b?mode=deep",
+    "timestamp": "2026-05-31 23:22:09.617499",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + touchMarket + take] Can an attacker compose a multicall of touchMarket(market_with_zero_fees) to create a market with zero default settlement fees, followed immediately by take(offer in that market) in the same transaction, bypassing the settlement fee that would apply if the market were created in a prior transaction, and does this allow the attacker to extract value from the fee spread that lenders and the protocol expect? Proof idea: assert claimableSettlementFee[loanToken] increases by expected amount even when market is created and taken in same multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_05b5c74a-d757-4c64-b3fd-de8f9bd3fc5a?mode=deep",
+    "timestamp": "2026-05-31 23:22:26.107785",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + repay (with repayCallback) + take] Can an attacker compose a multicall where repay(market, units, onBehalf, callback, data) is called with a callback that internally calls take() on a buy offer for onBehalf, where the take increases onBehalf's credit before the repay's token pull, and the repay's debt decrement has already happened (line 508), allowing onBehalf to have both reduced debt and increased credit simultaneously without paying the correct net assets, violating the credit/debt accounting invariant? Proof idea: assert loanToken balance delta equals net units transferred after multicall repay+take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d3f4dd06-9378-4839-8cbe-8f3c49724396?mode=deep",
+    "timestamp": "2026-05-31 23:22:41.271830",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + liquidate (bad debt) + withdraw] Can an attacker compose a multicall of liquidate(market, 0, 0, 0, borrower, false, receiver, 0, '') to realize bad debt and increase lossFactor, followed immediately by withdraw(market, units, lender, receiver) in the same transaction, where the lender's credit has not yet been slashed (lastLossFactor not updated until next _updatePosition), allowing the lender to withdraw more units than their post-slash credit entitles them to, draining withdrawable beyond what is solvency-safe? Proof idea: invariant test asserting withdrawable >= 0 and loanToken balance >= withdrawable after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_33f8a5fc-4ecb-4644-aaff-1fc5d7a78d36?mode=deep",
+    "timestamp": "2026-05-31 23:22:58.154373",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy, reduceOnly) + take (buy, non-reduceOnly)] Can an attacker compose a multicall of take(buy offer with reduceOnly=true, units) where the buyer has existing debt (so buyerCreditIncrease==0 passes reduceOnly check), followed by take(buy offer with reduceOnly=false, units) for the same buyer in the same transaction, where the first take reduces debt and the second take increases credit, and does the sequencing allow the buyer to end up with both zero debt and positive credit in a single transaction that a single non-reduceOnly take would have achieved, bypassing any intended reduceOnly semantic? Proof idea: assert buyer.credit and buyer.debt after multicall match expected single-take outcome.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9da1b8a0-9df1-4a20-84c3-331a43f2cec7?mode=deep",
+    "timestamp": "2026-05-31 23:23:14.090627",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (at maturity boundary) + take (debt increase)] Can an attacker compose a multicall where the first take(sell offer) is called at block.timestamp == market.maturity (so sellerDebtIncrease==0 passes the CannotIncreaseDebtPostMaturity check because zeroFloorSub(units, sellerPos.credit) == 0 when credit >= units), and the second take(sell offer) is called in the same block with sellerDebtIncrease > 0, and does the maturity check use block.timestamp consistently across both calls so that the second take correctly reverts? Proof idea: fuzz block.timestamp == maturity, assert no debt increase is possible in any take within the same multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3c3eed0-ffcc-4a4c-81ee-a0672d8f8e4d?mode=deep",
+    "timestamp": "2026-05-31 23:23:28.164363",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + supplyCollateral (multiple indices) + take (sell)] Can a borrower compose a multicall of supplyCollateral calls for indices 0..15 (MAX_COLLATERALS_PER_BORROWER) followed by supplyCollateral for index 16 in the same transaction, where the bitmap check (countBits(newCollateralBitmap) <= 16) is enforced per-call but the multicall allows the 17th supply to be attempted after the 16th, and does the TooManyActivatedCollaterals revert correctly propagate through multicall's delegatecall revert bubble? Proof idea: assert multicall reverts entirely when 17th collateral activation is attempted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcafc005-402d-42a1-bce0-5abc784dfc67?mode=deep",
+    "timestamp": "2026-05-31 23:23:43.760398",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (with buyerCallback) + take (same buyer, same group)] Can an attacker compose a multicall where the first take() triggers a buyerCallback that internally calls take() again for the same buyer and same group, where the outer take has already incremented consumed[maker][group] but the inner take increments it again before the outer take's ConsumedUnits check, causing the group budget to be exceeded within a single transaction, violating the invariant that consumption group budget cannot be exceeded across offers? Proof idea: fuzz group maxUnits, assert consumed[maker][group] <= maxUnits after nested take via callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1a16d3bc-dc26-461d-a8ba-361742811287?mode=deep",
+    "timestamp": "2026-05-31 23:23:58.155327",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + flashLoan + repay] Can an attacker compose a multicall of flashLoan(loanToken, amount, callback, data) where the callback calls repay(market, units, borrower, address(0), '') using the flash-loaned tokens, and then the flash loan repayment safeTransferFrom pulls the same tokens back, effectively using the protocol's own withdrawable balance to repay debt without the attacker providing any net capital, violating the solvency invariant that repaid units must correspond to real token inflows? Proof idea: assert loanToken balance of Midnight contract is unchanged after multicall flashLoan+repay if attacker provides zero external capital.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad240259-8096-44d8-acc7-600848f6a95a?mode=deep",
+    "timestamp": "2026-05-31 23:24:14.139881",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell, with sellerCallback) + withdrawCollateral] Can an attacker compose a multicall where take() is called with a sellerCallback that internally calls withdrawCollateral() for the seller, and since the liquidation lock is set (tstore) for the seller during callbacks (line 444), the withdrawCollateral's isHealthy check is called while the seller's debt has already been increased by the take but the collateral has not yet been transferred in (sellerAssets are sent to receiver before the sellerCallback), allowing the seller to withdraw collateral while temporarily undercollateralized? Proof idea: assert isHealthy(seller) is true after withdrawCollateral inside sellerCallback, with seller's full post-take debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f584022e-2379-41f7-88bc-ffd3d4d1257e?mode=deep",
+    "timestamp": "2026-05-31 23:24:29.379473",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + withdraw] Can a lender compose a multicall of take(buy offer, units) to increase their credit and then withdraw(market, units, lender, receiver) in the same transaction, where the withdraw checks withdrawable (which may not have increased from the take since no repayment occurred), causing the withdraw to revert with arithmetic underflow on withdrawable, and does this create a DoS for lenders who expect to immediately withdraw newly acquired credit? Proof idea: assert withdraw after take-buy in same multicall reverts unless withdrawable was pre-existing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62f2daa1-f4fe-41e7-a722-9d8064e41cd9?mode=deep",
+    "timestamp": "2026-05-31 23:24:44.964586",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + liquidate (postMaturityMode) + take (sell, debt increase)] Can an attacker compose a multicall of liquidate(market, index, 0, 0, borrower, true, receiver, 0, '') post-maturity to realize bad debt without seizing collateral, followed by take(sell offer, taker=borrower) in the same transaction, where the liquidate has already decremented borrower.debt but the take's CannotIncreaseDebtPostMaturity check (block.timestamp > market.maturity) still applies, and does the sequencing allow the borrower to re-acquire debt post-maturity via the take after their debt was zeroed? Proof idea: assert borrower.debt == 0 and no new debt is created after multicall liquidate+take post-maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b499930e-1d84-457d-a12c-d7c2a294c49e?mode=deep",
+    "timestamp": "2026-05-31 23:25:00.453326",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + liquidate (normal mode)] Can an attacker compose a multicall of take(sell offer, taker=borrower, units) to increase borrower's debt just above the health threshold, followed immediately by liquidate(market, index, seizedAssets, 0, borrower, false, receiver, 0, '') in the same transaction, where the liquidate's health check uses the post-take debt and the pre-take collateral, allowing the attacker to manufacture an unhealthy position and immediately liquidate it for profit within a single atomic transaction? Proof idea: fuzz units to find minimum debt increase that triggers liquidatability, assert liquidate succeeds in same multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d586215-317f-4a04-902a-7dd84285faa4?mode=deep",
+    "timestamp": "2026-05-31 23:25:17.122757",
+    "report_generated": false
+  }
+]
