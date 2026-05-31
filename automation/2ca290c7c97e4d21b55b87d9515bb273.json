@@ -1,0 +1,146 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that the bundler's authorization check require(taker == msg.sender || IMidnight(MIDNIGHT).isAuthorized(taker, msg.sender)) is necessary but not sufficient, because the bundler also needs isAuthorized[taker][bundler] to be true for Midnight.take to succeed, so a taker who authorizes msg.sender but not the bundler on Midnight will pass the bundler's check but fail Midnight's TakerUnauthorized check, and confirm whether this creates a griefing vector where a malicious msg.sender can waste the taker's gas? Proof idea: unit test with taker authorizing msg.sender but not bundler and assert Midnight reverts with TakerUnauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3722db5b-6580-497f-8e76-ac8cd3082f1a?mode=deep",
+    "timestamp": "2026-05-31 21:02:46.720075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that ConsumableUnitsLib.consumableUnits reads consumed[offer.maker][offer.group] at the time of the call, but between this read and the actual Midnight.take call, another transaction fills the offer, causing consumableUnits to return a stale (too large) value, so unitsToTake is computed as larger than the actual remaining capacity, causing take to revert with ConsumedUnits or ConsumedAssets, which is caught by the try/catch, and the loop skips the offer, potentially causing OutOfOffers() if no other offers are available? Proof idea: simulate a front-run fill between consumableUnits and take and assert the bundle handles it gracefully.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71602990-9bf8-4948-943a-caaab790dc9a?mode=deep",
+    "timestamp": "2026-05-31 21:02:59.028281",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that if ConsumableUnitsLib.consumableUnits returns 0 for an offer (fully consumed), unitsToTake = min(remaining, takes[i].units, 0) = 0, and Midnight.take with units = 0 is a no-op that succeeds (per protocol design), so the try/catch succeeds with resBuyerAssets = 0, filledUnits += 0, and the loop makes no progress, iterating through all remaining offers without filling any units, eventually reverting with OutOfOffers()? Confirm this is the expected behavior and not a DoS vector. Proof idea: unit test with all offers fully consumed and assert OutOfOffers() is the only revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0af06c6d-476f-4bf6-92b3-fb630afda7b4?mode=deep",
+    "timestamp": "2026-05-31 21:03:11.996711",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that ConsumableUnitsLib.consumableUnits with maxAssets > 0 calls TakeAmountsLib.buyerAssetsToUnits or sellerAssetsToUnits, which can revert if buyerPrice > WAD (PriceGreaterThanOne) or if offerPrice < settlementFee for a buy offer, and since these calls are NOT inside the try/catch block, a revert in consumableUnits propagates to the bundler and reverts the entire bundle, violating the invariant that a single bad offer in the takes array must not block the entire bundle? Proof idea: include one offer with buyerPrice > WAD in the takes array and assert the bundle reverts entirely instead of skipping that offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_208bf5e9-4c14-4f25-a6a5-62599ef328b8?mode=deep",
+    "timestamp": "2026-05-31 21:03:24.600151",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithAssetsTargetAndWithdrawCollateral / supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker observe that TakeAmountsLib.buyerAssetsToUnits reverts with PriceGreaterThanOne if buyerPrice > WAD, and since this call is outside the try/catch block in the bundle loop, a single offer with a tick corresponding to buyerPrice > WAD causes the entire bundle to revert, even if other offers in the array are valid, violating the invariant that invalid offers must be skippable? Proof idea: include one offer with tick = 0 (price near 1) and high settlement fee causing buyerPrice > WAD and assert the bundle reverts entirely.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73fd0e9e-8a58-4563-8c17-8907aeb773f1?mode=deep",
+    "timestamp": "2026-05-31 21:03:38.144141",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker observe that units = assets - referralFeeAssets = assets - assets.mulDivDown(referralFeePct, WAD), so the actual debt repaid is less than assets, and if the taker passes assets = position.debt (intending to fully repay), the actual repayment is position.debt * (1 - referralFeePct/WAD) < position.debt, leaving residual debt, causing the subsequent withdrawCollateral calls to fail with UnhealthyBorrower if the position is near the health threshold, violating the invariant that a repay-and-withdraw bundle must complete atomically? Proof idea: fuzz (debt, referralFeePct, collateral, oracle price) near the health threshold and assert the bundle either completes or the taker is informed of the shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4758cef1-5bb6-4ed8-abe2-0e92b79fd9ae?mode=deep",
+    "timestamp": "2026-05-31 21:03:51.915322",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker observe that repayAndWithdrawCollateral calls Midnight.repay(market, units, onBehalf, address(0), '') where units = assets - referralFeeAssets, and Midnight.repay pulls units from msg.sender (the bundler) via safeTransferFrom, but the bundler has already pulled assets from the user and approved MIDNIGHT for type(uint256).max, so MIDNIGHT pulls only units (not assets) from the bundler, leaving referralFeeAssets in the bundler, which is then sent to referralFeeRecipient, and confirm that no loan tokens are permanently stuck in the bundler after this call? Proof idea: unit test with referralFeePct > 0 and assert bundler loan token balance is zero post-call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0b3dc63-e605-4f43-a634-702cf0df14a4?mode=deep",
+    "timestamp": "2026-05-31 21:04:06.001252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker observe that repayAndWithdrawCollateral does not call touchMarket before repay, and Midnight.repay calls touchMarket internally, which creates the market if it doesn't exist, so a taker can pass a crafted market struct that creates a new market with specific parameters (e.g., zero settlement fee, specific LLTV) as a side effect of repaying debt in an existing market with the same id, violating the invariant that market creation must be an explicit action? Proof idea: pass a market struct with different rcfThreshold but same id and assert touchMarket does not create a new market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cefb6214-c8a2-485f-b33a-bec1e374b0a4?mode=deep",
+    "timestamp": "2026-05-31 21:04:20.608449",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that forceApproveMax is called once before the take loop, setting the bundler's allowance to type(uint256).max for MIDNIGHT, and that this approval persists across calls, so if a previous bundle call left a non-zero loan token balance in the bundler (due to rounding), a subsequent call by a different taker could have MIDNIGHT pull those residual tokens as part of the new take, effectively stealing the residual tokens from the previous taker, violating the invariant that each bundle call must only use tokens pulled from the current msg.sender? Proof idea: simulate two sequential bundle calls with different msg.senders and assert no cross-call token leakage.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5547ad1d-a023-46bb-af37-3feead1e7783?mode=deep",
+    "timestamp": "2026-05-31 21:04:34.669189",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker use an ERC2612 permit that has already been consumed by a front-runner, causing IERC20Permit.permit to revert (caught by try/catch in pullToken), and then SafeTransferLib.safeTransferFrom to be called without a valid approval, reverting with a transfer failure, and confirm that the try/catch in pullToken correctly handles this case without leaving the bundler in a partially funded state? Proof idea: front-run the permit consumption and assert the bundle reverts cleanly with no state mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee105ecb-1ab3-4dbc-b4d9-659717e7180a?mode=deep",
+    "timestamp": "2026-05-31 21:04:49.076623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker use a fee-on-transfer loan token where safeTransferFrom(token, msg.sender, bundler, maxBuyerAssets) delivers less than maxBuyerAssets to the bundler, causing the bundler to have insufficient balance when MIDNIGHT calls safeTransferFrom(token, bundler, MIDNIGHT, buyerAssets), reverting the take, and since the try/catch catches this, all takes fail and OutOfOffers() reverts, but the bundler has already received fewer tokens than maxBuyerAssets, violating the invariant that the bundler must return exactly maxBuyerAssets - filledBuyerAssets - referralFeeAssets to msg.sender? Proof idea: deploy a fee-on-transfer token and assert the refund equals the actual received amount minus fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7aba673-24e4-41cf-84cf-4b1384a2b518?mode=deep",
+    "timestamp": "2026-05-31 21:05:05.058176",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker use a fee-on-transfer collateral token where safeTransferFrom(token, msg.sender, bundler, assets) delivers less than assets to the bundler, causing forceApproveMax and supplyCollateral to supply less collateral than intended, so the taker's position is undercollateralized relative to the debt created by the subsequent takes, violating the invariant that every borrow must create correct collateral obligation? Proof idea: deploy a fee-on-transfer collateral token and assert position health after the bundle.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39a861e1-cbd6-4a43-bc44-4330aea0315f?mode=deep",
+    "timestamp": "2026-05-31 21:05:18.449627",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that the bundler calls Midnight.withdrawCollateral(market, collateralIndex, assets, taker, collateralReceiver) for each entry in collateralWithdrawals, and that Midnight.withdrawCollateral checks isHealthy after each withdrawal, so if the taker has multiple collateral types and the first withdrawal makes the position unhealthy, the second withdrawal reverts, causing the entire bundle to revert after the takes have already been executed, violating the invariant that a bundle must either complete atomically or not execute any takes? Proof idea: create a multi-collateral position and assert that a sequence of withdrawals that would be individually valid but collectively unhealthy causes a clean revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_183d2fe6-c480-4746-8719-daf007d06c50?mode=deep",
+    "timestamp": "2026-05-31 21:05:31.710866",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that the InconsistentMarket check uses IMidnight(MIDNIGHT).toId(takes[i].offer.market) == id, where id is computed from touchMarket(takes[0].offer.market), and that toId is a hash of the full market struct including collateralParams, so two market structs with different collateralParams but the same loanToken and maturity would have different ids, and confirm that the InconsistentMarket check correctly prevents cross-market takes? Proof idea: create two markets with same loanToken/maturity but different collateralParams and assert InconsistentMarket reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8cd6a4a4-6752-4c89-b4e6-64c2ff1ed785?mode=deep",
+    "timestamp": "2026-05-31 21:05:45.883730",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that collateral is supplied to Midnight before the take loop, and that if the take loop reverts (e.g., OutOfOffers), the entire transaction reverts including the collateral supply, but that if the take loop succeeds and then the minSellerAssets check fails (SellerAssetsTooLow), the entire transaction also reverts including the collateral supply, and confirm that no partial state (collateral supplied but no debt created) can persist after a bundle revert? Proof idea: assert that all Midnight state changes are atomically reverted on any bundle revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56ad8bf4-6dbb-4aa9-8264-190457fb93bc?mode=deep",
+    "timestamp": "2026-05-31 21:05:59.253641",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker observe that the loop condition is filledBuyerAssets < targetFilledBuyerAssets and that unitsToTake = min(buyerAssetsToUnits(..., targetFilledBuyerAssets - filledBuyerAssets), takes[i].units, consumableUnits(...)), so if buyerAssetsToUnits returns a value larger than takes[i].units, the take fills takes[i].units units but produces resBuyerAssets < targetFilledBuyerAssets - filledBuyerAssets, requiring multiple iterations, and confirm that the loop correctly accumulates filledBuyerAssets across multiple partial fills without rounding errors compounding? Proof idea: fuzz multi-offer sequences and assert sum of resBuyerAssets equals targetFilledBuyerAssets after the loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f26dbd63-c831-4f7b-b5e9-244a78e75ab0?mode=deep",
+    "timestamp": "2026-05-31 21:06:13.397576",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker observe that the loop condition is filledSellerAssets < targetFilledSellerAssets and that unitsToTake = min(sellerAssetsToUnits(..., targetFilledSellerAssets - filledSellerAssets), takes[i].units, consumableUnits(...)), so if the last take produces resSellerAssets that overshoots targetFilledSellerAssets - filledSellerAssets by 1 wei (due to mulDivUp in take for sell offers), filledSellerAssets exceeds targetFilledSellerAssets, the loop exits, and require(filledSellerAssets == targetFilledSellerAssets) reverts, but the bundler has already received filledSellerAssets from MIDNIGHT, violating the invariant that a revert must undo all token transfers? Proof idea: assert that a revert after MIDNIGHT has transferred tokens to the bundler correctly undoes all state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2fea508a-ded2-4116-bfbc-092c97d5f56a?mode=deep",
+    "timestamp": "2026-05-31 21:06:26.955742",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that the bundler calls touchMarket(takes[0].offer.market) which creates the market if it doesn't exist, and that a malicious taker can craft a takes[0].offer.market with specific parameters (e.g., enterGate = attacker, liquidatorGate = attacker) to create a new market as a side effect of calling the bundle, and then use this market for subsequent attacks, violating the invariant that market creation must be an explicit and intentional action? Proof idea: call the bundle with a crafted market struct and assert the market is created with the attacker's gate addresses.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_afb7ccd2-cea8-4c3a-85e7-91d7a212b661?mode=deep",
+    "timestamp": "2026-05-31 21:06:41.203828",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that the bundler passes address(0) as takerCallback to Midnight.take, so no taker callback is executed, but the maker's offer.callback is still executed as a buyer or seller callback, and that the maker's callback receives the bundler's address as msg.sender (since the bundler called take), allowing the maker's callback to call Midnight functions on behalf of the bundler if the bundler has been authorized by any user, violating the invariant that the maker's callback must not be able to act on behalf of the bundler? Proof idea: implement a malicious maker callback that calls Midnight.setIsAuthorized on behalf of the bundler and assert it fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_307eeed8-ced8-4e13-9b96-87895c9cb4ba?mode=deep",
+    "timestamp": "2026-05-31 21:06:54.793232",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that the bundler's refund is SafeTransferLib.safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets), and that if the loan token is a rebasing token that increases the bundler's balance between pullToken and the refund, the extra balance stays in the bundler permanently, violating the invariant that the bundler must hold zero loan token balance after each call? Proof idea: deploy a rebasing token and assert bundler balance is zero post-call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65ee7b4a-1f33-4ab0-8a49-570edb654ea9?mode=deep",
+    "timestamp": "2026-05-31 21:07:09.755247",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: supplyCollateralAndSellWithUnitsTarget / supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker observe that collateralSupplies[i].collateralIndex is used to index into market.collateralParams without bounds checking in the bundler, and that if collateralIndex >= market.collateralParams.length, the access reverts with an array out-of-bounds error, and confirm that this revert correctly undoes all state changes including any collateral already supplied in previous iterations of the collateral supply loop? Proof idea: pass collateralIndex = market.collateralParams.length and assert clean revert with no partial collateral supply.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78759da4-3218-466f-960c-db15ba87eb02?mode=deep",
+    "timestamp": "2026-05-31 21:07:24.305398",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker observe that the bundler checks require(!takes[i].offer.buy, InconsistentSide()) inside the loop, so if takes[0].offer.buy = true, the first iteration reverts with InconsistentSide(), but the bundler has already called touchMarket(takes[0].offer.market) and pulled maxBuyerAssets from msg.sender, and confirm that the revert correctly returns maxBuyerAssets to msg.sender? Proof idea: call the bundle with takes[0].offer.buy = true and assert msg.sender receives maxBuyerAssets back.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e64d3d11-1166-4649-bab3-45d4cc5190c0?mode=deep",
+    "timestamp": "2026-05-31 21:07:40.195338",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker observe that the bundler uses a try/catch to skip failed takes, including takes that fail due to SellerIsLiquidatable (the seller becomes unhealthy after the take), and that skipping such takes means the taker may not reach targetUnits, causing OutOfOffers(), but also that the try/catch masks legitimate protocol safety checks, allowing the bundler to silently skip takes that would have been valid if the seller's health was correctly managed, violating the invariant that the bundler must not silently skip takes that fail for non-asynchrony reasons? Proof idea: create a scenario where a take fails due to SellerIsLiquidatable and assert the bundler skips it and reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3a5323c-fa58-46ed-86d7-296819054107?mode=deep",
+    "timestamp": "2026-05-31 21:07:55.678743",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker observe that the bundler sends targetSellerAssets to receiver (not filledSellerAssets - referralFeeAssets), and that referralFeeAssets = targetSellerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) is computed with mulDivDown, so the actual referral fee paid is floor(targetSellerAssets * referralFeePct / (WAD - referralFeePct)), and the receiver gets exactly targetSellerAssets regardless of rounding, but the bundler may retain 0 or 1 wei of loan token depending on whether filledSellerAssets == targetSellerAssets + referralFeeAssets exactly, and confirm this 1-wei retention is the only possible residual? Proof idea: fuzz (targetSellerAssets, referralFeePct) and assert bundler balance is at most 1 wei post-call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_243d916b-2c87-4c0b-8ba0-59f28551dacc?mode=deep",
+    "timestamp": "2026-05-31 21:08:09.824642",
+    "report_generated": false
+  }
+]
