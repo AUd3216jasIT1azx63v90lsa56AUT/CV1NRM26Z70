@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: consumableUnits / Midnight.setMarketSettlementFee (fee change causes inconsistency with offer.start/expiry)] Can feeSetter under the precondition that a time-bounded offer (offer.start <= block.timestamp <= offer.expiry) has offer.maxAssets set to a value that is exactly consumable at the current fee call setMarketSettlementFee to change the fee just before the offer expires, causing consumableUnits to return a different unit count, causing MidnightBundles to compute unitsToTake that either exceeds the offer's remaining capacity or falls short, while the offer expires before a corrected take can be submitted? Proof idea: change fee near offer.expiry, call consumableUnits and assert result differs from pre-change, verify take with old units reverts after fee change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0cb1ec6b-ea87-4d73-8bec-80c6caebb8c1?mode=deep",
+    "timestamp": "2026-05-31 22:54:47.443896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: consumableUnits / Midnight.setMarketSettlementFee (fee change causes inconsistency with offer.maxAssets = 1)] Can feeSetter under the precondition that offer.maxAssets = 1 (dust-level) and consumed = 0 call setMarketSettlementFee to any non-zero fee, causing buyerAssetsToUnits to compute mulDivUp(1, WAD, buyerPrice) = ceil(WAD / buyerPrice) which may be 1 or 2 units depending on buyerPrice, while take with 1 unit computes buyerAssets = floor(1 * buyerPrice / WAD) = 0 (if buyerPrice < WAD), causing take to consume 0 assets and leave the offer perpetually unfilled? Proof idea: fuzz (buyerPrice, fee) with offer.maxAssets=1 and assert take with consumableUnits units actually consumes the offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6776528b-fe98-4394-8434-70c05d527785?mode=deep",
+    "timestamp": "2026-05-31 22:54:59.420933",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: consumableUnits / Midnight.setMarketSettlementFee (fee change causes inconsistency with offer.maxAssets near WAD)] Can feeSetter under the precondition that offer.maxAssets is near WAD (1e18) and buyerPrice is near WAD call setMarketSettlementFee to increase the fee, causing buyerPrice to exceed WAD, causing buyerAssetsToUnits to revert with PriceGreaterThanOne(), while the same offer with offer.maxUnits > 0 would succeed, creating a branch-dependent revert that depends on the fee level and the offer's price tier? Proof idea: fuzz (fee, tick) near the buyerPrice = WAD boundary and assert consumableUnits reverts exactly when buyerPrice > WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2240112-dad5-4358-9cd2-91b96b755a8d?mode=deep",
+    "timestamp": "2026-05-31 22:55:12.111905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: consumableUnits / Midnight.setMarketSettlementFee (fee change causes inconsistency with MidnightBundles.min)] Can feeSetter under the precondition that MidnightBundles computes unitsToTake = min(targetUnits - filledUnits, takes[i].units, consumableUnits(...)) change the settlement fee between the consumableUnits call and the take call, causing consumableUnits to return a value that was the binding minimum, but after the fee change the actual consumable units at take time differ, causing take to revert with ConsumedAssets() (if fee decreased, making more units consumable but the min was already set) or succeed with fewer units than expected (if fee increased)? Proof idea: change fee between consumableUnits and take in the same bundle iteration and assert the min computation is stale.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc3a19a9-24a4-4bef-9a3d-c5d36d265c83?mode=deep",
+    "timestamp": "2026-05-31 22:55:24.753815",
+    "report_generated": false
+  }
+]
