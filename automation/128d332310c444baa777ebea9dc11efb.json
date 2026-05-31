@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used by a flash loan callback to source funds for take(), triggering de-ratification that causes the flash loan callback's take() to revert, violating the invariant that flash loan callbacks must not be DoS-able via ratifier state manipulation, causing scoped impact: DoS on flash-loan-funded take() operations? Proof idea: flash loan callback that calls take(), de-ratify before flash loan, assert callback reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ae67008-5996-452e-b237-652a85f20a0d?mode=deep",
+    "timestamp": "2026-05-31 17:53:41.570775",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker has multiple roots ratified and the attacker de-ratifies all of them in a single multicall(), triggering a complete wipeout of all maker's ratified offer sets, violating the invariant that a maker's offer portfolio must not be entirely cancellable by a single authorized address in one transaction, causing scoped impact: complete DoS on all of maker's market activity via multicall de-ratification? Proof idea: multicall with N setIsRootRatified(false) calls, assert all take() calls revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8fe68bce-441d-4952-975a-939c47bd516e?mode=deep",
+    "timestamp": "2026-05-31 17:53:53.812076",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the feeClaimer relies on take() to crystallize continuous fees (via credit increases), triggering de-ratification that blocks fee crystallization, violating the invariant that protocol fee accrual must not be DoS-able via ratifier state manipulation, causing scoped impact: DoS on continuous fee crystallization and claim? Proof idea: state-test with continuous fee market, de-ratify, assert fee crystallization via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2287d0bd-3805-4be0-a46e-53f3dcf63777?mode=deep",
+    "timestamp": "2026-05-31 17:54:06.920810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified] Can an unprivileged ATTACKER call isRatified() directly (not via Midnight) under the precondition that msg.sender != MIDNIGHT, triggering the NotMidnight() revert, and then use this revert behavior to craft a malicious ratifier contract that mimics SetterRatifier but always returns CALLBACK_SUCCESS, violating the invariant that only Midnight should be able to invoke ratifier validation, causing scoped impact: ratifier bypass enabling unauthorized take() execution? Proof idea: deploy mock ratifier that returns CALLBACK_SUCCESS without validation, use it as offer.ratifier, assert take() succeeds without proper authorization.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_54bbfde4-594b-41c7-96a2-22be284b3ac6?mode=deep",
+    "timestamp": "2026-05-31 17:54:19.797092",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are the only mechanism for a borrower to repay debt in a market where repay() is blocked by a reverting repay callback, triggering de-ratification that removes the alternative repayment path via take(), violating the invariant that at least one repayment path must always be available, causing scoped impact: combined callback + ratifier DoS that makes debt unrepayable? Proof idea: state-test with reverting repay callback and de-ratified take offers, assert no repayment path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6e6f1839-f1b6-4208-a32e-3c24fa53df4b?mode=deep",
+    "timestamp": "2026-05-31 17:54:33.753584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where bad debt has been realized and lenders need to exit via take() to avoid further loss factor increases, triggering de-ratification that blocks lender exit, violating the invariant that lenders must be able to exit positions after bad debt realization, causing scoped impact: DoS on lender exit after bad debt, amplifying lender losses? Proof idea: state-test with bad debt realized, de-ratify lender exit offers, assert lenders cannot exit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b2b54483-4acc-418c-b3df-c3d5cdff843a?mode=deep",
+    "timestamp": "2026-05-31 17:54:48.263530",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the loss factor is approaching type(uint128).max (MarketLossFactorMaxedOut), triggering de-ratification that blocks the last available take() calls before the market becomes permanently frozen, violating the invariant that market participants must be able to exit before loss factor maxes out, causing scoped impact: DoS on last-resort exit before market freeze? Proof idea: state-test with near-max loss factor, de-ratify, assert take() reverts and market becomes permanently frozen.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_845f859e-db90-4dd9-bf0b-f1996a0bcbfe?mode=deep",
+    "timestamp": "2026-05-31 17:55:02.595367",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a multi-collateral market where a borrower has activated multiple collaterals and needs take() to reduce debt before an oracle price drop makes them liquidatable, triggering de-ratification that blocks debt reduction, violating the invariant that healthy accounts must not become liquidatable due to external state manipulation, causing scoped impact: DoS on debt reduction in multi-collateral market leading to forced liquidation? Proof idea: multi-collateral state-test, de-ratify, drop oracle price, assert borrower becomes liquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e2865d86-d192-4825-927d-bda3665d845f?mode=deep",
+    "timestamp": "2026-05-31 17:55:16.609545",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the tick spacing has been reduced (finer ticks), triggering de-ratification that blocks all take() calls at the new finer ticks, violating the invariant that tick spacing reduction must not create new DoS vectors, causing scoped impact: DoS on take() at finer tick levels after tick spacing reduction? Proof idea: reduce tick spacing, create offers at new ticks, de-ratify, assert take() reverts at new ticks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44eb5769-7fe9-477b-8356-2607833f1c6b?mode=deep",
+    "timestamp": "2026-05-31 17:55:30.891261",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the settlement fee has been increased (making some offers unprofitable), triggering de-ratification that blocks the remaining profitable offers, violating the invariant that settlement fee changes must not compound with ratifier DoS to block all market activity, causing scoped impact: combined settlement fee increase + ratifier DoS that blocks all take() calls? Proof idea: increase settlement fee, de-ratify remaining profitable offers, assert no take() path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9a98210-aae6-4633-b5d7-d2a0a73a9830?mode=deep",
+    "timestamp": "2026-05-31 17:55:44.926804",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the continuous fee has been set to maximum (MAX_CONTINUOUS_FEE), triggering de-ratification that blocks take() calls needed to crystallize fees, violating the invariant that maximum fee markets must not be DoS-able via ratifier manipulation, causing scoped impact: DoS on fee crystallization in maximum-fee markets? Proof idea: set MAX_CONTINUOUS_FEE, de-ratify, assert fee crystallization via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87574466-840b-4f8b-a338-f0046ce26f4c?mode=deep",
+    "timestamp": "2026-05-31 17:55:59.093882",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the rcfThreshold is set to a high value (making full liquidations impossible), triggering de-ratification that blocks partial liquidation via take(), violating the invariant that liquidation must remain available for unhealthy positions regardless of rcfThreshold, causing scoped impact: DoS on partial liquidation in high-rcfThreshold markets? Proof idea: high-rcfThreshold market, unhealthy borrower, de-ratify liquidator's take offers, assert liquidation fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c17aecbd-d466-4ca8-96fc-99e5aea46101?mode=deep",
+    "timestamp": "2026-05-31 17:56:14.850156",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has exactly MAX_COLLATERALS_PER_BORROWER (16) activated collaterals and needs take() to reduce debt, triggering de-ratification that blocks debt reduction, violating the invariant that borrowers with maximum collaterals must still be able to reduce debt via take(), causing scoped impact: DoS on debt reduction for maximum-collateral borrowers? Proof idea: state-test with 16 activated collaterals, de-ratify, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87df017c-2f60-42ab-85a8-9541c8e7b984?mode=deep",
+    "timestamp": "2026-05-31 17:56:29.761422",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's debt is exactly at the dust threshold (rcfThreshold), triggering de-ratification that blocks the only available liquidation path (full liquidation), violating the invariant that dust-level positions must remain liquidatable, causing scoped impact: DoS on dust-level liquidation via ratifier de-ratification? Proof idea: state-test with dust-level debt, de-ratify liquidation offers, assert liquidation fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_701bc7a9-39d2-4b1f-beea-4c94c71781b8?mode=deep",
+    "timestamp": "2026-05-31 17:56:45.319494",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral oracle is returning a price near the LLTV boundary (maxDebt ≈ debt), triggering de-ratification that blocks the borrower's ability to add credit to offset debt, violating the invariant that near-threshold positions must not become liquidatable due to external state manipulation, causing scoped impact: DoS on near-threshold position management via ratifier de-ratification? Proof idea: fuzz oracle price near LLTV boundary, de-ratify, assert position becomes liquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f681635-6d84-4de3-94e2-627bce388ce6?mode=deep",
+    "timestamp": "2026-05-31 17:57:00.736841",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has a pending fee that will be crystallized on the next take(), triggering de-ratification that blocks fee crystallization, violating the invariant that pending fees must be crystallizable via take(), causing scoped impact: DoS on pending fee crystallization via ratifier de-ratification? Proof idea: state-test with pending fee, de-ratify, assert fee crystallization via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5dafabaa-3e8a-44cd-8447-fbdad3a266eb?mode=deep",
+    "timestamp": "2026-05-31 17:57:14.023164",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral has been partially seized in a previous liquidation, triggering de-ratification that blocks the borrower's ability to buy units to reduce remaining debt, violating the invariant that partially liquidated positions must remain manageable, causing scoped impact: DoS on post-liquidation debt management via ratifier de-ratification? Proof idea: partial liquidation state-test, de-ratify, assert borrower cannot reduce remaining debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa957569-95e3-41cb-bd20-5e986e097434?mode=deep",
+    "timestamp": "2026-05-31 17:57:28.660257",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's debt is exactly equal to maxDebt (borderline healthy), triggering de-ratification that blocks the borrower's ability to add collateral value via take(), violating the invariant that borderline-healthy positions must not become liquidatable due to external state manipulation, causing scoped impact: DoS on borderline-healthy position management? Proof idea: fuzz debt == maxDebt boundary, de-ratify, assert position becomes liquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49db8c02-607c-48b9-8a0c-3e23e67498a2?mode=deep",
+    "timestamp": "2026-05-31 17:57:44.581843",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has a zero-debt position (credit only) and needs take() to exit credit, triggering de-ratification that blocks credit exit, violating the invariant that zero-debt lenders must always be able to exit credit positions, causing scoped impact: DoS on credit-only position exit via ratifier de-ratification? Proof idea: state-test with credit-only position, de-ratify, assert credit exit via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_783b87cd-f5d2-4e9d-984a-984c7d082573?mode=deep",
+    "timestamp": "2026-05-31 17:57:59.959592",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral is a rebasing token (balance changes over time), triggering de-ratification that blocks the borrower's ability to adjust their position via take() as collateral value changes, violating the invariant that rebasing token markets must not be DoS-able via ratifier manipulation, causing scoped impact: DoS on position adjustment in rebasing collateral markets? Proof idea: rebasing token market, de-ratify, assert position adjustment via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c767ce09-77ed-4b6b-a3af-9a71a5e88317?mode=deep",
+    "timestamp": "2026-05-31 17:58:15.191873",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the loan token has 6 decimals (low precision), triggering de-ratification that blocks take() calls where rounding errors could cause dust-level positions, violating the invariant that low-decimal markets must not be DoS-able via ratifier manipulation, causing scoped impact: DoS on take() in low-decimal markets where dust positions cannot be resolved? Proof idea: 6-decimal loan token market, de-ratify, assert dust positions cannot be resolved via take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eaf179b9-634a-4dd3-a354-3aef5a304163?mode=deep",
+    "timestamp": "2026-05-31 17:58:29.273861",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral oracle returns a price near type(uint128).max (causing overflow in maxDebt calculation), triggering de-ratification that blocks the only safe take() path, violating the invariant that near-overflow oracle prices must not compound with ratifier DoS to block all market activity, causing scoped impact: DoS on take() in near-overflow oracle price markets? Proof idea: near-max oracle price, de-ratify, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebb1a89f-57af-4d71-aa25-9f2051f406a7?mode=deep",
+    "timestamp": "2026-05-31 17:58:44.805761",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has exactly one unit of debt (minimum debt), triggering de-ratification that blocks the only available repayment path via take(), violating the invariant that minimum-debt positions must always be repayable, causing scoped impact: DoS on minimum-debt repayment via ratifier de-ratification? Proof idea: state-test with 1-unit debt, de-ratify, assert repayment via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8cc010a-51fb-4a21-80d6-ad97a6f7edf7?mode=deep",
+    "timestamp": "2026-05-31 17:58:59.147356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral is a fee-on-transfer token (actual received amount < requested amount), triggering de-ratification that blocks the borrower's ability to adjust their position via take() to account for fee-on-transfer discrepancies, violating the invariant that fee-on-transfer token markets must not be DoS-able via ratifier manipulation, causing scoped impact: DoS on position adjustment in fee-on-transfer collateral markets? Proof idea: fee-on-transfer collateral token market, de-ratify, assert position adjustment via take() is blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f1bad593-15f8-4335-b6d1-2964544200b2?mode=deep",
+    "timestamp": "2026-05-31 17:59:14.419367",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has a pending bad debt realization (badDebt > 0 in liquidate()), triggering de-ratification that blocks the liquidator's take()-based strategy for realizing bad debt, violating the invariant that bad debt must always be realizable, causing scoped impact: DoS on bad debt realization via ratifier de-ratification? Proof idea: state-test with pending bad debt, de-ratify liquidator's take offers, assert bad debt cannot be realized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4c0a11f-67f2-4d64-b7ad-c7cd02dd2a48?mode=deep",
+    "timestamp": "2026-05-31 17:59:31.214171",
+    "report_generated": false
+  }
+]
