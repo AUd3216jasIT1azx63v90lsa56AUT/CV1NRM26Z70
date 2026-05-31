@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4271e42c-ee9a-4b40-9ecb-18fe89249b75?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f31a140f-4545-4e2c-aaf3-dc705ff666ff?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_fdc5cc42-48c1-4473-86db-878ee67d7079?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e59ead20-a428-4b65-a9d7-a9305bb9c961?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7fddfad6-ccda-4c7c-84e5-b80839b1bbd2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9b94eb34-9950-4dd7-8f8b-4f4dba67486d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9b433057-5364-4631-8e73-b2c0dee6fedf?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_211d0e39-2872-467a-aac0-16da4c560fe9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4158e997-bcb8-4ace-ab68-d41a51d0c40d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_30c189c7-80cd-4f71-9882-f86edb388bf3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_09d19453-c70d-4bb3-b3fc-7132ea345d55?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_875613fb-1c85-4fc2-8d23-1ea19d317ac7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_52860a2c-d1d5-4cc6-b00a-dec8064b1bb3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_86aa99eb-9623-4aad-be9b-f9229bc8dec8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_becf4add-7163-4e2c-86cd-11701b192df7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_fc18f4f4-57c1-4f63-bdd1-14b613a137d5?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9f5f025d-1fc6-4452-8fb6-c4cbf75862a1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d9207e5b-6d67-427d-80b0-e82483bcad8b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_424e472d-f855-479e-8d49-b6a176ab7a46?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_68b9237e-3064-4666-924e-3374a4d0539f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3601de84-70ee-42c2-9293-6b3ba4a9c5be?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_67aaba28-ab70-4e67-8a5b-c6bdd2b100c8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2ecfc378-3cbd-4272-84e9-7986c31dd346?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c8335419-f911-4fce-ae14-baee53b214f9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_741c728e-ab68-49e0-9a32-85b87a56e908?mode=deep",
+    "questions_generated": false
+  }
+]
