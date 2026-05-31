@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IFlashLoanCallback.onFlashLoan / flashLoan] Can a flashLoanCallback that calls repay() inside onFlashLoan (using flash-loaned loanToken to repay debt) cause a revert if the repay() call uses the callback as payer (callback != address(0) in repay), double-spending the flash-loaned tokens and leaving insufficient balance for the flash loan repayment? Proof idea: inside onFlashLoan, call repay() with callback set to address(this); assert double-spend of loanToken; assert flashLoan repayment reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2810d0be-96d2-4c6f-8b30-6ea75a0605e4?mode=deep",
+    "timestamp": "2026-05-31 23:36:17.630033",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IFlashLoanCallback.onFlashLoan / flashLoan] Can a flashLoanCallback that calls flashLoan() again inside onFlashLoan (nested flash loan) for the same token cause a revert at the inner repayment step if the outer flash loan already transferred the token balance out, leaving Midnight with 0 balance for the inner flash loan? Proof idea: inside onFlashLoan, call flashLoan() again for the same token; assert Midnight has 0 balance for inner flash loan; assert inner safeTransfer reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0ff5be2-9112-4755-8801-919b6fe5422a?mode=deep",
+    "timestamp": "2026-05-31 23:36:29.816570",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that calls setIsAuthorized(attacker, true, buyer) inside onBuy (if the callback is authorized for the buyer) cause a revert in the subsequent safeTransferFrom if the attacker uses the new authorization to drain the buyer's loanToken balance before the payer transfer, blocking the take? Proof idea: inside onBuy, call setIsAuthorized to authorize attacker; attacker drains buyer's loanToken; assert safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcae63a7-785f-406a-9977-88a67a55776b?mode=deep",
+    "timestamp": "2026-05-31 23:36:42.299277",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that calls touchMarket() inside onBuy for a new market with the same loanToken cause a revert if the new market creation triggers a defaultSettlementFeeCbp lookup that reverts (e.g., due to a storage collision), blocking the take? Proof idea: inside onBuy, call touchMarket() with a crafted market; assert any revert propagates through onBuy and causes WrongBuyCallbackReturnValue or a raw revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebe3a827-484d-461c-94fa-068c2cab1c0a?mode=deep",
+    "timestamp": "2026-05-31 23:36:55.042856",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that calls withdrawCollateral() inside onSell (to withdraw collateral after borrowing) cause a revert if the oracle price dropped between the take's health check setup and the withdrawCollateral's isHealthy call, blocking a valid borrow take even though the seller was healthy at take initiation? Proof idea: inside onSell, call withdrawCollateral(); manipulate oracle price between take start and onSell; assert isHealthy fails inside withdrawCollateral; assert UnhealthyBorrower revert propagates through onSell.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c7226c2-2bfa-4bd0-8d70-53a6595ef9d5?mode=deep",
+    "timestamp": "2026-05-31 23:37:08.469076",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that calls multicall() inside onSell (combining supplyCollateral + withdrawCollateral) cause a revert if the multicall's delegatecall context loses the liquidation lock transient storage state, allowing a liquidation of the seller inside the multicall that would otherwise be blocked by the lock? Proof idea: inside onSell, call multicall([supplyCollateral, liquidate(seller)]); assert liquidationLocked(id, seller) is still true inside delegatecall; assert liquidate reverts with NotLiquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd9b068e-10c4-4f74-b12a-cabf6734e7d5?mode=deep",
+    "timestamp": "2026-05-31 23:37:21.842501",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IRepayCallback.onRepay / repay] Can a repayCallback that calls take() inside onRepay (to acquire loanToken via a sell take to fund the repayment) cause a revert if the take's sellerDebtIncrease > 0 and the enter gate's canIncreaseDebt returns false for the callback address, blocking the repayment even though the callback is a valid authorized contract? Proof idea: set enterGate to reject the callback address; inside onRepay, call take() as seller; assert SellerGatedFromIncreasingDebt; assert repay reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_767c66d6-446a-4e37-baf8-53f48aeb574d?mode=deep",
+    "timestamp": "2026-05-31 23:37:35.282503",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ILiquidateCallback.onLiquidate / liquidate] Can a liquidateCallback that calls take() inside onLiquidate (to acquire loanToken via a sell take to fund the repayment) cause a revert if the take's seller is the borrower being liquidated and the liquidation lock is still set (wasLocked=false in the outer liquidate, but the lock is not set by liquidate — only by take), allowing the inner take to proceed but then the inner take's health check fails because the borrower is still unhealthy? Proof idea: inside onLiquidate, call take() where seller=borrower; assert SellerIsLiquidatable at end of inner take; assert liquidate reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e96eb596-1023-4967-82af-02a7d278f84b?mode=deep",
+    "timestamp": "2026-05-31 23:37:49.492014",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that is an ERC777 token hook receiver cause a reentrancy into take() during the onBuy call (before the safeTransferFrom), allowing the attacker to fill the same offer twice within the same transaction, violating the consumed accounting invariant? Proof idea: deploy a callback that reenters take() with the same offer; assert consumed[maker][group] is incremented twice; assert newConsumed > maxAssets after both fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c764ce7f-fbd6-427b-9d7d-71d73634333b?mode=deep",
+    "timestamp": "2026-05-31 23:38:02.329497",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that calls updatePosition() inside onSell for the seller cause a revert if the seller's credit was already updated in the take() flow (line 380: _updatePosition called if hasCredit(id, seller)), leading to a double-accrual of continuousFee that causes a uint128 overflow in continuousFeeCredit? Proof idea: inside onSell, call updatePosition(market, seller); assert continuousFeeCredit += accruedFee twice; assert overflow or incorrect accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0fead976-c003-4119-aa6e-a6a97b89fb45?mode=deep",
+    "timestamp": "2026-05-31 23:38:16.303231",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IFlashLoanCallback.onFlashLoan / flashLoan] Can a flashLoanCallback that calls liquidate() inside onFlashLoan (using flash-loaned loanToken to repay debt) cause a revert if the liquidate() call uses callback=address(0) (so payer=msg.sender=flashLoanCallback) but the callback's loanToken balance is consumed by the liquidation, leaving insufficient balance for the flash loan repayment? Proof idea: inside onFlashLoan, call liquidate() consuming all loanToken; assert callback balance < assets[i]; assert flashLoan repayment reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a62f5e7c-b02b-4337-9ad6-495f717acdd3?mode=deep",
+    "timestamp": "2026-05-31 23:38:31.936172",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that calls claimContinuousFee() inside onBuy (if the callback is the feeClaimer) cause a revert if the claim reduces marketState.totalUnits below the amount needed for the subsequent take accounting, causing a uint128 underflow in _marketState.totalUnits? Proof idea: inside onBuy, call claimContinuousFee() draining continuousFeeCredit; assert totalUnits underflow in subsequent accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b9da674-acfa-4e5c-9d00-c2325aff0fe9?mode=deep",
+    "timestamp": "2026-05-31 23:38:45.863669",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that calls setConsumed(group, type(uint256).max, seller) inside onSell (if authorized) cause a revert in a subsequent take of the same seller's offer group, blocking the seller from filling any more offers in that group even though the current take already succeeded? Proof idea: inside onSell, call setConsumed(group, type(uint256).max, seller); assert subsequent take() reverts with ConsumedUnits or ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1353c7e-44af-4594-a758-17f19bef7e08?mode=deep",
+    "timestamp": "2026-05-31 23:38:59.827079",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IRepayCallback.onRepay / repay] Can a repayCallback that calls setIsAuthorized(address(0), false, onBehalf) inside onRepay (if authorized) cause a revert in the subsequent safeTransferFrom if the authorization revocation prevents the callback from pulling tokens on behalf of onBehalf, blocking the repayment? Proof idea: inside onRepay, revoke callback's authorization; assert safeTransferFrom fails if callback relied on authorization for token pull.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5973f580-30c7-4db6-b9a1-ee267ae334a3?mode=deep",
+    "timestamp": "2026-05-31 23:39:15.161777",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ILiquidateCallback.onLiquidate / liquidate] Can a liquidateCallback that calls setMarketContinuousFee() inside onLiquidate (if the callback is the feeSetter) cause a revert in a subsequent take() that relies on the old continuousFee for buyerPendingFeeIncrease calculation, leading to an incorrect pendingFee that causes a uint128 overflow? Proof idea: inside onLiquidate, call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE); assert subsequent take() computes buyerPendingFeeIncrease with new fee; assert overflow if credit + pendingFee > uint128.max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_196f0a17-80a7-4b5a-927a-ecddfd170428?mode=deep",
+    "timestamp": "2026-05-31 23:39:28.960769",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that is a contract with no code (e.g., a self-destructed contract) cause take() to revert with WrongBuyCallbackReturnValue because the low-level call to onBuy returns empty data (not CALLBACK_SUCCESS), blocking a valid take even though the offer is ratified and within limits? Proof idea: deploy a callback contract; self-destruct it; call take() with the destroyed address as buyerCallback; assert WrongBuyCallbackReturnValue due to empty return data.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a644c638-3e3d-422b-8c23-9312160e372d?mode=deep",
+    "timestamp": "2026-05-31 23:39:43.861828",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that is a contract with no code (self-destructed) cause take() to revert with WrongSellCallbackReturnValue because the low-level call to onSell returns empty data, blocking a valid borrow take even though the seller's debt was already increased and the buyer's credit was already increased? Proof idea: deploy and self-destruct a callback; call take() with the destroyed address as sellerCallback; assert WrongSellCallbackReturnValue.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2d8557a-5d50-469a-b775-2be9accb1a44?mode=deep",
+    "timestamp": "2026-05-31 23:39:59.235163",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IRepayCallback.onRepay / repay] Can a repayCallback that is an EOA (externally owned account, no code) cause repay() to revert with WrongRepayCallbackReturnValue because the low-level call to onRepay on an EOA returns empty data (not CALLBACK_SUCCESS), blocking a valid repayment? Proof idea: set callback to an EOA address; call repay(); assert WrongRepayCallbackReturnValue due to empty return from EOA call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80d3023f-3330-4141-90b6-a3fbab225d27?mode=deep",
+    "timestamp": "2026-05-31 23:40:14.857677",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IFlashLoanCallback.onFlashLoan / flashLoan] Can a flashLoanCallback that is an EOA cause flashLoan() to revert with WrongFlashLoanCallbackReturnValue because the low-level call to onFlashLoan on an EOA returns empty data, blocking a valid flash loan even though the tokens were already transferred to the EOA? Proof idea: set callback to an EOA; call flashLoan(); assert WrongFlashLoanCallbackReturnValue; assert tokens are stuck in EOA.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ad5942b-998e-4c99-abfd-93c5ac052162?mode=deep",
+    "timestamp": "2026-05-31 23:40:31.012181",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that calls take() inside onBuy for a different market (different id) cause a revert if the inner take's payer is the callback but the callback's loanToken balance is consumed by the inner take, leaving insufficient balance for the outer take's safeTransferFrom, blocking both takes? Proof idea: inside onBuy, call take() for a different market consuming all loanToken; assert outer take's safeTransferFrom reverts due to insufficient balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73a30268-8702-4955-9eec-22ed725dd632?mode=deep",
+    "timestamp": "2026-05-31 23:40:45.990360",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that calls repay() inside onSell (to repay the newly incurred debt) cause a revert if the repay's callback is set to the sellerCallback itself (payer = sellerCallback) but the sellerCallback has no loanToken (it was supposed to receive sellerAssets but receiver != sellerCallback), blocking the repayment and the take? Proof idea: inside onSell, call repay() with callback=address(this); assert sellerCallback has 0 loanToken; assert safeTransferFrom in repay reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a3f5b27-6338-44b8-8aea-b87115143191?mode=deep",
+    "timestamp": "2026-05-31 23:41:02.765032",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ILiquidateCallback.onLiquidate / liquidate] Can a liquidateCallback that calls flashLoan() inside onLiquidate (to borrow loanToken for repayment) cause a revert if the flash loan's repayment step (safeTransferFrom from callback to Midnight) fails because the callback already used the flash-loaned tokens to repay the liquidation debt, leaving insufficient balance? Proof idea: inside onLiquidate, call flashLoan() and use all tokens for repayment; assert flashLoan repayment reverts; assert liquidation reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a2026a1-aa43-41f7-bec1-8de528063d86?mode=deep",
+    "timestamp": "2026-05-31 23:41:17.958623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: IBuyCallback.onBuy / take] Can a buyerCallback that reads pendingFeeIncrease from the onBuy parameters and reverts if pendingFeeIncrease > expectedMax (a slippage check on continuous fee) cause take() to revert with WrongBuyCallbackReturnValue if the continuousFee was increased between offer signing and take execution, blocking a valid lend even though the offer is ratified? Proof idea: increase continuousFee after offer creation; call take(); assert onBuy reverts due to pendingFeeIncrease > expectedMax; assert WrongBuyCallbackReturnValue.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6bf15a1-65c6-4716-8588-5e8a4a3e14a5?mode=deep",
+    "timestamp": "2026-05-31 23:41:32.938696",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ISellCallback.onSell / take] Can a sellerCallback that reads pendingFeeDecrease from the onSell parameters and reverts if pendingFeeDecrease < expectedMin (a slippage check on fee accrual) cause take() to revert with WrongSellCallbackReturnValue if the seller's pendingFee was reduced by a prior updatePosition() call between offer signing and take execution? Proof idea: call updatePosition() to reduce pendingFee before take; call take(); assert onSell reverts due to pendingFeeDecrease < expectedMin; assert WrongSellCallbackReturnValue.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0bd8609-f1b6-4367-afd3-bca778f3049e?mode=deep",
+    "timestamp": "2026-05-31 23:41:47.470135",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: ILiquidateCallback.onLiquidate / liquidate] Can a liquidateCallback that reads badDebt from the onLiquidate parameters and reverts if badDebt > 0 (a safety check) cause liquidate() to revert with WrongLiquidateCallbackReturnValue when the borrower has bad debt, blocking the liquidation of an insolvent position and preventing bad debt socialization? Proof idea: create a position with bad debt (collateral value < debt); call liquidate() with a callback that reverts if badDebt > 0; assert WrongLiquidateCallbackReturnValue; assert bad debt not socialized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc6ca6a9-8f5b-4bdf-9df0-0da1d09e2c27?mode=deep",
+    "timestamp": "2026-05-31 23:42:02.703185",
+    "report_generated": false
+  }
+]
