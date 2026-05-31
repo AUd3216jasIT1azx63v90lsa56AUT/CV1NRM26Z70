@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that charges different fees on transfer vs transferFrom under the precondition that take() calls safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) and safeTransferFrom(loanToken, payer, receiver, sellerAssets) separately, trigger take() so that the two separate transferFrom calls each incur fees, causing the total received by Midnight and receiver to be less than buyerAssets, violating the invariant that total tokens moved equals buyerAssets, causing scoped impact: accounting desync between credit granted and tokens received? Proof idea: deploy token with per-call fee, execute take(), assert sum of received amounts < buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c1eb880-9ddd-4048-b4e0-d8c3a560d7f7?mode=deep",
+    "timestamp": "2026-05-31 18:24:21.217430",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token with a blacklist (e.g., USDC) under the precondition that the receiver address is blacklisted, trigger take() so that safeTransferFrom(loanToken, payer, receiver, sellerAssets) reverts due to blacklist, causing the entire take() to revert after position state has been partially updated (credit/debt already modified), violating the invariant that state updates are atomic with token transfers, causing scoped impact: DoS of take() for specific maker/receiver pairs? Proof idea: blacklist receiver, call take(), assert revert and verify no partial state corruption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5107855-9e6a-4402-aa9e-6391e56f3dbe?mode=deep",
+    "timestamp": "2026-05-31 18:24:33.287075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransfer / withdraw] Can an unprivileged lender use a token with a blacklist under the precondition that the receiver address becomes blacklisted after credit is established, trigger withdraw(units, onBehalf, receiver) so that safeTransfer(loanToken, receiver, units) reverts, causing the lender's credit to be permanently frozen since the only withdrawal path is blocked, violating the invariant that valid credit can always be redeemed, causing scoped impact: permanent fund freeze for blacklisted receiver? Proof idea: establish credit, blacklist receiver, attempt withdraw, assert permanent DoS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06405f12-d35f-4375-a859-476cf0f5f630?mode=deep",
+    "timestamp": "2026-05-31 18:24:46.059431",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that reverts on zero-value transfers under the precondition that sellerAssets or (buyerAssets - sellerAssets) computes to zero due to rounding (e.g., very small units with high settlement fee), trigger take() so that safeTransferFrom with value=0 reverts, causing take() to be DoS'd for dust-sized trades, violating the invariant that valid offers can always be taken, causing scoped impact: low-cost DoS of take() for specific tick/unit combinations? Proof idea: fuzz units near zero, find combinations where sellerAssets=0 or spread=0, assert take() behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_178ef2e4-61aa-4c35-a5dc-e78405a9f205?mode=deep",
+    "timestamp": "2026-05-31 18:24:58.531817",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a hook on transfer (e.g., ERC777 tokensToSend) that calls setConsumed() on the maker's group under the precondition that the hook fires during safeTransferFrom(loanToken, payer, address(this), ...) in take(), trigger take() so that the hook cancels the maker's offer group mid-execution, but consumed was already incremented before the transfer, violating the invariant that consumed state is consistent with offer fill state, causing scoped impact: offer accounting corruption? Proof idea: implement tokensToSend hook that calls setConsumed(group, type(uint256).max, maker), assert consumed state after take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ffd5a3f2-5030-4b4b-98b8-a6fbdefb5749?mode=deep",
+    "timestamp": "2026-05-31 18:25:11.900193",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token whose transferFrom modifies the allowance mapping in a non-standard way (e.g., infinite allowance that decrements, or allowance that resets to zero) under the precondition that the payer has approved Midnight, trigger multiple take() calls so that allowance is exhausted mid-sequence, causing later takes to revert, violating the invariant that a valid offer with sufficient maker balance can always be taken, causing scoped impact: DoS of maker offers? Proof idea: deploy token with capped allowance decrement, execute multiple takes, assert revert on allowance exhaustion.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5168b71d-94fe-4273-879c-eed36323c762?mode=deep",
+    "timestamp": "2026-05-31 18:25:25.055377",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that charges a fee only on transfers to specific addresses (e.g., fee when recipient is a contract) under the precondition that safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) incurs a fee but safeTransferFrom(loanToken, payer, receiver, sellerAssets) does not, trigger take() so that Midnight receives less than buyerAssets - sellerAssets but claimableSettlementFee is credited the full spread, violating the invariant that claimableSettlementFee[token] <= actual balance, causing scoped impact: protocol insolvency? Proof idea: deploy contract-recipient-fee token, execute take(), assert balance shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9455d8a2-5849-4dfe-b452-f3393e2b4e1b?mode=deep",
+    "timestamp": "2026-05-31 18:25:39.387328",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take + claimContinuousFee] Can an unprivileged fee claimer exploit a fee-on-transfer loan token under the precondition that claimContinuousFee() reduces marketState.withdrawable by amount and sends amount via safeTransfer, trigger a sequence of take() (which underfunds withdrawable due to fee-on-transfer) followed by claimContinuousFee(), so that withdrawable is reduced below the actual token balance needed for lenders, violating the invariant that withdrawable <= actual loan token balance after fee claims, causing scoped impact: lenders cannot withdraw after fee claim? Proof idea: execute take with fee-on-transfer token, claim continuous fee, assert lender withdraw reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_205a1233-5012-4bfa-aec3-f0e52401ca2d?mode=deep",
+    "timestamp": "2026-05-31 18:25:52.488265",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that behaves differently based on msg.sender (e.g., charges fee when called by Midnight but not by EOA) under the precondition that SafeTransferLib calls token.call(abi.encodeCall(IERC20.transferFrom, ...)) making msg.sender == Midnight, trigger take() so that the token charges a fee specifically when Midnight is the caller, causing accounting desync that cannot be detected by off-chain simulation, violating the invariant that token transfer amounts match accounting amounts, causing scoped impact: systematic underfunding of protocol balances? Proof idea: deploy caller-sensitive fee token, simulate off-chain vs on-chain, assert balance discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1b985187-6e82-46d4-9fdc-50687f21b295?mode=deep",
+    "timestamp": "2026-05-31 18:26:06.460102",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransfer / liquidate + withdraw race] Can an unprivileged liquidator use a fee-on-transfer collateral token under the precondition that liquidate() sends seizedAssets to receiver and then pulls repaidUnits from payer, trigger liquidate() so that position.collateral[i] is reduced by seizedAssets and position.debt is reduced by repaidUnits, but receiver gets (seizedAssets - fee) and Midnight receives (repaidUnits - fee), causing both collateral and loan token accounting to desync simultaneously, violating the invariant that liquidation is balance-neutral for the protocol, causing scoped impact: double-sided accounting desync? Proof idea: liquidate with fee-on-transfer tokens for both loan and collateral, assert both balance shortfalls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8aa27bb-0583-4f09-b407-7a8649c99b36?mode=deep",
+    "timestamp": "2026-05-31 18:26:20.910754",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that increases Midnight's balance during transferFrom (e.g., a token that sends a bonus to the recipient contract) under the precondition that safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) causes Midnight to receive more than buyerAssets - sellerAssets, trigger take() so that claimableSettlementFee is credited only the spread but the actual balance is higher, violating the invariant that claimableSettlementFee + withdrawable == actual balance, causing scoped impact: accounting desync where excess tokens are untracked and unclaimable? Proof idea: deploy bonus-on-receive token, execute take(), assert midnight.balanceOf > claimableSettlementFee + withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cab5e152-5146-42bb-8996-2ac16e6faaef?mode=deep",
+    "timestamp": "2026-05-31 18:26:35.898308",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token with multiple entry points (e.g., a proxy token where transfer and transferFrom route to different implementations) under the precondition that the token's transferFrom implementation has a bug that allows transferring from an address without sufficient allowance, trigger take() so that payer's tokens are taken without proper authorization, violating the invariant that only authorized transfers reduce payer's balance, causing scoped impact: unauthorized token seizure from payer? Proof idea: deploy proxy token with broken transferFrom auth, execute take(), assert payer balance reduced without consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_372b4faa-3ed4-4920-9445-78298db95877?mode=deep",
+    "timestamp": "2026-05-31 18:26:52.189813",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that emits a Transfer event but does not actually move tokens (silent no-op transfer returning true) under the precondition that SafeTransferLib only checks the return value and not the actual balance change, trigger take() so that position.credit is increased and position.debt is increased for the seller, but no tokens actually moved, violating the invariant that credit increase corresponds to actual token receipt, causing scoped impact: free credit minting without payment? Proof idea: deploy no-op transfer token, execute take(), assert midnight.balanceOf unchanged but credit increased.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3d3b80a-df0e-4594-bf89-cf68c24e28b8?mode=deep",
+    "timestamp": "2026-05-31 18:27:11.051604",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that reverts on transferFrom when the amount exceeds a per-transaction cap under the precondition that buyerAssets exceeds the cap, trigger take() with large units so that safeTransferFrom reverts, causing take() to revert after consumed has been incremented (consumed[maker][group] += units/assets before the transfer), violating the invariant that consumed is only incremented for successful takes, causing scoped impact: offer consumption without actual fill, DoS of maker offers? Proof idea: deploy capped-transfer token, execute take() with amount > cap, assert consumed incremented but take reverted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bfcdc7c4-9f60-4482-a547-8dc549016bac?mode=deep",
+    "timestamp": "2026-05-31 18:27:25.303544",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that charges a fee only on the first transfer in a block (e.g., MEV-protection token) under the precondition that multiple takes occur in the same block, trigger a multicall with multiple take() calls so that the first take incurs a fee but subsequent ones do not, causing inconsistent accounting across takes in the same block, violating the invariant that each take's accounting is independent and correct, causing scoped impact: accounting desync for first-take-in-block? Proof idea: deploy block-first-transfer-fee token, multicall two takes, assert first take has balance shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb90f50f-c040-4eea-b404-7a2bcbc19afc?mode=deep",
+    "timestamp": "2026-05-31 18:27:39.869833",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / repay + withdraw sequence] Can an unprivileged borrower use a fee-on-transfer loan token under the precondition that repay() increases withdrawable by units but only (units - fee) arrives, trigger repay() followed by withdraw() by a lender, so that the lender's withdraw() sends units from withdrawable but the contract only has (units - fee) available, causing the withdraw to either revert (fund freeze) or drain other users' funds, violating the invariant that withdrawable <= actual token balance, causing scoped impact: lender fund freeze or theft? Proof idea: repay with fee-on-transfer token, attempt lender withdraw, assert revert or balance shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc5a9e58-0d00-410f-874c-f2dd874cb5f6?mode=deep",
+    "timestamp": "2026-05-31 18:27:54.235345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls touchMarket() for a new market under the precondition that the hook fires during safeTransferFrom in take(), trigger take() so that the hook creates a new market with the same loanToken, causing defaultSettlementFeeCbp to be read and stored for the new market during the hook, violating the invariant that market creation is independent of ongoing take() execution, causing scoped impact: market state corruption or unexpected market creation? Proof idea: implement transfer hook that calls touchMarket(), execute take(), assert no state corruption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f486cd2a-7c7e-4b90-9863-85f64a281373?mode=deep",
+    "timestamp": "2026-05-31 18:28:08.077269",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that charges a fee proportional to the time since last transfer (time-weighted fee) under the precondition that the fee grows between the onBuy callback and the actual safeTransferFrom call, trigger take() so that the fee is larger than expected at callback time, causing the actual tokens received to be less than buyerAssets - sellerAssets, violating the invariant that claimableSettlementFee[token] <= actual balance, causing scoped impact: protocol insolvency? Proof idea: deploy time-weighted-fee token, warp time between callback and transfer, assert balance shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1db27e0-d241-4b6a-a9db-4a920702acc9?mode=deep",
+    "timestamp": "2026-05-31 18:28:21.647309",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has different behavior for transfer vs transferFrom (e.g., transfer charges no fee but transferFrom charges a fee) under the precondition that take() uses safeTransferFrom for all loan token movements, trigger take() so that all transfers incur fees, while a hypothetical direct transfer would not, causing systematic underfunding of the protocol compared to off-chain expectations, violating the invariant that accounting matches token movements, causing scoped impact: protocol insolvency over time? Proof idea: deploy asymmetric-fee token, compare take() balance impact vs expected, assert shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79852fa0-c5d2-485e-b02b-102a6c0002df?mode=deep",
+    "timestamp": "2026-05-31 18:28:35.617674",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a maximum wallet balance cap under the precondition that Midnight's balance of the token is near the cap, trigger take() so that safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) reverts due to the cap, causing take() to revert after consumed has been incremented, violating the invariant that consumed is only incremented for successful takes, causing scoped impact: offer consumption without fill, DoS? Proof idea: deploy max-balance-cap token, fill Midnight's balance to cap, execute take(), assert consumed incremented but take reverted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49ca0e17-e189-4da0-b11b-2e7be90cb7a9?mode=deep",
+    "timestamp": "2026-05-31 18:28:49.051650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that returns a non-standard ABI-encoded true value (e.g., returns uint256(1) instead of bool true, or returns 64 bytes) under the precondition that SafeTransferLib checks abi.decode(returndata, (bool)), trigger take() so that abi.decode interprets the non-standard return as false or reverts on decode, causing take() to revert with TransferFromReturnedFalse() even though the transfer succeeded, violating the invariant that valid transfers are not rejected, causing scoped impact: DoS of take() for non-standard tokens? Proof idea: deploy token returning uint256(1) or bytes64, assert SafeTransferLib behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd2045b0-376f-4dcb-8b91-a89c7112f0de?mode=deep",
+    "timestamp": "2026-05-31 18:29:03.450765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a reentrancy guard on transferFrom that blocks reentrant calls under the precondition that the onBuy callback attempts to call transferFrom on the same token, trigger take() so that the callback's token interaction is blocked by the token's reentrancy guard, causing the callback to revert and take() to revert with WrongBuyCallbackReturnValue(), violating the invariant that valid callbacks can always source funds, causing scoped impact: DoS of maker callbacks? Proof idea: deploy reentrancy-guarded token, implement onBuy callback that calls transferFrom, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d8551d65-4eb6-4f62-917b-1f1c018e72bc?mode=deep",
+    "timestamp": "2026-05-31 18:29:17.231889",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that charges a fee only when the sender is not the token owner under the precondition that payer is a callback contract (not the token owner), trigger take() with buyerCallback set so that payer = buyerCallback, causing the fee to be charged on the transfer from callback to Midnight, while no fee would be charged if payer were the maker directly, violating the invariant that accounting is consistent regardless of payer identity, causing scoped impact: accounting desync when callback is payer? Proof idea: deploy owner-exempt-fee token, compare take() with and without callback payer, assert balance difference.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c74407d5-4493-43ed-a715-8c22a3958b22?mode=deep",
+    "timestamp": "2026-05-31 18:29:30.675267",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer tax that is sent to a third-party address under the precondition that the tax reduces the amount received by Midnight, trigger take() so that claimableSettlementFee[loanToken] is credited the full spread but Midnight only receives (spread - tax), violating the invariant that claimableSettlementFee[token] <= actual balance attributable to fees, causing scoped impact: protocol insolvency where fee claimer cannot withdraw? Proof idea: deploy tax-to-treasury token, execute take(), assert claimableSettlementFee > actual balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32a533b7-09b2-44f3-866d-69b737111122?mode=deep",
+    "timestamp": "2026-05-31 18:29:43.285259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a dynamic fee that increases with transfer size (e.g., fee = amount * 1%) under the precondition that large takes incur proportionally larger fees, trigger take() with large units so that the fee is significant, causing a proportional accounting desync between credited amounts and actual token balances, violating the invariant that accounting is correct for all valid trade sizes, causing scoped impact: larger trades cause larger insolvency? Proof idea: fuzz units from 1 to type(uint128).max, assert balance shortfall scales with units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_926659bf-474b-4f84-bdaa-3a8b676cd449?mode=deep",
+    "timestamp": "2026-05-31 18:29:56.509580",
+    "report_generated": false
+  }
+]
