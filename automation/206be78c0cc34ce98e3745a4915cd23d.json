@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, under a buy offer with small units such that units * settlementFee < WAD, trigger take() where mulDivDown(buyerPrice, WAD) == mulDivDown(sellerPrice, WAD), causing claimableSettlementFee[loanToken] += 0 while the buyer still pays the full buyerAssets, violating the invariant that settlement fee accrual equals buyerAssets - sellerAssets > 0 whenever settlementFee > 0, causing scoped impact: settlement fee underclaimed (zero fee collected despite nonzero settlementFee)? Proof idea: fuzz units in [1, WAD/settlementFee) for a buy offer and assert claimableSettlementFee delta == 0 while settlementFee(id, ttm) > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aaa8fe96-71c3-40d7-91af-3c330cc9e1b9?mode=deep",
+    "timestamp": "2026-05-31 23:35:27.600259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, under a sell offer with small units such that units * settlementFee < WAD, trigger take() where mulDivUp(buyerPrice, WAD) == mulDivUp(sellerPrice, WAD), causing claimableSettlementFee[loanToken] += 0 while the seller still receives sellerAssets at the full offerPrice, violating the invariant that the protocol collects a nonzero settlement fee whenever settlementFee > 0 and units > 0, causing scoped impact: settlement fee underclaimed? Proof idea: fuzz units in [1, WAD/settlementFee) for a sell offer and assert claimableSettlementFee delta == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a69a44df-e7cd-4793-8b30-bdeca0939fc5?mode=deep",
+    "timestamp": "2026-05-31 23:35:39.762742",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by repeatedly calling take() with dust units (units=1) on a buy offer, accumulate buyerAssets - sellerAssets = 0 per call while consuming the full offer, causing the total settlement fee collected across all calls to be strictly less than the fee that would have been collected in a single equivalent take(), violating the invariant that fee collection is independent of call granularity, causing scoped impact: settlement fee underclaimed via dust fragmentation? Proof idea: compare claimableSettlementFee after N calls of units=1 vs one call of units=N and assert equality.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a454b18d-78e3-4827-83a6-78e37a64b9a9?mode=deep",
+    "timestamp": "2026-05-31 23:35:52.476181",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: settlementFee] Can any caller, at a timeToMaturity that is exactly at a breakpoint boundary (e.g., timeToMaturity == 1 days, 7 days, 30 days, 90 days, 180 days, or 360 days), observe a discontinuity in the piecewise linear interpolation formula (feeLower * (end - ttm) + feeUpper * (ttm - start)) / (end - start) where the fee jumps to a different bracket's lower bound, causing the settlement fee to be miscalculated relative to the intended linear schedule, causing scoped impact: settlement fee overclaimed or underclaimed at breakpoint boundaries? Proof idea: evaluate settlementFee(id, t) for t in {1 days - 1, 1 days, 1 days + 1} and assert monotonicity and continuity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a9d1135-247c-4ce3-a27f-47b4e9083243?mode=deep",
+    "timestamp": "2026-05-31 23:36:06.020407",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: settlementFee] Can any caller, when timeToMaturity >= 360 days, observe that settlementFee returns settlementFeeCbp6 * CBP (a flat cap) rather than continuing the linear extrapolation, causing a taker who takes an offer with TTM just above 360 days to pay a different settlement fee than one with TTM just below 360 days, violating the invariant that the fee schedule is monotonically non-decreasing with TTM, causing scoped impact: settlement fee underclaimed for long-dated markets? Proof idea: compare settlementFee(id, 360 days - 1) vs settlementFee(id, 360 days) and settlementFee(id, 365 days) and assert the flat cap does not create a fee cliff exploitable by timing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_daa92520-c4e5-4440-b871-d4ac88fbc901?mode=deep",
+    "timestamp": "2026-05-31 23:36:19.894499",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by executing a take() at block.timestamp == market.maturity (timeToMaturity == 0), observe that settlementFee uses the [0d, 1d] bracket with feeLower = settlementFeeCbp0 * CBP and feeUpper = settlementFeeCbp1 * CBP, and the interpolation yields exactly cbp0 * CBP, while a take at block.timestamp == market.maturity + 1 (post-maturity, timeToMaturity = zeroFloorSub = 0) yields the same fee, causing no fee discontinuity at maturity, but if cbp0 is set to 0 by the feeSetter, causing zero settlement fee to be collected at and after maturity, causing scoped impact: settlement fee unclaimable post-maturity? Proof idea: set cbp0=0, take at maturity, assert claimableSettlementFee delta == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ccb633cb-9aa7-4a9b-b1d3-550a513d8a7b?mode=deep",
+    "timestamp": "2026-05-31 23:36:34.187282",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by taking a sell offer (offer.buy == false) where sellerPrice = offerPrice and buyerPrice = offerPrice + settlementFee, observe that the buyer pays the full settlement fee while the seller receives offerPrice, and then verify that claimableSettlementFee[loanToken] += buyerAssets - sellerAssets = mulDivUp(buyerPrice, WAD) - mulDivUp(sellerPrice, WAD), which may be strictly greater than units * settlementFee / WAD due to rounding up on both terms, causing the protocol to overclaim settlement fee relative to the nominal rate, causing scoped impact: settlement fee overclaimed on sell offers via rounding? Proof idea: fuzz units and assert claimableSettlementFee delta <= units * settlementFee / WAD + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af6518ad-0b02-40d4-b93d-68b86d28ca17?mode=deep",
+    "timestamp": "2026-05-31 23:36:49.283065",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by taking a buy offer (offer.buy == true) where buyerAssets = mulDivDown(buyerPrice, WAD) and sellerAssets = mulDivDown(sellerPrice, WAD), observe that claimableSettlementFee[loanToken] += buyerAssets - sellerAssets may be strictly less than units * settlementFee / WAD due to rounding down on both terms, causing the protocol to underclaim settlement fee relative to the nominal rate, causing scoped impact: settlement fee underclaimed on buy offers via rounding? Proof idea: fuzz units and assert claimableSettlementFee delta >= units * settlementFee / WAD - 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a577b8d-5410-4502-a272-5254074feebe?mode=deep",
+    "timestamp": "2026-05-31 23:37:06.167409",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take / claimSettlementFee] Can an unprivileged market creator, by creating a market with a loan token that is a fee-on-transfer ERC-20, trigger take() where payer transfers buyerAssets to address(this) but Midnight only receives buyerAssets * (1 - feeRate), causing claimableSettlementFee[loanToken] to be incremented by buyerAssets - sellerAssets while the actual token balance increase is less, causing claimSettlementFee to revert or drain lender funds when the feeClaimer attempts to claim, causing scoped impact: settlement fee unclaimable or overclaimed against lender balances? Proof idea: deploy fee-on-transfer token, create market, take, assert claimableSettlementFee > actual balance increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_30e50977-c6e9-49a4-bbd5-9683cd7b9d3c?mode=deep",
+    "timestamp": "2026-05-31 23:37:22.132408",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimSettlementFee] Can the feeClaimer, given that claimableSettlementFee[token] is a global mapping shared across all markets using the same loanToken, claim settlement fees from market A that were intended to cover market B's fee obligations, causing lenders in market B to be unable to withdraw their full credit because the token balance has been drained, violating the invariant that each market's lender funds are protected, causing scoped impact: settlement fee overclaimed from shared pool, freezing lender withdrawals in other markets? Proof idea: create two markets with same loanToken, generate fees in market A, claim all, then attempt withdraw in market B and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09932b80-efdb-44d2-bf03-bfe812aeed76?mode=deep",
+    "timestamp": "2026-05-31 23:37:38.976426",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee] Can the feeClaimer, by calling claimContinuousFee(market, amount, receiver) with amount > marketState[id].withdrawable, trigger an underflow revert in _marketState.withdrawable -= toUint128(amount), causing the continuous fee to become permanently unclaimable if continuousFeeCredit > withdrawable (e.g., after bad debt socialization reduces withdrawable but not continuousFeeCredit proportionally), causing scoped impact: continuous fee unclaimable due to withdrawable underflow? Proof idea: realize bad debt to reduce withdrawable, then call claimContinuousFee with amount == continuousFeeCredit and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62f9ef70-3a66-4786-ac7c-8a35a6b336d6?mode=deep",
+    "timestamp": "2026-05-31 23:37:53.311509",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee] Can the feeClaimer, by calling claimContinuousFee(market, amount, receiver) where amount <= continuousFeeCredit but amount > withdrawable, cause _marketState.withdrawable to underflow (revert in checked arithmetic), making the continuous fee unclaimable even though continuousFeeCredit correctly reflects accrued fees, violating the invariant that accrued continuous fees are always claimable, causing scoped impact: continuous fee unclaimable when withdrawable < continuousFeeCredit? Proof idea: construct scenario where repayments are absent but continuousFeeCredit accrues, assert claimContinuousFee reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e8a9129-e0d7-47ed-adea-9453f0118465?mode=deep",
+    "timestamp": "2026-05-31 23:38:07.831565",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee] Can the feeClaimer, by calling claimContinuousFee(market, amount, receiver) with amount == continuousFeeCredit, cause _marketState.totalUnits to decrease by amount, which then affects the lossFactor computation in subsequent liquidate() calls (since lossFactor uses totalUnits), causing the loss factor to be miscalculated and lenders to be over-slashed on the next bad debt event, violating the invariant that fee claims do not corrupt loss accounting, causing scoped impact: continuous fee claim corrupts loss factor, causing lender credit overclaim? Proof idea: claim all continuousFeeCredit, trigger bad debt, compare lossFactor before and after claim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e8430690-31a3-4970-a555-61949508b74d?mode=deep",
+    "timestamp": "2026-05-31 23:38:23.412388",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: _updatePosition / updatePositionView] Can an unprivileged lender, when _position.lastAccrual == market.maturity (set by a prior _updatePosition call at exactly maturity), observe that updatePositionView computes fee = 0 because the condition _lastAccrual < market.maturity is false, causing all subsequent pendingFee to remain unaccrued and continuousFeeCredit to not increase, making the continuous fee permanently unclaimable for that lender's share, causing scoped impact: continuous fee unclaimable after position updated at exact maturity? Proof idea: call updatePosition at block.timestamp == market.maturity, then call again later and assert accruedFee == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01aaf797-e82e-4460-a520-8346096cff8a?mode=deep",
+    "timestamp": "2026-05-31 23:38:37.644476",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take / _updatePosition] Can an unprivileged taker, by calling take() at block.timestamp == market.maturity, observe that timeToMaturity = zeroFloorSub(market.maturity, block.timestamp) = 0, causing buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * 0, WAD) = 0, so the new lender accrues zero pendingFee, while existing lenders still have their pendingFee from before maturity, causing the continuous fee to be charged asymmetrically (zero for new credit at maturity vs nonzero for pre-maturity credit), causing scoped impact: continuous fee underclaimed for credit created at maturity? Proof idea: take at maturity, assert buyerPendingFeeIncrease == 0 and continuousFeeCredit does not increase for that credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_064918a1-0f38-4218-bf9b-a85751f9e8e4?mode=deep",
+    "timestamp": "2026-05-31 23:38:53.716226",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by taking a buy offer where the buyer already has debt (buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) < units), observe that buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) is computed only on the net credit increase (not on units), causing the continuous fee to be underclaimed relative to the full units transacted, violating the invariant that the continuous fee is proportional to credit outstanding, causing scoped impact: continuous fee underclaimed when buyer nets debt against credit? Proof idea: create buyer with debt D, take units > D, assert buyerPendingFeeIncrease < units * continuousFee * ttm / WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4098b45f-95c7-44f1-a41d-a9035656f770?mode=deep",
+    "timestamp": "2026-05-31 23:39:08.139453",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: setMarketContinuousFee / take] Can an unprivileged market creator, by creating a market and then having the feeSetter call setMarketContinuousFee(id, newContinuousFee) after lenders have entered, observe that existing lenders' pendingFee is not updated (per the comment 'their fee is fixed'), while new lenders entering after the fee change pay the new rate, causing the continuous fee to be charged at different rates to different lenders in the same market, and if the fee is increased, causing the protocol to underclaim from existing lenders relative to the new rate, causing scoped impact: continuous fee underclaimed from pre-change lenders? Proof idea: change continuousFee mid-market, compare pendingFee accrual for old vs new lenders.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_404fde78-7f59-4bc9-b7d2-2df7e3a556f6?mode=deep",
+    "timestamp": "2026-05-31 23:39:24.209346",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: liquidate / _updatePosition] Can an unprivileged liquidator, by triggering bad debt realization in liquidate() which slashes continuousFeeCredit via the formula continuousFeeCredit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - oldLossFactor), cause continuousFeeCredit to be reduced by more than the proportional bad debt share (due to mulDivDown rounding), making the remaining continuousFeeCredit insufficient to cover the feeClaimer's expected claim, causing scoped impact: continuous fee unclaimable after bad debt due to rounding in continuousFeeCredit slash? Proof idea: realize bad debt, compare continuousFeeCredit before and after, assert the slash is at most proportional.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_453e9f76-caed-4a3a-9c43-cb49edfd2b33?mode=deep",
+    "timestamp": "2026-05-31 23:39:41.971776",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: liquidate] Can an unprivileged liquidator, by triggering multiple sequential bad debt realizations (each reducing totalUnits and continuousFeeCredit), cause continuousFeeCredit to approach zero faster than totalUnits due to compounding mulDivDown rounding in each slash, making the continuous fee effectively unclaimable even though lenders still have pendingFee that will accrue to continuousFeeCredit, causing scoped impact: continuous fee unclaimable after repeated bad debt events? Proof idea: simulate N bad debt events, assert continuousFeeCredit / totalUnits ratio is preserved within rounding tolerance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a6e9402-03a1-40ab-9ff6-ade375153dcc?mode=deep",
+    "timestamp": "2026-05-31 23:39:58.548753",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: withdraw / _updatePosition] Can an unprivileged lender, by calling withdraw() which triggers _updatePosition and then decrements pendingFee via pendingFeeDecrease = pendingFee.mulDivUp(units, credit) (rounded up), cause the lender's pendingFee to be decremented by more than the proportional share, resulting in less pendingFee remaining for future accrual, causing the continuous fee to be underclaimed from that lender's position over the remaining lifetime, causing scoped impact: continuous fee underclaimed due to pendingFee rounding up on partial withdrawal? Proof idea: partial withdraw, assert remaining pendingFee * (credit - units) / credit == expected remaining pendingFee within 1 unit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60514735-5ce7-4b57-99b9-39b7ddfb9e49?mode=deep",
+    "timestamp": "2026-05-31 23:40:15.045636",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by taking a sell offer where the seller has credit (sellerCreditDecrease > 0), observe that sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit) rounds up, causing the seller's pendingFee to be decremented by more than the proportional share, resulting in the seller paying slightly more continuous fee than their proportional credit share, while the excess is not credited to continuousFeeCredit, causing scoped impact: continuous fee underclaimed (lost to rounding) when seller reduces credit? Proof idea: take sell offer partially, assert sum of pendingFee decreases across all partial takes equals original pendingFee within N units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_877b3b34-30ce-4a8b-8df3-1e41216613d2?mode=deep",
+    "timestamp": "2026-05-31 23:40:28.727034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: _updatePosition] Can an unprivileged user, by calling updatePosition() multiple times within the same block (block.timestamp unchanged), observe that the second call computes accrualEnd - _lastAccrual = block.timestamp - block.timestamp = 0, causing fee = 0 and no additional continuousFeeCredit accrual, but also that _position.lastAccrual is set to block.timestamp on each call, causing no double-accrual, but if the first call is in a multicall with a take that increases credit, the new credit's pendingFee is not accrued until the next block, causing scoped impact: continuous fee underclaimed for credit created and updated in the same block? Proof idea: multicall take + updatePosition in same block, assert continuousFeeCredit increase equals expected accrual.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c39e0578-9fb1-4401-9886-a763c7f792b3?mode=deep",
+    "timestamp": "2026-05-31 23:40:43.548066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take] Can an unprivileged taker, by calling take() with units = 0 (a no-op take allowed per the comment 'Midnight can call the callback of offers through a no-op take'), observe that buyerAssets = 0, sellerAssets = 0, and claimableSettlementFee[loanToken] += 0, causing no settlement fee to be collected, while the offer's consumed counter is not incremented (since units = 0 means consumed += 0), allowing the callback to be triggered without any fee payment, causing scoped impact: settlement fee underclaimed via zero-unit callback take? Proof idea: take with units=0, assert claimableSettlementFee unchanged and callback was invoked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_91cfd242-cfac-4033-88d7-d0683310fdbe?mode=deep",
+    "timestamp": "2026-05-31 23:41:00.222200",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: setMarketSettlementFee / take] Can an unprivileged taker, by front-running a feeSetter's setMarketSettlementFee() call that increases the settlement fee, execute take() at the old (lower) settlement fee, causing the protocol to collect less settlement fee than intended for that take, while the maker's offer was priced assuming the new higher fee, causing the taker to receive a better effective price than the maker intended, causing scoped impact: settlement fee underclaimed due to fee update race condition? Proof idea: simulate mempool race: take at old fee, then setMarketSettlementFee, assert fee collected < expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0769936-d68c-463c-9c15-cc7db224831a?mode=deep",
+    "timestamp": "2026-05-31 23:41:16.729622",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: setMarketSettlementFee / take] Can an unprivileged taker, by back-running a feeSetter's setMarketSettlementFee() call that decreases the settlement fee, observe that existing buy offers with tick prices just above the old settlement fee now have sellerPrice = offerPrice - newSettlementFee > 0 (valid), but the taker pays less fee than the maker expected when signing the offer, causing the maker to receive more sellerAssets than expected (since sellerPrice increased), while the protocol collects less settlement fee, causing scoped impact: settlement fee underclaimed after fee decrease, maker receives windfall? Proof idea: decrease settlementFee, take existing buy offer, assert claimableSettlementFee delta < original expected fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_55ec9d34-ef22-4fcc-a2a9-e94518a49d1a?mode=deep",
+    "timestamp": "2026-05-31 23:41:32.690558",
+    "report_generated": false
+  }
+]
