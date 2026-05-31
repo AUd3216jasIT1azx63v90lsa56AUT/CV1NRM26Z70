@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/libraries/IdLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: toId / take (fee-on-transfer, invariant: sum of credits <= withdrawable + debt)] Can an unprivileged attacker, under the precondition that loanToken is fee-on-transfer and multiple users lend and borrow in the same market, trigger a state where sum(position[id][user].credit for all users) > marketState.withdrawable + sum(position[id][user].debt for all users), violating the core solvency invariant that total claimable credit must not exceed repaid loan assets plus valid recoverable debt, causing scoped impact: protocol insolvency where not all lenders can be repaid even if all borrowers repay? Proof idea: stateful fuzz test with fee-on-transfer loanToken, N lenders and M borrowers, assert sum(credits) <= withdrawable + sum(debts) after every operation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_438c9300-0e7e-4fcf-a688-cbbd4c7a88f6?mode=deep",
+    "timestamp": "2026-05-31 19:32:09.722494",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/IdLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: toId / take (fee-on-transfer, zero-amount transfer revert)] Can an unprivileged attacker, under the precondition that loanToken reverts on zero-amount transfers and take() calls SafeTransferLib.safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) where buyerAssets == sellerAssets (zero settlement fee at maturity), cause take() to revert when the settlement fee is zero, violating the invariant that any valid take must be executable, causing scoped impact: DoS of all takes at zero-fee conditions (e.g., post-maturity or at fee breakpoint 0) for tokens that revert on zero transfers? Proof idea: deploy token that reverts on transfer(to, 0), warp to maturity (settlementFee=0), call take(), assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_706f61a0-cf2a-4e02-9379-ef65deb03fde?mode=deep",
+    "timestamp": "2026-05-31 19:32:21.428624",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/IdLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: toId / take (fee-on-transfer, differential: nominal vs actual balance)] Can an unprivileged researcher, using a differential fuzz test comparing a market with a standard ERC20 loanToken versus a fee-on-transfer loanToken (same fee rate, same operations), demonstrate that after identical sequences of take/repay/withdraw/liquidate operations, the fee-on-transfer market has loanToken.balanceOf(midnight) < sum(withdrawable + claimableSettlementFee + continuousFeeCredit) while the standard market maintains equality, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: quantifying the exact insolvency gap introduced by fee-on-transfer tokens per unit of protocol activity? Proof idea: differential fuzz test with identical operation sequences on standard vs fee-on-transfer loanToken, assert balance invariant holds for standard but fails for fee-on-transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d00b7266-0cc1-4456-b51c-d0ad22f718b0?mode=deep",
+    "timestamp": "2026-05-31 19:32:34.031954",
+    "report_generated": false
+  }
+]
