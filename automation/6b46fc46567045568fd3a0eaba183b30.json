@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an unprivileged operator who has been authorized by a maker in Midnight.setIsAuthorized for unrelated position management call SetterRatifier.setIsRootRatified(maker, arbitraryRoot, true) to ratify a Merkle root the maker never intended, under the precondition that isAuthorized[maker][operator]==true in Midnight, by calling setIsRootRatified directly on SetterRatifier, violating the invariant that ratifier approval must bind correct maker intent, causing scoped impact: maker's offers are filled under terms the maker never approved? Proof idea: unit test where Alice calls Midnight.setIsAuthorized(Bob, true), Bob calls SetterRatifier.setIsRootRatified(Alice, maliciousRoot, true), Bob constructs a Merkle tree with an offer at an unfavorable tick, Bob takes the offer as taker, assert Alice's position changes without her consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_05b14db5-f689-4fb0-81c8-a16ba29ec11d?mode=deep",
+    "timestamp": "2026-05-31 22:54:04.017274",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an authorized operator revoke a maker's active root by calling setIsRootRatified(maker, activeRoot, false) under the precondition that isAuthorized[maker][operator]==true and the maker has live offers depending on that root, by calling setIsRootRatified with newIsRootRatified=false, violating the invariant that a maker's ratified offers must remain fillable until the maker explicitly revokes them, causing scoped impact: maker's valid offers are permanently blocked (fund freeze / DoS on take)? Proof idea: unit test where maker ratifies root, operator calls setIsRootRatified(maker, root, false), assert subsequent take reverts with NotRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6542496-978a-4b5a-b09a-3e41425eb03f?mode=deep",
+    "timestamp": "2026-05-31 22:54:15.858259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an authorized operator re-enable a root that the maker explicitly revoked by calling setIsRootRatified(maker, root, true) after the maker called setIsRootRatified(maker, root, false), under the precondition that isAuthorized[maker][operator]==true, by toggling isRootRatified back to true, violating the invariant that a maker's revocation of a root must be final unless the maker re-enables it, causing scoped impact: maker's revoked offers become fillable again without maker's consent? Proof idea: unit test where maker revokes root, operator re-enables it, assert take succeeds against maker's intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c54d497f-664b-4bae-a4ca-0e4692dcf705?mode=deep",
+    "timestamp": "2026-05-31 22:54:27.978322",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can a user who authorizes MidnightBundles (or any periphery contract) in Midnight inadvertently grant that contract the ability to call setIsRootRatified on their behalf, under the precondition that the user calls Midnight.setIsAuthorized(MidnightBundles, true) to use bundled flows, by MidnightBundles (or any contract with that authorization) calling SetterRatifier.setIsRootRatified(user, root, true/false), violating the invariant that authorization scope in Midnight must not silently extend to peripheral ratifier contracts, causing scoped impact: user's offer ratification state is mutated without their knowledge? Proof idea: integration test where user authorizes MidnightBundles, a malicious bundler call path invokes setIsRootRatified, assert isRootRatified state changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_135f80f1-5fba-489a-8dc7-9814f1096ce5?mode=deep",
+    "timestamp": "2026-05-31 22:54:40.558694",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an authorized operator ratify a root containing offers with a different market (different loanToken, collateral, maturity) than the maker intended, under the precondition that isAuthorized[maker][operator]==true and isRootRatified is not scoped to a specific market, by constructing a Merkle tree with offers for a different market and calling setIsRootRatified(maker, crossMarketRoot, true), violating the invariant that ratifier approval must bind the correct market parameters, causing scoped impact: maker's credit or debt is modified in an unintended market? Proof idea: unit test where operator ratifies a root for market B while maker only intended market A, assert take in market B succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac0c6834-2829-4601-b112-0f22399f92b3?mode=deep",
+    "timestamp": "2026-05-31 22:54:53.812989",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.setIsAuthorized chain] Can an authorized operator Bob (isAuthorized[Alice][Bob]==true) call Midnight.setIsAuthorized(Alice, Carol, true) to grant Carol authorization for Alice, and then Carol calls setIsRootRatified(Alice, root, true), under the precondition that Midnight authorization is coarse-grained and authorized accounts can authorize other accounts, by exploiting the authorization chain, violating the invariant that only the maker or their directly intended delegates should control root ratification, causing scoped impact: third-party Carol ratifies roots for Alice without Alice's direct consent? Proof idea: unit test tracing Alice->Bob->Carol authorization chain, assert Carol can call setIsRootRatified for Alice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a38c779-591d-494e-b178-0b6b4aa15a13?mode=deep",
+    "timestamp": "2026-05-31 22:55:07.860467",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / HashLib.isLeaf] Can a taker pass proof.length==256 with an arbitrary leafIndex value to bypass the LeafIndexOutOfRange check in HashLib.isLeaf, under the precondition that leafIndex>>256==0 is always true in Solidity EVM semantics for uint256, by supplying ratifierData with a 256-element proof and any leafIndex, violating the invariant that leafIndex must be bounded by the tree height, causing scoped impact: taker can attempt alternative leaf orderings against a ratified root? Proof idea: fuzz test with proof.length=256 and random leafIndex values, assert LeafIndexOutOfRange never reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dbeeadea-a20c-4b97-8ba9-a870c136ca50?mode=deep",
+    "timestamp": "2026-05-31 22:55:21.794568",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / HashLib.isLeaf] Can a taker take an offer using an empty proof (proof.length==0, leafIndex==0) when the maker has ratified a root equal to HashLib.hashOffer(offer), under the precondition that isLeaf returns true when currentHash==root and proof is empty, by passing ratifierData=abi.encode(hashOffer(offer), 0, new bytes32[](0)), violating the invariant that a Merkle root must commit to a tree structure and not be trivially equal to a single offer hash, causing scoped impact: any offer whose hash the maker accidentally ratifies as a root can be taken without a proper Merkle proof? Proof idea: unit test where maker calls setIsRootRatified(maker, hashOffer(offer), true), taker passes empty proof, assert take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de482343-efe0-4bd3-874f-f9ea666a4a4d?mode=deep",
+    "timestamp": "2026-05-31 22:55:36.300597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with maxUnits=type(uint256).max or maxAssets=type(uint256).max to allow unlimited fills, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes maxUnits/maxAssets fields, by constructing a Merkle tree with an offer with unbounded caps and ratifying the root, violating the invariant that offer fill amounts must be bounded by maker-specified caps, causing scoped impact: maker's position is drained beyond intended exposure? Proof idea: unit test where operator ratifies root with maxUnits=type(uint256).max offer, taker fills repeatedly, assert consumed exceeds maker's intended cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ef322f3-cdb4-49de-84c3-84e57042e86a?mode=deep",
+    "timestamp": "2026-05-31 22:55:51.652824",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.take] Can an operator who is also a taker ratify a root containing a sell offer (offer.buy==false) at a tick far below market price, then take that offer as taker, under the precondition that isAuthorized[maker][operator]==true and the operator constructs the Merkle tree with an unfavorable tick, by calling setIsRootRatified then Midnight.take in the same transaction, violating the invariant that a maker's offer price must reflect the maker's intent, causing scoped impact: maker (seller) receives far fewer assets than expected (direct loss)? Proof idea: unit test where operator ratifies root with tick=MIN_TICK sell offer, operator takes as taker, assert maker receives near-zero sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a123f12-17cc-4530-9b61-e41053cef865?mode=deep",
+    "timestamp": "2026-05-31 22:56:06.433011",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.take] Can an operator ratify a root containing a buy offer (offer.buy==true) at a tick far above market price, then take that offer as taker (seller), under the precondition that isAuthorized[maker][operator]==true and the operator is the taker, by ratifying the root and taking the offer, violating the invariant that a maker's credit increase must correspond to assets paid at the maker's intended price, causing scoped impact: maker (buyer) overpays for credit units (direct loss)? Proof idea: unit test where operator ratifies root with tick=MAX_TICK buy offer, operator takes as taker, assert maker's buyerAssets far exceed fair value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_709b38d5-f71f-472e-8ff3-a526adfbc2fd?mode=deep",
+    "timestamp": "2026-05-31 22:56:20.301493",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.callback set to a malicious contract, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes the callback field, by constructing a Merkle tree with a malicious callback address and ratifying the root, violating the invariant that the maker's callback must be the maker's intended contract, causing scoped impact: malicious callback is invoked during take, potentially draining maker's funds or corrupting state? Proof idea: unit test where operator ratifies root with malicious callback, taker takes offer, assert malicious callback is called with maker's funds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_20439417-0a9d-4b9b-a504-ea6f742c3b5d?mode=deep",
+    "timestamp": "2026-05-31 22:56:34.533625",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.group set to a group the maker uses for other offers, effectively sharing the consumption budget with unauthorized offers, under the precondition that isAuthorized[maker][operator]==true and consumed[maker][group] is shared across all offers in the group, by ratifying a root with an offer using the maker's existing group, violating the invariant that a consumption group budget must only be consumed by maker-intended offers, causing scoped impact: maker's group budget is exhausted by unauthorized offers, blocking legitimate offer fills? Proof idea: unit test where operator ratifies root with offer using maker's group, taker fills it, assert maker's legitimate offers revert with ConsumedUnits/ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c5708426-e788-4858-b454-e4557c160df6?mode=deep",
+    "timestamp": "2026-05-31 22:56:47.985629",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.reduceOnly==false when the maker intended reduceOnly==true, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes the reduceOnly field, by ratifying a root with reduceOnly=false, violating the invariant that a maker's reduceOnly constraint must be respected, causing scoped impact: maker's credit or debt increases beyond their intended reduce-only position? Proof idea: unit test where maker intends reduceOnly=true, operator ratifies root with reduceOnly=false, assert maker's credit/debt increases unexpectedly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f19b693-9dde-4795-afcb-940cda67cc6e?mode=deep",
+    "timestamp": "2026-05-31 22:57:01.722899",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.expiry set far in the future (e.g., type(uint256).max), preventing the maker from ever having the offer naturally expire, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes the expiry field, by ratifying a root with expiry=type(uint256).max, violating the invariant that offer expiry must reflect the maker's intended time bound, causing scoped impact: maker is exposed to an offer that never expires, creating indefinite risk? Proof idea: unit test where operator ratifies root with expiry=type(uint256).max, assert offer remains fillable indefinitely.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98350dab-a2a0-495e-9d9e-49d72ecda46d?mode=deep",
+    "timestamp": "2026-05-31 22:57:15.735618",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.start set to 0 (immediately active) when the maker intended a future start time, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes the start field, by ratifying a root with start=0, violating the invariant that offer activation time must reflect the maker's intent, causing scoped impact: maker's offer is fillable before the maker intended, potentially at an unfavorable market price? Proof idea: unit test where operator ratifies root with start=0, assert offer is immediately takeable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f744625-570f-4411-b40c-a8d0cfc8fa71?mode=deep",
+    "timestamp": "2026-05-31 22:57:29.659102",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.multicall] Can a taker use Midnight.multicall to atomically call setConsumed(group, 0, maker) (if authorized) and then take an offer whose group was previously exhausted, under the precondition that isAuthorized[maker][taker]==true and the offer's root is already ratified in SetterRatifier, by resetting consumed and taking in the same multicall, violating the invariant that cancelled/consumed offers cannot be replayed, causing scoped impact: maker's exhausted offer is replayed (offer replay)? Proof idea: unit test where taker resets consumed via multicall then takes, assert consumed accounting is bypassed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9ce43093-7524-47dd-86ff-f9e30bec55e8?mode=deep",
+    "timestamp": "2026-05-31 22:57:45.040227",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified] Can a taker call isRatified directly (not through Midnight) to probe which roots are ratified for a maker without triggering any on-chain state change, under the precondition that isRatified is external view and the NotMidnight check only applies when msg.sender != MIDNIGHT, by calling isRatified from an EOA or contract, violating the invariant that ratifier validation must only be invoked by Midnight, causing scoped impact: information leakage about ratified roots enables targeted offer construction? Proof idea: unit test calling isRatified directly, assert it reverts with NotMidnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e648d06-1b7a-4b44-a479-6ad544707ecd?mode=deep",
+    "timestamp": "2026-05-31 22:58:01.372868",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can a maker who authorizes SetterRatifier itself in Midnight (as required for offer.ratifier to pass RatifierUnauthorized check) inadvertently allow SetterRatifier to call setIsRootRatified on the maker's behalf, under the precondition that isAuthorized[maker][SetterRatifier]==true and SetterRatifier.isRatified is view so cannot call setIsRootRatified during take, by a separate transaction where SetterRatifier is used as msg.sender, violating the invariant that authorizing a ratifier contract must not grant it root management rights, causing scoped impact: SetterRatifier contract can ratify/revoke roots for any maker who authorized it? Proof idea: unit test where maker authorizes SetterRatifier, assert SetterRatifier address can call setIsRootRatified for maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6b9afc35-5ab4-4597-b679-7f88c0309f51?mode=deep",
+    "timestamp": "2026-05-31 22:58:17.493969",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.receiverIfMakerIsSeller set to the operator's address, redirecting the maker's loan token proceeds to the operator, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes receiverIfMakerIsSeller, by ratifying a root with receiverIfMakerIsSeller=operator, violating the invariant that the maker's asset receiver must be the maker's intended address, causing scoped impact: maker's sellerAssets are sent to the operator instead of the maker (direct loss)? Proof idea: unit test where operator ratifies root with receiverIfMakerIsSeller=operator, taker takes offer, assert operator receives sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90d6fca1-b471-43a3-a065-41a65db9f890?mode=deep",
+    "timestamp": "2026-05-31 22:58:32.682680",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.enterGate set to address(0) when the maker intended a gated market, bypassing the enter gate restriction, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes market.enterGate, by ratifying a root with enterGate=address(0), violating the invariant that gate checks must apply to all entry paths, causing scoped impact: unauthorized users can increase credit/debt in a market the maker intended to be gated? Proof idea: unit test where operator ratifies root with enterGate=address(0) for a gated market, assert gate bypass.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86a652d2-87f9-4a85-8299-b25ecc9bb38d?mode=deep",
+    "timestamp": "2026-05-31 22:58:46.212949",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified / HashLib.isLeaf] Can a taker supply a ratifierData with a valid root and proof but a different leafIndex than the one used to construct the proof, causing isLeaf to traverse a different path and potentially match a different leaf, under the precondition that the root is ratified and the taker controls leafIndex, by fuzzing leafIndex values with a fixed proof array, violating the invariant that a Merkle proof must uniquely identify the leaf position, causing scoped impact: taker fills an offer not included in the maker's intended Merkle tree? Proof idea: fuzz test varying leafIndex with fixed proof, assert isLeaf only returns true for the correct leafIndex.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4eae1a6-94ee-49ef-aa09-9b333f702ed4?mode=deep",
+    "timestamp": "2026-05-31 22:59:00.495916",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root for a maker in a market that has already passed maturity, enabling post-maturity debt-increasing trades that should be forbidden, under the precondition that isAuthorized[maker][operator]==true and block.timestamp > market.maturity, by ratifying a root with an offer where sellerDebtIncrease > 0 post-maturity, violating the invariant that debt must not increase after maturity, causing scoped impact: maker's debt increases post-maturity (bad debt creation)? Proof idea: unit test where operator ratifies root post-maturity, assert take reverts with CannotIncreaseDebtPostMaturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0d672288-49eb-4b27-996f-2efcd31feb92?mode=deep",
+    "timestamp": "2026-05-31 22:59:15.694650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.maturity set to a different maturity than the market the maker intended, causing the offer to be executed in a different market, under the precondition that isAuthorized[maker][operator]==true and market identity is determined by all market params including maturity, by ratifying a root with a different maturity, violating the invariant that offer execution must occur in the maker's intended market, causing scoped impact: maker's position is modified in an unintended market with different risk parameters? Proof idea: unit test where operator ratifies root with maturity=T+1 instead of T, assert take creates position in wrong market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_442838c4-791b-4df0-a8e5-8d7d948d028b?mode=deep",
+    "timestamp": "2026-05-31 22:59:31.673283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.collateralParams having different LLTV or maxLif values than the maker intended, altering the liquidation risk profile, under the precondition that isAuthorized[maker][operator]==true and collateralParams are part of the offer hash, by ratifying a root with modified collateralParams, violating the invariant that market parameters must match the maker's intended risk profile, causing scoped impact: maker's position is subject to different liquidation thresholds than intended? Proof idea: unit test where operator ratifies root with LLTV=0.385e18 instead of 0.965e18, assert maker's position is liquidatable sooner.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_accfa602-3914-4891-bddf-aa70f37af29f?mode=deep",
+    "timestamp": "2026-05-31 22:59:45.607789",
+    "report_generated": false
+  }
+]
