@@ -1,0 +1,32 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot then re-sign] Can an unprivileged maker, under the precondition that the maker's callback calls setConsumed(group, max) and cancelRoot(maker, root) during onBuy(), observe that the maker can then sign a new root with a new group, effectively rotating their offer book mid-take, violating the invariant that offer state must be stable during a take, causing scoped impact: maker can rotate their offer book mid-take, potentially griefing takers who expected the old offers to remain valid? Proof idea: deploy callback that rotates offer book, execute take(), assert old offers are frozen and new offers are available.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1712a9a9-c092-4061-96fb-0de3f3e84325?mode=deep",
+    "timestamp": "2026-05-31 22:23:32.306493",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot then re-sign then take] Can an unprivileged maker, under the precondition that the maker's callback calls setConsumed(group, max), cancelRoot(maker, root), and then take() with a new offer, observe that the reentrant take() succeeds with the new offer, effectively allowing the maker to fill a different offer mid-take, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker can fill a different offer mid-take via callback, potentially extracting value from the taker? Proof idea: deploy callback that rotates offer book and reenters take(), execute outer take(), assert reentrant take() succeeds with new offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5dd7c528-f848-417c-9620-ced374470b44?mode=deep",
+    "timestamp": "2026-05-31 22:23:44.402908",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot then re-sign then take then cancelRoot] Can an unprivileged maker, under the precondition that the maker's callback calls setConsumed(group, max), cancelRoot(maker, root), take() with a new offer, and then cancelRoot(maker, newRoot), observe that the maker can fill a different offer and then cancel the new root, effectively extracting value from the taker while leaving no valid offers, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker can extract value from the taker via a complex callback sequence? Proof idea: deploy callback that executes the full sequence, execute outer take(), assert maker extracts value and no valid offers remain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8907717b-5144-4b60-95cc-f000cd341a7d?mode=deep",
+    "timestamp": "2026-05-31 22:23:57.594997",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot then re-sign then take then cancelRoot then re-sign] Can an unprivileged maker, under the precondition that the maker's callback executes a complex sequence of setConsumed, cancelRoot, take, and re-sign operations, observe that the maker can repeatedly rotate their offer book mid-take, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker can repeatedly rotate their offer book mid-take, griefing takers who expected stable offers? Proof idea: deploy callback that executes the full sequence, execute outer take(), assert maker can rotate offer book indefinitely.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bcf341ef-aa35-401c-bab3-9f1f8de62b3d?mode=deep",
+    "timestamp": "2026-05-31 22:24:10.512471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot then re-sign then take then cancelRoot then re-sign then take] Can an unprivileged maker, under the precondition that the maker's callback executes a complex sequence of setConsumed, cancelRoot, take, and re-sign operations, observe that the maker can repeatedly rotate their offer book mid-take, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker can repeatedly rotate their offer book mid-take, griefing takers who expected stable offers? Proof idea: deploy callback that executes the full sequence, execute outer take(), assert maker can rotate offer book indefinitely.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_92812cd9-4569-447e-9634-0ec36f7dcc96?mode=deep",
+    "timestamp": "2026-05-31 22:24:23.213700",
+    "report_generated": false
+  }
+]
