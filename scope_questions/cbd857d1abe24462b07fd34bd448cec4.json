@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ce29299d-02ad-4bc2-b2cc-def3b55ce78e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_df215631-d0a8-45e3-8612-54e1059f67e8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_37aaf7c0-e70c-4529-9ea0-baecefe8115f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e3d01385-7c6a-4c81-bbfc-6ded75f73537?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_da140450-417e-4c27-a82c-a2a22dc9d326?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9d382239-8b54-4b14-a5c0-9ed0cc537235?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cfd2a3d6-fcd1-4df3-8b05-0081feb64d2a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3101875d-0efd-49d8-9eff-c0cabca50142?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_141cf8a1-92ca-4417-941b-51ae082bb887?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3cefdabd-b8ec-4276-83af-8972d92d1683?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c6f05960-547b-4229-af2d-46ede4058c96?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_aa5051cb-92ab-4b44-8761-7831074ef0be?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8e73b262-5ca2-4f12-957d-cc7357ecc6fe?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6e42ae01-ce8d-4427-bf6a-bfde97f80cd3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ca2d903f-016b-4b5a-a57c-6be357358f4a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_92524d30-3198-43b0-9bfa-304b9bd2b57f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_49fcf2aa-d98c-467d-a707-6c2a5f980de8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6ce9def7-6c9c-4382-8cb9-68e0b4503bcf?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_476baabe-4221-4f69-8e64-50d55738a98d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3d2f31c1-134a-45a2-ba55-f12cd4e26f7f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b9cad4fb-755a-42c1-b793-c58455ae698c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_42eac3c0-3893-4815-a5c7-67f1abb2d9c2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_341c39c6-3965-4d2b-a487-8a3326ae55d3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3fc6b0ba-da3a-475f-8ea6-9f9fcb28d39e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8d97de47-bdcd-4c2d-a494-3ea5e4af7634?mode=deep",
+    "questions_generated": false
+  }
+]
