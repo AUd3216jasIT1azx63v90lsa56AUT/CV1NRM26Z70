@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / setConsumed / take] Can an unprivileged taker, under the precondition that a maker has a shared consumption group across multiple markets, compose a multicall() with alternating setConsumed() and take() calls to manipulate the consumed mapping state between takes, forcing each take() to re-execute isRatified() with full hashOffer() + isLeaf() computation, violating the invariant that multicall() must not allow state manipulation between take() calls to amplify per-call gas, causing scoped impact: gas griefing through state-dependent computation amplification? Proof idea: compose multicall with setConsumed() + take() pairs; assert each take() re-executes full isRatified() computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e571201-d7ea-411e-b9b0-e4caab34d480?mode=deep",
+    "timestamp": "2026-05-31 21:41:48.375853",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / IMidnight.isAuthorized] Can an unprivileged taker, under the precondition that a maker has authorized EcrecoverRatifier, call take() where isRatified() makes an external call to IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) after executing the full hashOffer() and isLeaf() computation, violating the invariant that the external isAuthorized() call must not be reachable after expensive computation if the signer is not the maker, causing scoped impact: gas griefing where the attacker forces the expensive hash path before the authorization check? Proof idea: call isRatified() with a valid proof/sig where signer != maker and maker has not authorized signer; measure gas consumed before Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7d69502c-db20-4086-8fab-98cb8460e163?mode=deep",
+    "timestamp": "2026-05-31 21:42:00.221871",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / liquidate / take] Can an unprivileged attacker acting as both taker and liquidator, under the precondition that a borrower is post-maturity liquidatable and has 16 activated collaterals, compose a multicall() that first calls take() (triggering isRatified() with 128-collateral hashMarket()) and then calls liquidate() (triggering 16-collateral while-loop with 16 oracle calls), violating the invariant that the combined gas of take() + liquidate() in multicall() must not exceed block gas limit for a single attacker, causing scoped impact: block gas exhaustion DoS? Proof idea: measure combined gas of take() + liquidate() in multicall() with max collaterals; assert it approaches block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8496277-1f35-48e1-94f1-b5b1e24abb45?mode=deep",
+    "timestamp": "2026-05-31 21:42:12.564260",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / HashLib.hashOffer / callbackData] Can an unprivileged taker, under the precondition that a maker has signed an offer with a large callbackData field, call take() where isRatified() calls hashOffer() which executes keccak256(offer.callbackData) on the full callbackData bytes, violating the invariant that callbackData size must not contribute unbounded gas to isRatified() execution, causing scoped impact: gas griefing where the maker's offer with large callbackData becomes expensive to ratify? Proof idea: fuzz callbackData length from 0 to 100KB; measure isRatified() gas and assert it grows linearly with callbackData length.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be0f6a5f-1a90-4ecc-b23c-81284d311f93?mode=deep",
+    "timestamp": "2026-05-31 21:42:25.326730",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / updatePosition / isHealthy] Can an unprivileged caller, under the precondition that many users have stale positions in a market with 16 activated collaterals, compose a multicall() with M updatePosition() calls for different users, each triggering updatePositionView() which reads position storage, followed by withdrawCollateral() calls triggering isHealthy() with 16 oracle calls per user, violating the invariant that multicall() must not allow O(M * 16) oracle calls in a single transaction, causing scoped impact: gas exhaustion DoS of the position update path? Proof idea: compose multicall with M updatePosition() + withdrawCollateral() pairs; assert M * 16 oracle calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4088761-5a13-44f6-9c54-25c949c1694a?mode=deep",
+    "timestamp": "2026-05-31 21:42:39.083999",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / while(_collateralBitmap) / badDebt] Can an unprivileged liquidator, under the precondition that a borrower has 16 activated collaterals all with zero price (full bad debt), call liquidate() with seizedAssets=0 and repaidUnits=0, forcing the while(_collateralBitmap != 0) loop to execute 16 times computing badDebt via mulDivUp(price=0, ...) for each collateral, then execute the bad debt socialization logic, violating the invariant that zero-price liquidations must not impose the same loop cost as non-zero-price liquidations, causing scoped impact: gas griefing through repeated zero-price oracle calls in the liquidation loop? Proof idea: set all 16 oracle prices to 0; call liquidate(0,0); measure gas and assert it equals full-price liquidation gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c643afc-d294-430e-ba8a-bd644f4f95ed?mode=deep",
+    "timestamp": "2026-05-31 21:42:53.757718",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / repay] Can an unprivileged taker, under the precondition that a maker has signed offers on multiple markets each with 128 collateral params, compose a multicall() with take() calls on each market, forcing each take() to call touchMarket() (which reads market state) and isRatified() (which calls hashMarket() with 128 iterations), violating the invariant that multicall() across multiple markets must not multiply the per-market collateral hashing cost, causing scoped impact: block gas exhaustion DoS when composing takes across many max-collateral markets? Proof idea: compose multicall with K takes on K different 128-collateral markets; assert K * 128 * hashCollateralParams_gas approaches block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f99c301-581a-4321-86bd-3f58426c54bf?mode=deep",
+    "timestamp": "2026-05-31 21:43:07.430334",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / abi.decode] Can an unprivileged taker, under the precondition that a maker has authorized EcrecoverRatifier, supply a ratifierData with a proof array of length 20 (maximum valid) encoded as abi.decode(ratifierData, (Signature, bytes32, uint256, bytes32[])), forcing abi.decode to copy 20 * 32 = 640 bytes of proof data into memory before any validation, violating the invariant that memory allocation in isRatified() must be bounded by a constant independent of caller input, causing scoped impact: gas griefing through memory expansion cost for large proof arrays? Proof idea: measure memory gas cost of isRatified() with proof.length 0..20; assert memory cost grows with proof length.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_42eb0525-7b71-40da-8f97-61a2e5566a7e?mode=deep",
+    "timestamp": "2026-05-31 21:43:21.793892",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / supplyCollateral / liquidate] Can an unprivileged attacker, under the precondition that they are authorized to act on behalf of a borrower, compose a multicall() that first calls supplyCollateral() 16 times to activate all 16 collateral slots for the borrower and then immediately calls liquidate() triggering the while(_collateralBitmap != 0) loop over all 16 newly activated collaterals, violating the invariant that multicall() must not allow a single transaction to both maximize collateral bitmap density and immediately trigger the maximum-cost liquidation loop, causing scoped impact: gas griefing of the liquidation path? Proof idea: compose multicall with 16 supplyCollateral() + 1 liquidate(); measure gas and assert it equals 16 * supplyCollateral_gas + 16 * oracle_call_gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3eb75b49-8b18-4f3a-91de-2e2430db45b4?mode=deep",
+    "timestamp": "2026-05-31 21:43:36.706682",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / HashLib.hashMarket / market.collateralParams] Can an unprivileged taker, under the precondition that a maker has signed an offer on a market with 128 collateral params, call take() where isRatified() calls hashOffer() -> hashMarket() which allocates a new bytes32[] memory array of length 128 and loops 128 times, and this computation is repeated on every take() call without any caching, violating the invariant that repeated takes on the same market must not re-execute the full collateral hashing loop each time, causing scoped impact: gas griefing where the attacker makes many small takes to force repeated 128-iteration hashing? Proof idea: call take() 100 times on a 128-collateral market; assert total gas = 100 * 128 * hashCollateralParams_gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b905d75-d773-4b7c-a615-0607081a17bd?mode=deep",
+    "timestamp": "2026-05-31 21:43:51.442522",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / withdrawCollateral / isHealthy] Can an unprivileged borrower, under the precondition that they have 16 activated collaterals and outstanding debt, compose a multicall() with M withdrawCollateral() calls each attempting to withdraw 0 assets (no-op), forcing each call to execute isHealthy() with 16 oracle.price() calls, violating the invariant that zero-asset withdrawals must not impose the same health check cost as non-zero withdrawals, causing scoped impact: gas griefing through repeated max-cost health checks with no economic output? Proof idea: compose multicall with M withdrawCollateral(assets=0) calls on a 16-collateral borrower; assert M * 16 oracle calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_deddeacd-0d2e-43ce-8266-31d50822781c?mode=deep",
+    "timestamp": "2026-05-31 21:44:05.635311",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / isLeaf / leafIndex] Can an unprivileged taker, under the precondition that a maker has signed a depth-20 tree, supply a ratifierData with leafIndex = 2^20 - 1 (all bits set) to isRatified(), forcing isLeaf() to evaluate (leafIndex >> i) & 1 for i=0..19 where all bits are 1, causing the maximum number of hashNode(proof[i], currentHash) calls (right-child path), violating the invariant that the worst-case leaf index must not impose more gas than the best-case leaf index, causing scoped impact: gas griefing through leaf index selection? Proof idea: compare isLeaf() gas with leafIndex=0 (all left) vs leafIndex=2^20-1 (all right); assert gas difference is measurable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31d3d3f9-a344-42df-add9-a5114137a536?mode=deep",
+    "timestamp": "2026-05-31 21:44:19.923940",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / setIsAuthorized] Can an unprivileged attacker, under the precondition that they are authorized by a maker, compose a multicall() that first calls setIsAuthorized() to revoke their own authorization and then calls take() with an EcrecoverRatifier offer, forcing take() to call isRatified() which calls IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) and find the authorization revoked, causing the take() to revert after executing the full hashOffer() + isLeaf() computation, violating the invariant that authorization revocation must not be usable to grief gas in multicall(), causing scoped impact: gas griefing through self-revocation before expensive computation? Proof idea: compose multicall with setIsAuthorized(false) + take(); assert take() reverts after full isRatified() computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_47a37ed3-8a20-4d8d-b242-5a333f02939e?mode=deep",
+    "timestamp": "2026-05-31 21:44:33.848300",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / isHealthy / while-loop / collateralBitmap] Can an unprivileged liquidator, under the precondition that a borrower has 16 activated collaterals with indices spread across the full 128-bit bitmap (e.g., bits 0, 8, 16, ..., 120), call liquidate() where the while(_collateralBitmap != 0) loop uses msb() to find the highest set bit and clearBit() to remove it, forcing 16 iterations each with a msb() (clz opcode) and clearBit() operation, violating the invariant that bitmap-based iteration must not impose more gas than sequential iteration for sparse bitmaps, causing scoped impact: gas griefing through sparse bitmap layout? Proof idea: compare liquidate() gas with collaterals at indices 0..15 vs 0,8,16,...,120; assert gas is equivalent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32c42867-455d-4194-9963-d1162917ba1b?mode=deep",
+    "timestamp": "2026-05-31 21:44:49.191239",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / isRatified / hashOffer] Can an unprivileged taker, under the precondition that a maker has signed offers on a 128-collateral market with a depth-20 Merkle tree, compose a multicall() with K take() calls each using a different valid leaf from the tree, forcing K * (128 hashCollateralParams + 20 hashNode + 1 ecrecover) operations, violating the invariant that the combined gas of K takes in multicall() must not exceed block gas limit for economically rational K, causing scoped impact: block gas exhaustion DoS where the attacker can prevent all other transactions in the block? Proof idea: compute K_max = block_gas_limit / gas_per_take; assert K_max * gas_per_take >= block_gas_limit for K_max >= 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28424553-9410-44aa-80d4-3694b4fad9d1?mode=deep",
+    "timestamp": "2026-05-31 21:45:03.209393",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / HashLib.hashOffer / offer.callbackData / keccak256] Can an unprivileged taker, under the precondition that a maker has signed an offer with offer.callbackData of length 100KB, call take() where isRatified() calls hashOffer() which executes keccak256(offer.callbackData) on the full 100KB buffer, violating the invariant that offer.callbackData hashing in isRatified() must not impose unbounded gas proportional to callbackData size, causing scoped impact: gas griefing where the maker's offer with large callbackData becomes prohibitively expensive to ratify, effectively freezing the offer? Proof idea: fuzz offer.callbackData length; measure hashOffer() gas and assert it grows linearly with callbackData length at ~6 gas per 32 bytes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd9b8086-31e0-482d-9f7f-b1bacebb2804?mode=deep",
+    "timestamp": "2026-05-31 21:45:17.422143",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / liquidate / updatePosition] Can an unprivileged liquidator, under the precondition that a market has many lenders with stale positions and a borrower with 16 activated collaterals is liquidatable, compose a multicall() with M updatePosition() calls for different lenders followed by a liquidate() call, forcing M * updatePositionView() computations plus 16 oracle calls in the liquidation loop, violating the invariant that multicall() must not allow O(M + 16) gas amplification in a single transaction, causing scoped impact: gas exhaustion DoS of the liquidation path? Proof idea: compose multicall with M updatePosition() + 1 liquidate(); measure total gas and assert it grows linearly with M.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae6f5df1-032a-461d-b1d4-144f96d599cd?mode=deep",
+    "timestamp": "2026-05-31 21:45:32.207047",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / HashLib.hashMarket / market.collateralParams.length] Can an unprivileged taker, under the precondition that a maker has signed an offer on a market with N collateral params (fuzzed from 1 to 128), call take() and observe that isRatified() gas cost grows linearly with N due to the hashMarket() for-loop, violating the invariant that the gas cost of ratification must be bounded by a constant independent of market configuration, causing scoped impact: gas griefing where markets with more collaterals impose higher per-take costs on all takers? Proof idea: fuzz N from 1 to 128; measure isRatified() gas for each N; assert gas = base_cost + N * hashCollateralParams_gas with R^2 > 0.99.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_33116491-f064-4536-8ff9-19aa636c637d?mode=deep",
+    "timestamp": "2026-05-31 21:45:48.186882",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / isRatified / cancelRoot] Can an unprivileged maker, under the precondition that a taker has submitted a multicall() with N take() calls using roots R1..RN, call cancelRoot() for each root R1..RN in a separate multicall() in the same block, forcing all N take() calls to revert after executing the full hashOffer() + isLeaf() computation for each, violating the invariant that root cancellation must not be usable as a griefing tool to waste taker gas proportional to N, causing scoped impact: taker loses N * take_gas with no recourse and no economic benefit to the maker? Proof idea: simulate same-block ordering of N cancelRoot() calls before multicall(N takes); assert taker gas loss = N * take_gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90ad4725-15cb-4ebb-9c4e-1ebb37c4917f?mode=deep",
+    "timestamp": "2026-05-31 21:46:04.163575",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / HashLib.isLeaf / proof.length / offerTreeTypeHash] Can an unprivileged taker, under the precondition that a maker has signed a root at height 20, supply a ratifierData where proof.length == 20 but leafIndex has bits set beyond position 19 (e.g., leafIndex = 2^20), forcing isLeaf() to revert with LeafIndexOutOfRange() only after the abi.decode and before any hashing, violating the invariant that the LeafIndexOutOfRange check must be the first operation in isLeaf() to minimize wasted gas, causing scoped impact: gas griefing through invalid leafIndex that wastes abi.decode gas before the cheapest check? Proof idea: call isRatified() with proof.length=20 and leafIndex=2^20; measure gas consumed before LeafIndexOutOfRange revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b875a57-c26b-4c65-a97d-04f53ab18386?mode=deep",
+    "timestamp": "2026-05-31 21:46:20.487817",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / isHealthy / withdrawCollateral / take] Can an unprivileged taker, under the precondition that a seller has 16 activated collaterals and outstanding debt, compose a multicall() that calls take() (which locks liquidation via tExchange and calls isHealthy() on the seller) followed by withdrawCollateral() (which calls isHealthy() again with 16 oracle calls), forcing two full isHealthy() executions with 16 oracle calls each in a single multicall(), violating the invariant that multicall() must not allow double health check execution for the same borrower in a single transaction, causing scoped impact: gas griefing through redundant health check amplification? Proof idea: compose multicall with take() + withdrawCollateral() for a 16-collateral seller; assert 2 * 16 oracle calls are made.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ab312d9-88ef-412b-8eb8-0070a8634b36?mode=deep",
+    "timestamp": "2026-05-31 21:46:35.703185",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / while(_collateralBitmap) / maxDebt / badDebt] Can an unprivileged liquidator, under the precondition that a borrower has 16 activated collaterals with varying prices and LLTVs, call liquidate() where the while(_collateralBitmap != 0) loop computes both maxDebt (mulDivDown * mulDivDown per collateral) and badDebt (zeroFloorSub(mulDivUp * mulDivUp) per collateral), forcing 4 mulDiv operations per collateral * 16 collaterals = 64 mulDiv operations in a single liquidation, violating the invariant that liquidation arithmetic cost must be bounded by MAX_COLLATERALS_PER_BORROWER * constant_arithmetic_cost, causing scoped impact: gas griefing through arithmetic amplification in the liquidation loop? Proof idea: measure liquidate() gas with 1 vs 16 activated collaterals; assert gas ratio is approximately 16.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e63337e0-90bc-4c4a-9cd6-036a27ca0fba?mode=deep",
+    "timestamp": "2026-05-31 21:46:49.368596",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / isRatified / hashOffer / hashMarket] Can an unprivileged taker, under the precondition that a maker has signed offers on a 128-collateral market using EcrecoverRatifier with a depth-20 Merkle tree, compose a multicall() with the maximum number of take() calls that fit within the block gas limit, each forcing 128 * hashCollateralParams + 20 * hashNode + 1 ecrecover operations, violating the invariant that the protocol must remain usable (i.e., at least one take() must succeed) even when an attacker fills the block with max-cost takes, causing scoped impact: block-level DoS where legitimate takers cannot execute any takes in the same block? Proof idea: compute max_takes = block_gas_limit / gas_per_max_take; assert max_takes >= 1 and that a single attacker can fill the entire block with max-cost takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_665e6bb6-5b8b-40fa-9cce-fe7f1841ee6d?mode=deep",
+    "timestamp": "2026-05-31 21:47:04.268770",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isRatified / IMidnight.isAuthorized / external call] Can an unprivileged taker, under the precondition that a maker has authorized EcrecoverRatifier and signed a valid offer, call take() where isRatified() makes an external call to IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) after executing hashOffer() (128 collateral iterations) and isLeaf() (20 iterations) and ecrecover(), violating the invariant that the external isAuthorized() call must not be reachable after all expensive computation if the signer equals the maker (short-circuit path), causing scoped impact: gas griefing where the maker == signer path still executes the external call unnecessarily? Proof idea: call isRatified() where _signer == offer.maker; assert IMidnight.isAuthorized() is NOT called (short-circuit at line 44 of EcrecoverRatifier.sol).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f298c7eb-fc8a-4e78-b0d8-a9f73f3e1d37?mode=deep",
+    "timestamp": "2026-05-31 21:47:18.703967",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take / liquidate / isHealthy] Can an unprivileged attacker, under the precondition that they control a borrower with 16 activated collaterals and a maker with a 128-collateral offer signed with EcrecoverRatifier at depth-20, compose a single multicall() that calls take() (triggering 128 hashCollateralParams + 20 hashNode + 16 oracle calls for seller health check) followed by liquidate() (triggering 16 oracle calls in the while-loop), forcing a combined gas cost of 128 * hashCollateralParams_gas + 20 * hashNode_gas + 32 * oracle_call_gas in a single transaction, violating the invariant that the combined gas of take() + liquidate() in multicall() must not approach block gas limit for a single attacker, causing scoped impact: block gas exhaustion DoS? Proof idea: measure combined gas of max-cost take() + max-cost liquidate() in multicall(); assert it approaches block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_16f0938c-1014-4942-9c31-44e799f41cf2?mode=deep",
+    "timestamp": "2026-05-31 21:47:33.595294",
+    "report_generated": false
+  }
+]
