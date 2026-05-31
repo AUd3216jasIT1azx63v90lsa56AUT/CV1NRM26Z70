@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: IBuyCallback.onBuy / take()] Can an unprivileged taker under the precondition that the buyer callback reenters take() with a sell offer where the buyer is the seller and sellerCreditDecrease consumes the freshly-added credit, and the second take's sellerAssets are transferred to receiver before onSell fires, causing the receiver to hold sellerAssets while the first take's payer transferFrom has not yet executed, violating the invariant that token outflows must be preceded by corresponding inflows, causing scoped impact: receiver holds sellerAssets backed by tokens not yet received by Midnight (direct fund loss)? Proof idea: measure loanToken.balanceOf(midnight) at each step; assert outflow precedes inflow in the callback sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fe0bdf46-e3bd-4b35-aba2-e5523ca09235?mode=deep",
+    "timestamp": "2026-05-31 23:27:54.061267",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: IFlashLoanCallback.onFlashLoan / flashLoan()] Can an unprivileged flash loan borrower under the precondition that the callback reenters liquidate() with a callback that reenters withdraw() inside onLiquidate, creating a three-level reentrant call chain (flashLoan → liquidate → withdraw), causing withdrawable to be incremented by repaidUnits and then immediately decremented by withdraw before the liquidate's loan token transferFrom executes, violating the invariant that withdrawable must be backed by actual token balance at all times, causing scoped impact: lender withdraws tokens that the liquidator never paid (direct fund loss)? Proof idea: three-level reentrant chain; assert loanToken.balanceOf(midnight) < marketState.withdrawable at each level.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1badbd5e-6173-462f-8d8f-412e276aac70?mode=deep",
+    "timestamp": "2026-05-31 23:28:05.973672",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/ICallbacks.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: IRepayCallback.onRepay / repay()] Can an unprivileged borrower under the precondition that the repay callback reenters take() with a buy offer where the borrower is the buyer and units equals the repaid amount, causing buyerPos.debt to be decremented by units (netting) while the repay already decremented debt by units, resulting in debt being decremented by 2*units, and the take's payer transferFrom pulls buyerAssets from the callback while the repay's transferFrom pulls units from the callback, violating the invariant that total tokens paid must equal total debt reduction, causing scoped impact: borrower reduces debt by 2*units while paying buyerAssets + units tokens (which may be less than 2*units at discount prices) (direct fund loss to lenders)? Proof idea: at tick < 0 (price < 1), buyerAssets < units; total paid = buyerAssets + units < 2*units; assert debt reduced by 2*units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d484d92b-836c-4960-97de-28145a600ed2?mode=deep",
+    "timestamp": "2026-05-31 23:28:18.410918",
+    "report_generated": false
+  }
+]
