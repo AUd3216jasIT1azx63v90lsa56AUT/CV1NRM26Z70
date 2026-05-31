@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6dd7bea6-51be-4a44-a92a-3ba02c3c740b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4865a4b3-bdfb-4835-b79f-a655fa2c6cad?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7af1e169-bf96-430d-a037-a934c885df97?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f58d318d-9f17-434b-8d8e-c03045aa7241?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e5688ebb-6d7a-4352-949d-38b6b661f910?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e2eb39e6-ffe1-46ac-a404-69fc9a23af1a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_44c11788-7d68-4b88-bb05-7d419a48c179?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_aa80a688-1420-4168-84a4-0bb6a9ac7cfd?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ffe17533-3d5c-467f-9ab6-aee9b95dc303?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b3c50e30-916f-451d-b627-3a67b1381141?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a325fbcb-b435-4465-a424-7e0b4b6bca32?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_adedfa08-064a-493d-acd6-1afb877eeaf0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3d6e3ade-00b1-4184-8546-13bf42266d1b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_17e0d385-a741-4c6f-9aca-6ea5efba156f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6f06774a-abd9-4765-98b4-fff70e647c87?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_75b628a3-8335-4607-9754-5d64adddcab2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_71261f94-50c7-4913-9e6e-e6800af3bc01?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5e67b344-0492-4470-9131-1644db96206f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_703cb102-f652-4471-a423-651d36eba012?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8aa1e57f-e4b5-4380-83dc-c31f0e3727e2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5f8a826c-4ad1-4927-86c8-2ddbf9431e81?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d35e060b-151a-4606-a259-431184004180?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0d02e4ea-6c3c-4fd6-b8dd-193a4b9dc28f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_71039a6c-8368-4aea-8fb0-5e1dc9419409?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a43fc73a-9fcb-4dcf-828d-4e95078ef1ee?mode=deep",
+    "questions_generated": false
+  }
+]
