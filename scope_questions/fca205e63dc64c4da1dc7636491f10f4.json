@@ -1,0 +1,52 @@
+[
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_1d63fc14-03d6-41ab-9b81-436dcdec09ff?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e51222ca-0f60-4ae3-a96b-14852873f5d5?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9556ef78-1ef7-4801-85c2-6ec55638211e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_47077f54-1e92-40cb-960c-d19032838b0c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e7089d4d-0d31-4ecd-8dbb-e2d3ab372e78?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_96e4547f-bca2-4737-b471-9fdaa468146c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_53cf46d8-fe94-4e68-b83c-1b59c4e9f28d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9f8f3288-b726-4641-8285-43e406a7f1ae?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_db685d4a-52ad-4bfd-b378-6bb6ff34fd84?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_1cc1b1a2-d609-4fae-bff8-7443698a0a8f?mode=deep",
+    "questions_generated": false
+  }
+]
