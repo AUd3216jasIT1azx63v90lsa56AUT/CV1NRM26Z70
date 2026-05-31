@@ -1,0 +1,14 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'] [Function: Midnight.take / TickLib.tickToPrice rounding] Can an unprivileged ATTACKER as seller under PRECONDITIONS where offer.tick is chosen such that tickToPrice returns a price that after settlement fee subtraction gives sellerPrice=0 call take, observing that sellerAssets = units.mulDivUp(0, WAD) = 0 and buyerAssets = units.mulDivUp(settlementFee, WAD) > 0, so seller receives 0 assets while buyer pays only the fee, violating the invariant that every borrow/take must create correct debt and collateral obligation, causing scoped impact: seller takes on debt units for 0 loan token received, immediately undercollateralized? Proof idea: find tick where tickToPrice(tick) <= settlementFee and assert sellerAssets == 0 while sellerDebtIncrease > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4382aaa0-77e4-4108-bf6b-63038eb5b8f8?mode=deep",
+    "timestamp": "2026-05-31 18:35:44.240789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'] [Function: Midnight.take / flashLoan + take + liquidate composability] Can an unprivileged ATTACKER as callback receiver under PRECONDITIONS where a SetterRatifier-ratified sell offer exists and borrower is near health boundary use flashLoan to borrow collateral tokens, supply them as collateral for borrower, take the sell offer to increase borrower's debt past health threshold, then liquidate borrower in the same callback, violating the invariant that only unhealthy accounts should be liquidatable, causing scoped impact: attacker manufactures unhealthy position and immediately liquidates it for profit within one transaction? Proof idea: PoC combining flashLoan, supplyCollateral, take, and liquidate in onFlashLoan callback asserting net profit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56710e83-d411-4321-ade8-f94737969120?mode=deep",
+    "timestamp": "2026-05-31 18:35:56.108103",
+    "report_generated": false
+  }
+]
