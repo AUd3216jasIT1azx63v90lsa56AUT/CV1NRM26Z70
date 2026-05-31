@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing + offer fill] Can tickSpacingSetter decrease tick spacing from 4 to 2 under the precondition that a maker has a signed offer at tick=2 (previously invalid at spacing=4) with a very favorable price, triggering a fill of that offer at tick=2 which was never intended to be accessible, violating the invariant that offer ticks must be valid at the time of signing (not just at fill time), causing scoped impact: maker's offer at an unintended tick is filled, potentially at a price the maker did not intend to offer at that tick? Proof idea: sign offer at tick=2, decrease spacing to 2, fill offer, assert maker receives expected assets at tick=2 price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e3a86d1-870c-4b1f-8366-6834f9a0ca96?mode=deep",
+    "timestamp": "2026-05-31 22:40:18.477939",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized (coarse-grained)] Can an authorized operator call setIsAuthorized(operator, true, user) to authorize themselves in a different Midnight deployment or ratifier contract under the precondition that the isAuthorized mapping is shared across all contracts that call IMidnight(MIDNIGHT).isAuthorized(), triggering cross-contract authorization abuse where the operator gains rights in ratifiers or authorizers beyond what the user intended, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: operator can ratify offers on behalf of user in EcrecoverRatifier or other ratifier contracts? Proof idea: user authorizes operator in Midnight, operator uses isAuthorized[user][operator] in EcrecoverAuthorizer to sign authorization structs on user's behalf.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8dd59659-a368-4354-85f7-4cecdf09adb1?mode=deep",
+    "timestamp": "2026-05-31 22:40:30.639292",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee (breakpoint boundary)] Can feeSetter set settlementFeeCbp0 (index=0, TTM=0) to MAX_SETTLEMENT_FEE_0_DAYS/CBP and settlementFeeCbp1 (index=1, TTM=1 day) to 0 under the precondition that the piecewise linear interpolation for TTM in [0, 1 day) uses feeLower=cbp0*CBP and feeUpper=cbp1*CBP, triggering a fee schedule where TTM just above 0 has a high fee but TTM at exactly 1 day has 0 fee, violating the invariant that settlement fees should be smooth and predictable near breakpoints, causing scoped impact: takers near maturity face unexpectedly high fees while takers at exactly 1 day TTM pay zero? Proof idea: set cbp0=MAX/CBP, cbp1=0, compute settlementFee(id, 1) and settlementFee(id, 86399) and assert large discontinuity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_534b3edf-b324-4ac2-9689-a50b82eb94b2?mode=deep",
+    "timestamp": "2026-05-31 22:40:42.987356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee + take (pendingFee calculation)] Can feeSetter call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) immediately before a large take() under the precondition that the market has a long TTM (e.g., 360 days) and the buyer is acquiring a large credit position, triggering buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(MAX_CONTINUOUS_FEE * timeToMaturity, WAD) to overflow uint128 if buyerCreditIncrease * MAX_CONTINUOUS_FEE * timeToMaturity > type(uint128).max * WAD, violating the invariant that pendingFee must fit in uint128, causing scoped impact: take() reverts with overflow, DoS of large credit positions? Proof idea: fuzz buyerCreditIncrease near type(uint128).max with MAX_CONTINUOUS_FEE and TTM=360 days, assert toUint128() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9917e9ff-3c52-4e64-bf5a-67c253120908?mode=deep",
+    "timestamp": "2026-05-31 22:40:55.918397",
+    "report_generated": false
+  }
+]
