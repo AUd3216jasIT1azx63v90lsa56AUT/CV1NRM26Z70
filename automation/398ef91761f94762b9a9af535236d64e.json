@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2.permitTransferFrom / MidnightBundles.pullToken] Can an unprivileged lender under a front-running scenario trigger a third party consuming the Permit2 nonce before MidnightBundles.pullToken executes, causing pullToken to revert with InvalidNonce while the ERC2612 path silently tolerates the same race via try/catch, violating the undocumented asymmetry invariant that both permit paths should degrade gracefully, causing scoped impact: missing edge-case test coverage for Permit2 front-run nonce consumption vs ERC2612 tolerance? Proof idea: unit test where a third party calls Permit2.permitTransferFrom with the same nonce before the bundler call and assert that PermitKind.Permit2 reverts while PermitKind.ERC2612 succeeds, then check whether IPermit2.sol or MidnightBundles.sol documents this asymmetry.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3178c83-e2cf-45b7-807a-5a9146c0d99f?mode=deep",
+    "timestamp": "2026-05-31 17:54:06.708327",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 interface declaration] Can an integrator under the assumption that IPermit2 is the complete Permit2 interface trigger incorrect nonce management by relying solely on IPermit2.sol, which omits nonceBitmap, invalidateUnorderedNonces, permitWitnessTransferFrom, and permitBatchTransferFrom, violating the documentation invariant that the interface accurately represents the callable surface of the canonical Permit2 contract, causing scoped impact: invariant documentation mismatch — IPermit2.sol does not document that it is an intentionally narrowed subset? Proof idea: diff IPermit2.sol against the canonical Permit2 ISignatureTransfer interface in test/vendor/Permit2.sol and assert that every omitted function is either commented as intentionally excluded or documented as out-of-scope.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_899134ee-f8d2-4d9b-9bcd-ca7e1f83a90e?mode=deep",
+    "timestamp": "2026-05-31 17:54:18.826195",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2.permitTransferFrom calldata vs memory] Can an integrator under the assumption that IPermit2.permitTransferFrom matches the canonical Permit2 ABI trigger an incorrect assumption about the PermitTransferFrom parameter location qualifier, given that IPermit2.sol declares it as calldata while the real Permit2 ISignatureTransfer declares it as memory, violating the documentation invariant that the interface is ABI-compatible with the deployed Permit2, causing scoped impact: misleading comment / documentation mismatch on parameter mutability? Proof idea: compare the function selector and ABI encoding of IPermit2.permitTransferFrom(calldata) vs ISignatureTransfer.permitTransferFrom(memory) and assert they produce identical selectors, then document whether the discrepancy is safe or misleading.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c98a0a49-baa6-40c3-a89d-924dc44a6210?mode=deep",
+    "timestamp": "2026-05-31 17:54:31.052876",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged lender under a fee-on-transfer loan token scenario trigger pullToken via PermitKind.Permit2 to transfer amount tokens from the owner but have MidnightBundles receive fewer tokens due to the transfer fee, violating the undocumented invariant that MidnightBundles.balance increases by exactly amount after pullToken, causing scoped impact: missing edge-case test coverage for fee-on-transfer tokens through the Permit2 path? Proof idea: deploy a fee-on-transfer ERC20, sign a Permit2 permit for amount, call buyWithAssetsTargetAndWithdrawCollateral with PermitKind.Permit2, and assert that the bundler's received balance equals amount minus fee, then check whether IPermit2.sol or MidnightBundles documents this assumption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_082df75e-7cd0-4b05-b1f2-a176477c8a98?mode=deep",
+    "timestamp": "2026-05-31 17:54:43.985503",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged lender under a scenario where TokenPermissions.amount differs from SignatureTransferDetails.requestedAmount trigger a partial pull where only requestedAmount is transferred despite the permit authorizing a larger amount, violating the undocumented invariant that pullToken always transfers exactly the amount parameter, causing scoped impact: missing edge-case test coverage — IPermit2.sol does not document that requestedAmount can be less than permitted.amount? Proof idea: sign a Permit2 permit for amount=1000 but call pullToken with requestedAmount=500, assert only 500 is transferred, and verify no test in MidnightBundlesTest.sol covers this partial-amount scenario.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8fc64e7a-d1a7-4889-959c-19df8adf93af?mode=deep",
+    "timestamp": "2026-05-31 17:54:57.006259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / Certora specs] Can the absence of any Certora rule or invariant covering MidnightBundles.pullToken or IPermit2.permitTransferFrom allow a token-balance desync between the amount pulled via Permit2 and the amount subsequently approved and transferred to Midnight, violating the formal verification invariant that all token flows through the bundler are accounted for, causing scoped impact: unsafe assumption in Certora specs — no spec models the Permit2 token transfer path? Proof idea: grep certora/specs/ for any reference to Permit2, pullToken, or PermitKind and assert zero matches, then document the gap as an unverified assumption in the formal model.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_257e493c-772a-48bd-95ec-9fd8d3e109cd?mode=deep",
+    "timestamp": "2026-05-31 17:55:09.709345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged lender under a deadline boundary scenario trigger pullToken with deadline equal to block.timestamp to succeed or fail depending on whether Permit2 uses strict less-than or less-than-or-equal comparison, violating the undocumented invariant about deadline inclusivity, causing scoped impact: missing edge-case test coverage for Permit2 deadline == block.timestamp boundary? Proof idea: unit test pullToken with PermitKind.Permit2 where deadline == block.timestamp and deadline == block.timestamp - 1, assert the exact revert boundary, and verify MidnightBundlesTest.sol testBuyBuyerAssetsTargetPermit2 only uses deadline = block.timestamp + 1 and never tests the boundary.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e87a0603-a350-43d9-a673-57738326fefc?mode=deep",
+    "timestamp": "2026-05-31 17:55:23.039607",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged lender under a scenario where deadline equals zero trigger pullToken via PermitKind.Permit2 to revert with SignatureExpired, violating the undocumented invariant that zero deadline is always invalid, causing scoped impact: missing edge-case test coverage for Permit2 deadline=0? Proof idea: fuzz deadline in [0, block.timestamp-1, block.timestamp, block.timestamp+1, type(uint256).max] and assert revert/success boundaries match Permit2 semantics, then verify no test in MidnightBundlesTest.sol covers deadline=0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad3231fb-1706-4eaa-806f-2ba5f4844c77?mode=deep",
+    "timestamp": "2026-05-31 17:55:36.518047",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a nonce replay scenario trigger pullToken twice with the same Permit2 nonce to succeed on the first call and revert on the second, violating the undocumented invariant that Permit2 nonces are single-use unordered bitmap nonces, causing scoped impact: missing edge-case test coverage for Permit2 nonce replay? Proof idea: call buyWithAssetsTargetAndWithdrawCollateral twice with identical Permit2 permit data (same nonce), assert the second call reverts with InvalidNonce, and verify MidnightBundlesTest.sol has no replay test.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3625c7d1-6ffc-482d-a3cc-bde092ce2752?mode=deep",
+    "timestamp": "2026-05-31 17:55:50.290003",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the Permit2 signature was created for a different spender (not MidnightBundles) trigger pullToken to revert, violating the undocumented invariant that the spender field in the Permit2 EIP-712 hash must equal address(MidnightBundles), causing scoped impact: missing edge-case test coverage for wrong-spender Permit2 signatures? Proof idea: sign a Permit2 permit with spender=address(0xdead) instead of address(midnightBundles), call pullToken with PermitKind.Permit2, assert revert, and verify no test covers this.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_52277f87-6435-4d17-a180-2115b1895b2b?mode=deep",
+    "timestamp": "2026-05-31 17:56:03.562231",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the Permit2 signature was created for a different token trigger pullToken to revert, violating the undocumented invariant that TokenPermissions.token must match the loan token being pulled, causing scoped impact: missing edge-case test coverage for wrong-token Permit2 signatures? Proof idea: sign a Permit2 permit for collateralToken1 but call pullToken for loanToken, assert revert, and verify no test in MidnightBundlesTest.sol covers token mismatch.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c6e948a3-f809-4204-ae7b-d86141e6ed2c?mode=deep",
+    "timestamp": "2026-05-31 17:56:18.782644",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the Permit2 signature was created for a larger amount than requested trigger pullToken to succeed and transfer only requestedAmount, violating the undocumented invariant that the permit amount is an upper bound not an exact amount, causing scoped impact: missing edge-case test coverage and documentation mismatch — IPermit2.sol does not document the permitted.amount-as-ceiling semantics? Proof idea: sign permit for amount=2000, call pullToken with amount=1000, assert 1000 is transferred and the nonce is consumed, verify no test covers this.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_830f4694-a488-44fb-a5d2-1fcd2626b759?mode=deep",
+    "timestamp": "2026-05-31 17:56:32.807768",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the owner is an ERC1271 smart contract wallet trigger pullToken via PermitKind.Permit2 to succeed using isValidSignature, violating the undocumented invariant that Permit2 only supports EOA ECDSA signatures, causing scoped impact: missing edge-case test coverage for ERC1271 smart contract wallet owners in the Permit2 path? Proof idea: deploy an ERC1271 mock wallet as the lender, sign a Permit2 permit via isValidSignature, call pullToken with PermitKind.Permit2, assert success, and verify no test in MidnightBundlesTest.sol covers ERC1271 owners.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bfd86e1a-5947-45e6-a820-206e10d264dc?mode=deep",
+    "timestamp": "2026-05-31 17:56:45.666049",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the owner has not approved Permit2 for the token trigger pullToken via PermitKind.Permit2 to revert inside Permit2's transferFrom, violating the undocumented invariant that Permit2 requires a prior ERC20 approval from owner to Permit2, causing scoped impact: missing edge-case test coverage — IPermit2.sol does not document the prerequisite ERC20 allowance to Permit2? Proof idea: call pullToken with PermitKind.Permit2 without first calling loanToken.approve(PERMIT2, amount), assert revert, and verify testBuyBuyerAssetsTargetPermit2 always pre-approves Permit2 and never tests the missing-approval path.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e046c55-b8a0-45fa-92d0-af92fd9aa2ff?mode=deep",
+    "timestamp": "2026-05-31 17:56:59.418907",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the owner has approved Permit2 for less than amount trigger pullToken via PermitKind.Permit2 to revert inside Permit2's transferFrom due to insufficient ERC20 allowance, violating the undocumented invariant that Permit2 requires allowance >= requestedAmount, causing scoped impact: missing edge-case test coverage for partial Permit2 ERC20 allowance? Proof idea: approve Permit2 for amount-1, sign permit for amount, call pullToken, assert revert, and verify no test covers this.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf8c9150-04be-4eb8-b42b-6b8e4d845d98?mode=deep",
+    "timestamp": "2026-05-31 17:57:12.754551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where amount equals zero trigger pullToken via PermitKind.Permit2 to succeed as a no-op or revert, violating the undocumented invariant about zero-amount Permit2 transfers, causing scoped impact: missing edge-case test coverage for zero-amount Permit2 permits? Proof idea: sign a Permit2 permit for amount=0, call pullToken with PermitKind.Permit2 and amount=0, assert behavior (success or revert), and verify no test in MidnightBundlesTest.sol covers amount=0 for the Permit2 path.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a7678270-78b7-4893-a9e9-70918758d01d?mode=deep",
+    "timestamp": "2026-05-31 17:57:25.689191",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the Permit2 signature is malformed (wrong length, wrong v value, or all zeros) trigger pullToken to revert with a non-descriptive error, violating the undocumented invariant that invalid signatures always revert with a clear error, causing scoped impact: missing edge-case test coverage for malformed Permit2 signatures? Proof idea: fuzz the signature bytes in abi.encode(nonce, deadline, signature) with lengths [0, 32, 64, 65, 96] and assert all malformed cases revert, then verify no test covers malformed signatures.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79bc4520-06b0-495f-8f59-698082d02a75?mode=deep",
+    "timestamp": "2026-05-31 17:57:39.566543",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the nonce is at a word boundary (nonce = 255, 256, 257) trigger pullToken via PermitKind.Permit2 to correctly mark the nonce as consumed in the bitmap, violating the undocumented invariant that nonce bitmap word boundaries are handled correctly, causing scoped impact: missing edge-case test coverage for Permit2 nonce bitmap word boundaries? Proof idea: fuzz nonce in [0, 255, 256, 257, type(uint256).max] and assert each nonce is consumed exactly once and the correct word in nonceBitmap is updated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1fd22eac-5961-4903-b507-6cf4e1884212?mode=deep",
+    "timestamp": "2026-05-31 17:57:52.139424",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where nonce equals type(uint256).max trigger pullToken via PermitKind.Permit2 to succeed or revert due to bitmap overflow, violating the undocumented invariant that all uint256 nonce values are valid, causing scoped impact: missing edge-case test coverage for maximum nonce value in Permit2? Proof idea: sign a Permit2 permit with nonce=type(uint256).max, call pullToken, assert success or revert, and verify no test covers this boundary.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2258d36-e53e-4d56-956d-8256ca48b6c6?mode=deep",
+    "timestamp": "2026-05-31 17:58:05.637346",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / MidnightBundles.pullToken] Can an unprivileged lender under a scenario where the Permit2 signature was created on a different chain trigger pullToken to revert due to domain separator mismatch, violating the undocumented invariant that Permit2 signatures are chain-specific, causing scoped impact: missing edge-case test coverage for cross-chain Permit2 signature replay? Proof idea: sign a Permit2 permit using a domain separator for chainId=1 but execute on a fork with chainId=31337, assert revert, and verify IPermit2.sol does not document the DOMAIN_SEPARATOR dependency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85ffc1f8-bf05-4474-9a3d-1747c67d4b29?mode=deep",
+    "timestamp": "2026-05-31 17:58:18.499913",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 interface / DOMAIN_SEPARATOR omission] Can an integrator under the assumption that IPermit2.sol exposes all necessary functions trigger incorrect domain separator computation by not having access to DOMAIN_SEPARATOR() through the interface, violating the documentation invariant that the interface provides all functions needed to construct valid Permit2 signatures, causing scoped impact: invariant documentation mismatch — IPermit2.sol omits DOMAIN_SEPARATOR() which is required to construct valid signatures off-chain? Proof idea: attempt to construct a valid Permit2 signature using only IPermit2.sol without casting to the full Permit2 interface, assert that DOMAIN_SEPARATOR is inaccessible, and verify the test helper _permit2() in MidnightBundlesTest.sol must cast to VendorPermit2 to access DOMAIN_SEPARATOR.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6f9a55e-3fd7-4acd-b2e5-5769119a98ce?mode=deep",
+    "timestamp": "2026-05-31 17:58:31.948113",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / nonceBitmap omission] Can an integrator under the assumption that IPermit2.sol exposes all necessary functions trigger incorrect nonce selection by not having access to nonceBitmap() through the interface, violating the documentation invariant that the interface provides all functions needed to safely manage Permit2 nonces, causing scoped impact: invariant documentation mismatch — IPermit2.sol omits nonceBitmap() which is required to check whether a nonce is already consumed? Proof idea: attempt to check nonce availability using only IPermit2.sol without casting to the full Permit2 interface, assert that nonceBitmap is inaccessible, and document the gap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a83d5c5-5cf9-4c9c-badd-7aa8c9f8bb0a?mode=deep",
+    "timestamp": "2026-05-31 17:58:44.695495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / invalidateUnorderedNonces omission] Can an integrator under the assumption that IPermit2.sol exposes all necessary functions trigger inability to cancel a Permit2 permit by not having access to invalidateUnorderedNonces() through the interface, violating the documentation invariant that the interface provides all functions needed to revoke outstanding permits, causing scoped impact: invariant documentation mismatch — IPermit2.sol omits invalidateUnorderedNonces() which is required to cancel signed permits? Proof idea: attempt to cancel a Permit2 permit using only IPermit2.sol, assert that invalidateUnorderedNonces is inaccessible, and verify no comment in IPermit2.sol documents this omission.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af8ffde9-fb1e-40de-8755-821f7ebddfdb?mode=deep",
+    "timestamp": "2026-05-31 17:58:57.690841",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: IPermit2 / permitWitnessTransferFrom omission] Can an integrator under the assumption that IPermit2.sol exposes all necessary functions trigger incorrect assumptions about Permit2 capabilities by not having access to permitWitnessTransferFrom() through the interface, violating the documentation invariant that the interface accurately represents the Permit2 signature transfer surface, causing scoped impact: invariant documentation mismatch — IPermit2.sol omits permitWitnessTransferFrom() without documenting the intentional exclusion? Proof idea: diff IPermit2.sol against ISignatureTransfer in test/vendor/Permit2.sol and assert that all omitted functions are either documented as excluded or are genuinely unused by MidnightBundles.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1a2f6127-3b50-47a0-8593-44b63278abc7?mode=deep",
+    "timestamp": "2026-05-31 17:59:10.492155",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged lender under a scenario where the Permit2 permit data is ABI-decoded with wrong types trigger pullToken to revert or silently use wrong values due to abi.decode(permit.data, (uint256, uint256, bytes)) assuming a specific encoding, violating the undocumented invariant that the Permit2 permit.data encoding is exactly (nonce, deadline, signature), causing scoped impact: missing edge-case test coverage for malformed permit.data ABI encoding in the Permit2 path? Proof idea: fuzz permit.data with truncated, padded, or reordered ABI encodings and assert all malformed cases revert cleanly without silent value corruption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_963267f0-6067-4e9d-9627-92fb9cb9234a?mode=deep",
+    "timestamp": "2026-05-31 17:59:23.493222",
+    "report_generated": false
+  }
+]
