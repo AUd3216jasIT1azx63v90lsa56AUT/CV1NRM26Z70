@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take onSell callback] Can an attacker who controls the sellerCallback under the precondition that the market has a liquidatorGate and the callback is not whitelisted trigger take -> onSell callback -> callback calls liquidate(msg.sender = sellerCallback) -> gate checks canLiquidate(sellerCallback), violating the invariant that liquidator gate must not be bypassed through alternate liquidation or callback paths, causing scoped impact: callback contract bypasses liquidatorGate check because liquidationLocked only prevents liquidation of the seller in the current take, not other borrowers? Proof idea: deploy sellerCallback that calls liquidate on a different borrower, assert gate enforced on callback address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e3912b5-d34c-4312-b0da-450aa008beff?mode=deep",
+    "timestamp": "2026-05-31 19:27:51.680112",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.multicall + take] Can an attacker use multicall to sequence take calls across a gated market under the precondition that the attacker is not whitelisted by the enterGate trigger multicall([take(gatedOffer, ..., attacker)]) -> each take checks gate independently, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: multicall does not provide any additional bypass since each take is checked independently? Proof idea: fuzz multicall with multiple take calls in gated market, assert each take reverts with BuyerGatedFromIncreasingCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44f8cde9-8099-40c2-83e8-e8a839ea03d8?mode=deep",
+    "timestamp": "2026-05-31 19:28:03.907643",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: EcrecoverRatifier.cancelRoot] Can an attacker who is authorized by the maker cancel a valid Merkle root under the precondition that isAuthorized[maker][attacker] = true trigger cancelRoot(maker, root) -> isRootCanceled[maker][root] = true -> all offers under that root become unfillable, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: attacker DoS's all of maker's outstanding offers by canceling their root? Proof idea: authorize attacker, attacker calls cancelRoot, assert all offers under root revert with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6707eb8e-024a-48c3-ae70-dd17af0d6090?mode=deep",
+    "timestamp": "2026-05-31 19:28:16.349066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that isAuthorized is not scoped by market under the precondition that a user authorizes an operator for one market trigger operator calls take in a gated market on behalf of the user -> gate checks canIncreaseCredit(user) = true (user is whitelisted) -> credit increases for user in gated market, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: operator routes credit increase in a gated market the user never intended to participate in? Proof idea: whitelist user in gated market, user authorizes operator for a different purpose, operator calls take in gated market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e6902778-7e5c-4eba-b3ab-a2e851d85dc2?mode=deep",
+    "timestamp": "2026-05-31 19:28:29.054544",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker pass an empty takes[] array under the precondition that targetUnits = 0 trigger buyWithUnitsTargetAndWithdrawCollateral with takes = [] and targetUnits = 0 -> loop does not execute -> filledUnits = 0 == targetUnits -> collateralWithdrawals executed on takes[0].offer.market which reverts with array out-of-bounds, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: bundler reverts before gate check, no bypass but potential DoS? Proof idea: call bundler with empty takes array, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70210524-944c-4691-a0e6-3b22760eacdd?mode=deep",
+    "timestamp": "2026-05-31 19:28:43.011433",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an attacker manipulate the referralFeePct to cause targetFilledSellerAssets to overflow under the precondition that referralFeePct is close to WAD trigger supplyCollateralAndSellWithAssetsTarget with referralFeePct = WAD - 1 -> referralFeeAssets = targetSellerAssets.mulDivDown(WAD-1, 1) -> targetFilledSellerAssets = targetSellerAssets + referralFeeAssets overflows, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: overflow causes incorrect fill target, potentially allowing gate bypass through arithmetic? Proof idea: fuzz referralFeePct near WAD, assert no overflow in targetFilledSellerAssets computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_007685a5-199c-433f-bec3-f6dbf6780278?mode=deep",
+    "timestamp": "2026-05-31 19:28:55.267980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check uses the buyer/seller derived from offer.buy under the precondition that offer.buy is flipped from what the taker expects trigger take(offer with offer.buy=true, taker=attacker) -> buyer = offer.maker, seller = taker -> gate checks canIncreaseDebt(taker) -> if taker not whitelisted, revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker confirms gate correctly identifies roles from offer.buy flag? Proof idea: fuzz offer.buy flag, assert gate called with correct buyer/seller addresses.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f277341-39c2-442f-b22f-2d00f913aef7?mode=deep",
+    "timestamp": "2026-05-31 19:29:08.383745",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker use a flashLoan callback to call take in a gated market under the precondition that the market has a non-zero enterGate and the flashLoan callback contract is not whitelisted trigger flashLoan -> onFlashLoan callback -> callback calls take in gated market -> gate checks canIncreaseCredit(callback) = false -> revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: flashLoan callback cannot bypass enterGate? Proof idea: deploy flashLoan callback that calls take in gated market, assert BuyerGatedFromIncreasingCredit revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5c98fca-a425-4bd7-85c7-8f19e5b1b69e?mode=deep",
+    "timestamp": "2026-05-31 19:29:21.551980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate is called with view semantics (canIncreaseCredit is view) under the precondition that the gate contract has mutable state that changes between the gate check and the end of the transaction trigger take -> canIncreaseCredit returns true (state A) -> callback executes -> gate state changes to B -> transaction completes with credit increase despite gate now returning false, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: TOCTOU race between gate check and credit increase? Proof idea: deploy gate with mutable state, change state in callback, assert credit increase is committed despite gate state change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e4c3c6b0-2090-4fb6-bc72-034513d318d4?mode=deep",
+    "timestamp": "2026-05-31 19:29:34.916904",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for credit increase uses buyerCreditIncrease which depends on _updatePosition being called first under the precondition that _updatePosition changes buyerPos.credit or buyerPos.debt trigger take -> _updatePosition(buyer) -> buyerPos updated with loss factor -> buyerCreditIncrease recomputed -> gate check on updated value, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: loss factor update changes buyerCreditIncrease from non-zero to zero, bypassing gate check? Proof idea: create market with bad debt, trigger loss factor update in _updatePosition, assert gate check uses post-update credit/debt values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa0e2792-005e-4982-b5b0-6b7b2f66921a?mode=deep",
+    "timestamp": "2026-05-31 19:29:49.489846",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check is skipped when buyerCreditIncrease == 0 even if the buyer's net position improves under the precondition that the buyer has debt D and takes units U where U <= D trigger take -> buyerCreditIncrease = 0 -> gate skipped -> buyerPos.debt -= U (debt reduced) -> buyer's net position improves without gate approval, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: de-whitelisted buyer reduces debt (improves position) in a gated market without gate approval? Proof idea: whitelist buyer, create debt, delist buyer, take units <= debt, assert debt reduced without gate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5287616-9514-4b8d-8d4e-68b5f5e26c9f?mode=deep",
+    "timestamp": "2026-05-31 19:30:03.047330",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check is skipped when sellerDebtIncrease == 0 even if the seller's net position changes under the precondition that the seller has credit C and takes units U where U <= C trigger take -> sellerDebtIncrease = 0 -> gate skipped -> sellerPos.credit -= U (credit reduced) -> seller's net position changes without gate approval, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: de-whitelisted seller reduces credit in a gated market without gate approval? Proof idea: whitelist seller, create credit, delist seller, take units <= credit, assert credit reduced without gate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43f3928b-1f1b-455f-8190-bb74a1992baf?mode=deep",
+    "timestamp": "2026-05-31 19:30:17.031034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker use a ratifier that calls back into Midnight.setIsAuthorized under the precondition that the ratifier is authorized by the maker and the ratifier is a contract that can call setIsAuthorized trigger take -> isRatified(offer, data) -> ratifier calls midnight.setIsAuthorized(attacker, true, maker) -> ratifier returns CALLBACK_SUCCESS -> take proceeds with attacker now authorized, violating the invariant that ratifier approval must bind correct maker, causing scoped impact: ratifier callback grants attacker full authorization over maker's Midnight state? Proof idea: deploy ratifier that calls setIsAuthorized in isRatified, assert authorization is granted during take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f4c8dcb-cae3-4705-964a-27cd4caab48d?mode=deep",
+    "timestamp": "2026-05-31 19:30:32.159993",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the ratifier check (line 355-356) occurs before the gate check (lines 397-406) under the precondition that the ratifier is a contract that reads gate state trigger take -> isRatified called -> ratifier reads gate.canIncreaseCredit(buyer) = false -> ratifier still returns CALLBACK_SUCCESS -> gate check later reverts, violating the invariant that ratifier approval must bind correct maker, causing scoped impact: ratifier and gate checks are independent, no bypass but ordering matters for ratifier logic? Proof idea: deploy ratifier that reads gate state, assert ratifier is called before gate check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a59834bb-fc7c-4096-8bcb-28128d86eff5?mode=deep",
+    "timestamp": "2026-05-31 19:30:45.765928",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker pass takes[] where takes[i].offer.market has a different enterGate than takes[0].offer.market under the precondition that the InconsistentMarket check uses toId() which includes the enterGate in the market hash trigger bundler -> toId(takes[i].offer.market) != id -> InconsistentMarket revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker cannot mix gated and non-gated markets in a single bundle? Proof idea: create two markets with same params but different enterGate, pass both in takes[], assert InconsistentMarket revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3f238c8-d917-4ab5-ac85-0ffb22022bcc?mode=deep",
+    "timestamp": "2026-05-31 19:31:00.842129",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check passes the buyer address but the buyer's identity depends on offer.buy under the precondition that an attacker crafts an offer with offer.buy = false (sell offer) where the attacker is the maker trigger take(sellOffer, taker=victim) -> buyer = taker (victim), seller = offer.maker (attacker) -> gate checks canIncreaseDebt(attacker) -> if attacker not whitelisted, revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker as maker of sell offer cannot bypass debt gate? Proof idea: delist attacker, attacker creates sell offer, victim takes it, assert SellerGatedFromIncreasingDebt revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e466b1cf-35da-407a-9138-7bc76065b01a?mode=deep",
+    "timestamp": "2026-05-31 19:31:14.012037",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseDebt is only called when sellerDebtIncrease > 0 under the precondition that the seller has existing credit C >= units trigger take -> sellerCreditDecrease = min(units, C) = units -> sellerDebtIncrease = units - units = 0 -> canIncreaseDebt not called -> seller's credit decreases without gate approval, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: de-whitelisted seller can reduce their credit position in a gated market? Proof idea: whitelist seller, create credit, delist seller, take units <= credit, assert canIncreaseDebt not called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9043fd6d-9e48-482a-ae28-6910027aa6cb?mode=deep",
+    "timestamp": "2026-05-31 19:31:28.824683",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.liquidate] Can an attacker exploit the fact that the liquidatorGate check uses msg.sender (not taker or any other identity) under the precondition that the market has a liquidatorGate and the attacker calls liquidate directly trigger liquidate(msg.sender = attacker) -> gate checks canLiquidate(attacker) -> if attacker not whitelisted, LiquidatorGatedFromLiquidating revert, violating the invariant that liquidator gate must not be bypassed through alternate liquidation or callback paths, causing scoped impact: direct liquidation correctly enforces gate on msg.sender? Proof idea: fuzz msg.sender against gate whitelist, assert gate called with msg.sender.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5440004a-22cc-49c0-912d-726f23b5fc9f?mode=deep",
+    "timestamp": "2026-05-31 19:31:42.098328",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address which for a buy offer is offer.maker under the precondition that the maker is whitelisted but the taker is not trigger take(buyOffer) -> buyer = offer.maker (whitelisted) -> canIncreaseCredit(maker) = true -> gate passes -> seller = taker (not whitelisted) -> canIncreaseDebt(taker) = false -> revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: taker cannot bypass debt gate even when maker is whitelisted? Proof idea: whitelist maker, delist taker, take buy offer, assert SellerGatedFromIncreasingDebt revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e250b7c6-43b8-4291-a333-99d5e0b2f77e?mode=deep",
+    "timestamp": "2026-05-31 19:31:56.976019",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check occurs after the consumed state is updated (lines 366-373) under the precondition that the gate check reverts trigger take -> consumed[maker][group] += units -> gate check reverts -> entire transaction reverts -> consumed state rolled back, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: no consumed state corruption because revert rolls back all state? Proof idea: assert consumed state is unchanged after a gate-reverted take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea3237b6-9a1f-4857-9882-7cd36f46c2d1?mode=deep",
+    "timestamp": "2026-05-31 19:32:10.519927",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is a view function that can be manipulated by a reentrant callback under the precondition that the gate reads from Midnight state that changes during the callback trigger take -> canIncreaseCredit(buyer) = true (reads Midnight state) -> callback changes Midnight state -> gate would now return false but check already passed, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: TOCTOU between gate check and callback execution allows credit increase despite gate state change? Proof idea: deploy gate that reads Midnight.creditOf, change credit in callback, assert gate check uses pre-callback state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_257e3556-a4b8-441b-8d32-74d35f893fe8?mode=deep",
+    "timestamp": "2026-05-31 19:32:23.350678",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseDebt is skipped when sellerDebtIncrease == 0 but the seller's total debt can still increase through a subsequent take in the same multicall under the precondition that the seller has credit C and takes multiple offers trigger multicall([take(units1 <= C), take(units2 > 0)]) -> first take: sellerDebtIncrease = 0, gate skipped, credit reduced -> second take: sellerDebtIncrease > 0, gate checked, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: multicall sequences can reduce credit then increase debt across two takes, with gate only checked on the second? Proof idea: fuzz multicall sequences with varying units, assert gate called on each take where debtIncrease > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a0b13c9-b87e-4ff3-a469-510212693e9b?mode=deep",
+    "timestamp": "2026-05-31 19:32:36.720590",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's credit increase depends on _updatePosition which may change buyerPos.debt under the precondition that the buyer has pending loss factor updates trigger take -> _updatePosition(buyer) -> buyerPos.credit updated with loss factor -> buyerCreditIncrease = zeroFloorSub(units, updatedDebt) -> gate check on updated value, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: loss factor update changes buyerCreditIncrease from zero to non-zero, triggering gate check that would have been skipped? Proof idea: create market with bad debt, trigger loss factor update, assert gate check uses post-update values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85342fcb-ded7-416b-9b05-68ae23b6bc1a?mode=deep",
+    "timestamp": "2026-05-31 19:32:50.272758",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer can be the same as the taker for a sell offer under the precondition that the taker is both the buyer and the seller in different takes trigger multicall([take(sellOffer1, taker=A), take(buyOffer2, taker=A)]) -> first take: buyer=A, gate checks canIncreaseCredit(A) -> second take: seller=A, gate checks canIncreaseDebt(A), violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker uses multicall to accumulate both credit and debt in a gated market? Proof idea: fuzz multicall with mixed buy/sell offers for same taker, assert gate called correctly for each.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c86416a3-d670-457a-9080-26e5dc47e152?mode=deep",
+    "timestamp": "2026-05-31 19:33:03.888671",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is a view function that can revert under the precondition that the gate contract is a malicious contract that reverts on canIncreaseCredit trigger take -> IEnterGate(enterGate).canIncreaseCredit(buyer) reverts -> take reverts with the gate's revert reason, violating the invariant that exit paths must remain available even when enter gate reverts, causing scoped impact: malicious gate can DoS all credit increases in a market? Proof idea: deploy reverting gate, assert take reverts when buyerCreditIncrease > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c872b55-e745-43b5-8f26-69dea94ef876?mode=deep",
+    "timestamp": "2026-05-31 19:33:17.987905",
+    "report_generated": false
+  }
+]
