@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseDebt is a view function that can revert under the precondition that the gate contract is a malicious contract that reverts on canIncreaseDebt trigger take -> IEnterGate(enterGate).canIncreaseDebt(seller) reverts -> take reverts, violating the invariant that exit paths must remain available even when enter gate reverts, causing scoped impact: malicious gate can DoS all debt increases in a market while exit paths (repay, withdraw) remain available? Proof idea: deploy reverting gate, assert take reverts when sellerDebtIncrease > 0 but repay and withdraw succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_422c4e7e-864f-4569-ba04-09036f0f22a0?mode=deep",
+    "timestamp": "2026-05-31 20:11:36.696091",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.liquidate] Can an attacker exploit the fact that the liquidatorGate check uses msg.sender but the liquidate function can be called through Midnight.multicall under the precondition that the market has a liquidatorGate and the attacker calls multicall([liquidate(...)]) trigger multicall -> delegatecall -> liquidate -> gate checks canLiquidate(msg.sender) where msg.sender is the original caller (preserved through delegatecall), violating the invariant that liquidator gate must not be bypassed through alternate liquidation or callback paths, causing scoped impact: multicall does not bypass liquidatorGate because delegatecall preserves msg.sender? Proof idea: call multicall([liquidate(...)]) with non-whitelisted msg.sender, assert LiquidatorGatedFromLiquidating revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f59381db-1508-47f1-930a-aaf5c9f2b2b1?mode=deep",
+    "timestamp": "2026-05-31 20:11:49.805116",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the ratifier check requires isAuthorized[offer.maker][offer.ratifier] but authorization is coarse-grained under the precondition that the maker has authorized a ratifier for one purpose and the ratifier can be used for any offer trigger take with offer.ratifier = authorizedRatifier -> isAuthorized[maker][ratifier] = true -> ratifier.isRatified(offer, data) called -> ratifier validates any offer attributed to maker, violating the invariant that ratifier approval must bind correct maker, causing scoped impact: maker's authorization of a ratifier for one offer set allows the ratifier to validate any offer with that maker? Proof idea: authorize ratifier, craft different offer, assert ratifier validates it if ratifier logic allows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f595918a-2e04-49b1-9f91-2c5fd507324a?mode=deep",
+    "timestamp": "2026-05-31 20:12:02.044932",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's identity for a buy offer is offer.maker which is set by the attacker in the offer struct under the precondition that the attacker crafts an offer with offer.maker = whitelisted address and offer.buy = true trigger take(buyOffer, taker=attacker) -> buyer = offer.maker (whitelisted) -> canIncreaseCredit(whitelisted) = true -> credit increases for whitelisted maker -> seller = taker (attacker) -> canIncreaseDebt(attacker) = false -> revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker cannot bypass debt gate by setting maker to whitelisted address? Proof idea: set offer.maker to whitelisted address, attacker as taker, assert SellerGatedFromIncreasingDebt revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6760e95b-441c-4568-8175-99a66d5f7de5?mode=deep",
+    "timestamp": "2026-05-31 20:12:14.950192",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's credit increase is computed after _updatePosition which may change the buyer's debt under the precondition that the buyer has a pending loss factor update that reduces their debt trigger take -> _updatePosition(buyer) -> buyerPos.debt reduced by loss factor -> buyerCreditIncrease = zeroFloorSub(units, reducedDebt) > 0 -> gate check triggered -> if buyer not whitelisted, revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: loss factor update causes gate check to trigger for a buyer who previously had enough debt to absorb units? Proof idea: create market with bad debt, trigger loss factor update, assert gate check triggered for buyer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2dddea6-79cc-43c7-96f8-c16dac1c95b9?mode=deep",
+    "timestamp": "2026-05-31 20:12:28.291785",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseDebt is called with the seller address but the seller's debt increase depends on their existing credit under the precondition that the seller has credit C and takes units U where U > C trigger take -> sellerCreditDecrease = C -> sellerDebtIncrease = U - C > 0 -> canIncreaseDebt(seller) called -> if seller not whitelisted, revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: seller with partial credit cannot bypass debt gate for the incremental debt portion? Proof idea: create seller credit C, delist seller, take units > C, assert SellerGatedFromIncreasingDebt revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_29583d18-68eb-41f8-b7e3-89886c3377ba?mode=deep",
+    "timestamp": "2026-05-31 20:12:41.309650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's credit increase is computed using zeroFloorSub which saturates at zero under the precondition that the buyer has debt D and takes units U where U > D trigger take -> buyerCreditIncrease = zeroFloorSub(U, D) = U - D > 0 -> canIncreaseCredit(buyer) called -> if buyer not whitelisted, revert, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: buyer with partial debt cannot bypass credit gate for the incremental credit portion? Proof idea: create buyer debt D, delist buyer, take units > D, assert BuyerGatedFromIncreasingCredit revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c9c21dc4-5daf-4281-a054-930d9320c592?mode=deep",
+    "timestamp": "2026-05-31 20:12:55.428421",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's credit increase is computed using zeroFloorSub which can be zero even when units > 0 under the precondition that the buyer has debt D >= units trigger take -> buyerCreditIncrease = zeroFloorSub(units, D) = 0 -> gate check skipped -> buyerPos.debt -= units (debt reduced) -> buyer's net position improves without gate approval, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: de-whitelisted buyer can reduce debt in a gated market by taking sell offers? Proof idea: whitelist buyer, create debt D >= units, delist buyer, take units, assert debt reduced without gate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_519723bb-cddb-4a47-b5b2-4c7dc1ada8b3?mode=deep",
+    "timestamp": "2026-05-31 20:13:08.757732",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseDebt is called with the seller address but the seller's debt increase is computed using subtraction which can be zero even when units > 0 under the precondition that the seller has credit C >= units trigger take -> sellerDebtIncrease = units - min(units, C) = 0 -> gate check skipped -> sellerPos.credit -= units (credit reduced) -> seller's net position changes without gate approval, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: de-whitelisted seller can reduce credit in a gated market by taking buy offers? Proof idea: whitelist seller, create credit C >= units, delist seller, take units, assert credit reduced without gate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01cefced-3231-4b1c-945b-bbc9ad2f2684?mode=deep",
+    "timestamp": "2026-05-31 20:13:22.444448",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Gate or ratifier bypass allowing restricted markets, restricted liquidation, or restricted credit/debt increase to be accessed by unauthorized users'] [Function: Midnight.take] Can an attacker exploit the fact that the gate check for canIncreaseCredit is called with the buyer address but the buyer's credit increase is computed after _updatePosition which may change the buyer's credit under the precondition that the buyer has pending continuous fee crystallization trigger take -> _updatePosition(buyer) -> buyerPos.credit updated with pending fee -> buyerCreditIncrease = zeroFloorSub(units, updatedDebt) -> gate check on updated value, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: continuous fee crystallization changes buyerCreditIncrease, potentially triggering or skipping gate check? Proof idea: create buyer with pending continuous fee, trigger _updatePosition, assert gate check uses post-update values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_471955d7-8b79-4106-a85e-30a8f288f727?mode=deep",
+    "timestamp": "2026-05-31 20:13:36.497640",
+    "report_generated": false
+  }
+]
