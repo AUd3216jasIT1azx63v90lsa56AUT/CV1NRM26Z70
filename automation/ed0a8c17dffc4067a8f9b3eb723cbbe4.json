@@ -1,0 +1,38 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the authorized address is a Midnight gate contract, granting it operator access to A's account, and then use that gate's canIncreaseDebt or canLiquidate callbacks to manipulate A's debt or collateral state, violating the invariant that gate callbacks must not gain unauthorized operator access to user accounts? Proof idea: sign Authorization{authorized=maliciousGate}; submit; trigger take with maliciousGate as enterGate; assert gate's canIncreaseDebt callback can call Midnight functions on behalf of A.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1453f8d9-58f9-4f1c-ad8c-37b8c176dda9?mode=deep",
+    "timestamp": "2026-05-31 22:04:42.593758",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the full sequence is: A signs Authorization{authorized=X, isAuthorized=true, nonce=0, deadline=T}; attacker holds it; A signs Authorization{authorized=X, isAuthorized=false, nonce=0, deadline=T+1}; attacker submits the first (true) authorization; A's revocation (false) at nonce=0 is now invalid because nonce=0 is consumed; violating the invariant that the authorizer's most recently signed intent must be submittable? Proof idea: A signs auth_true{nonce=0}; A signs auth_false{nonce=0}; attacker submits auth_true; assert auth_false reverts with InvalidNonce; assert isAuthorized[A][X]=true despite A's intent to revoke.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_19a90277-c475-4e9e-9f78-2cfe34b91127?mode=deep",
+    "timestamp": "2026-05-31 22:04:54.409426",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the MIDNIGHT address is immutable but points to a proxy contract, and the proxy's implementation is upgraded to a malicious contract that always returns true for isAuthorized, causing the signer check (line 34) to accept any signature, violating the invariant that MIDNIGHT must always point to the canonical non-upgradeable Midnight instance? Proof idea: assert MIDNIGHT is immutable; assert Midnight has no proxy or upgrade mechanism; assert isAuthorized cannot be spoofed by a malicious MIDNIGHT implementation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c6341c56-27ee-4319-ae22-443ab9bd0e39?mode=deep",
+    "timestamp": "2026-05-31 22:05:06.737345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the full downstream effect is: EcrecoverAuthorizer grants operator X access to A's account; X calls midnight.repay(market, units, A, maliciousCallback, data) with a malicious callback that re-enters Midnight to drain A's collateral; violating the invariant that authorization granted via EcrecoverAuthorizer must not enable reentrancy-based fund extraction? Proof idea: sign Authorization{authorized=X}; submit; X calls repay with maliciousCallback; assert callback cannot re-enter withdrawCollateral on behalf of A.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_619d4c64-26df-4cd5-a438-52428d72f010?mode=deep",
+    "timestamp": "2026-05-31 22:05:19.536824",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the nonce[authorizer] is read from EcrecoverAuthorizer storage (not from Midnight), and verify that the two nonce systems (EcrecoverAuthorizer.nonce and any Midnight-side nonce) are independent, such that a nonce reset in one system does not affect the other, violating the invariant that nonce[authorizer] in EcrecoverAuthorizer must be the sole source of truth for replay protection? Proof idea: advance EcrecoverAuthorizer.nonce[A] to N; assert Midnight has no corresponding nonce; assert EcrecoverAuthorizer.nonce[A] is the only replay protection mechanism; assert no Midnight-side nonce can be manipulated to bypass EcrecoverAuthorizer's nonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c476aed-28d4-414b-86c1-d59e0a1b7170?mode=deep",
+    "timestamp": "2026-05-31 22:05:32.284444",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization where the full sequence exploits the permissionless submission: (1) A signs Authorization{authorized=B, isAuthorized=true, nonce=0} and shares it with B; (2) attacker intercepts and submits it; (3) attacker submits Authorization{authorized=C, isAuthorized=true, nonce=1} signed by B (now authorized); causing C to gain access to A's account without A's knowledge, violating the invariant that the authorizer must control all downstream authorization grants? Proof idea: A signs auth{authorized=B, nonce=0}; attacker submits; B signs auth{authorized=C, nonce=1}; attacker submits; assert isAuthorized[A][C]=true without A's direct consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d5bea12-60ad-4585-b3b2-407c3675bcf3?mode=deep",
+    "timestamp": "2026-05-31 22:05:46.468683",
+    "report_generated": false
+  }
+]
