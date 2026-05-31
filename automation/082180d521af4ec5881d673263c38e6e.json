@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take bitmap limit and health check] Can an unprivileged attacker, under the precondition that a borrower has 16 activated collaterals and one collateral's oracle price drops, observe that the borrower cannot add a new collateral (bitmap full) and cannot withdraw the low-value collateral (would fail health check), causing the borrower to be stuck with a deteriorating position, violating the invariant that healthy accounts must not become liquidatable due to bitmap edge cases, causing scoped impact: borrower's funds are frozen because bitmap limit prevents health improvement? Proof idea: fill bitmap to 16, drop one oracle price, assert borrower cannot add collateral and cannot withdraw any collateral without becoming unhealthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f420072e-d5a8-4d6e-9491-8db28e3f5eb4?mode=deep",
+    "timestamp": "2026-05-31 20:54:32.300048",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets = 0 and maxUnits = 0] Can an unprivileged taker, under the precondition that an offer has maxAssets = 0 and maxUnits = 0 (both zero, atMostOneNonZero passes), attempt take() with units = 1, causing consumed[maker][group] += 1 and require(1 <= 0) to revert with ConsumedUnits(), permanently freezing the offer for any non-zero fill, violating the invariant that offers must be fillable up to their stated capacity, causing scoped impact: the offer is permanently frozen for any meaningful fill? Proof idea: create offer with maxAssets = 0 and maxUnits = 0, attempt take() with units = 1, assert ConsumedUnits(); attempt with units = 0, assert success (no-op).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6188f7ec-93c7-4181-8889-431d75c467c5?mode=deep",
+    "timestamp": "2026-05-31 20:54:44.156777",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and settlement fee] Can an unprivileged taker, under the precondition that a buy offer has maxAssets = M and the settlement fee is non-zero, observe that buyerAssets = mulDivDown(units, buyerPrice, WAD) includes the settlement fee spread, causing consumed to track buyerAssets (which includes fee), so the effective units capacity is less than M / buyerPrice * WAD, violating the invariant that maxAssets must accurately cap the buyer's asset exposure, causing scoped impact: the offer's effective capacity is reduced by the settlement fee, griefing takers who expect to fill up to maxAssets / buyerPrice units? Proof idea: fuzz settlement fee and maxAssets, assert total units fillable = floor(maxAssets / buyerPrice * WAD) and not floor(maxAssets / (buyerPrice + fee) * WAD).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1457392-7af1-465d-a2e7-03983856384c?mode=deep",
+    "timestamp": "2026-05-31 20:54:56.597556",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and fee change] Can an unprivileged attacker (fee setter), under the precondition that a buy offer has maxAssets = M and the settlement fee is increased after the offer is signed, observe that buyerAssets per unit increases, causing consumed to increase faster per fill, effectively reducing the offer's remaining capacity and potentially causing the next fill to revert with ConsumedAssets(), violating the invariant that offer capacity must not be implicitly reduced by fee changes, causing scoped impact: maker's offer is partially frozen by a fee increase? Proof idea: sign offer with maxAssets = M, increase settlement fee, attempt fill with same units, assert ConsumedAssets() if newBuyerAssets > remaining.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74c66ece-8ddb-44e6-813f-88ccd2e2ea90?mode=deep",
+    "timestamp": "2026-05-31 20:55:09.269024",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and tick spacing change] Can an unprivileged attacker (tick spacing setter), under the precondition that a buy offer has tick T and the market's tick spacing is decreased, observe that the offer's tick T is still valid (finer ticks keep previous ticks valid), but if the tick spacing is decreased to a value that does not divide T, the offer's tick becomes inaccessible (TickNotAccessible revert), violating the invariant that finer ticks must keep previous ticks valid, causing scoped impact: maker's offer is frozen by a tick spacing change? Proof idea: create offer at tick T, decrease spacing to a value not dividing T, attempt take() and assert TickNotAccessible().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9724dcfd-a8a2-4ed7-88b6-399102e84331?mode=deep",
+    "timestamp": "2026-05-31 20:55:22.460092",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and lossFactor maxed] Can an unprivileged attacker, under the precondition that the market's lossFactor approaches type(uint128).max due to repeated bad debt realizations, observe that take() reverts with MarketLossFactorMaxedOut() when lossFactor == type(uint128).max, freezing all takes in the market including valid offers, violating the invariant that valid offers must be fillable, causing scoped impact: all maker offers in the market are temporarily frozen when lossFactor is maxed? Proof idea: simulate repeated bad debt liquidations until lossFactor == type(uint128).max, attempt take() and assert MarketLossFactorMaxedOut().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a22a1b28-e360-4644-baf0-e3772534f647?mode=deep",
+    "timestamp": "2026-05-31 20:55:36.271796",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and enterGate] Can an unprivileged attacker, under the precondition that a market has an enterGate and the gate's canIncreaseCredit returns false for the buyer, observe that take() reverts with BuyerGatedFromIncreasingCredit() even for a valid offer with a valid EcrecoverRatifier signature, violating the invariant that gate checks must apply to all entry paths but must not block valid offers, causing scoped impact: maker's offer is frozen for gated buyers? Proof idea: deploy enterGate that returns false for specific buyer, attempt take() with that buyer, assert BuyerGatedFromIncreasingCredit().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b4ef8f3-4637-4847-a505-1104b63eea9b?mode=deep",
+    "timestamp": "2026-05-31 20:55:51.360442",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and callback revert] Can an unprivileged taker, under the precondition that a buy offer has a maker callback (offer.callback != address(0)) that reverts when called with specific parameters, observe that take() reverts with WrongBuyCallbackReturnValue(), freezing the offer for any taker who triggers the callback revert condition, violating the invariant that a valid offer with a valid signature must be fillable, causing scoped impact: maker's offer is frozen for takers who trigger the callback revert? Proof idea: deploy callback that reverts on specific buyerAssets values, fuzz units to find values that trigger revert, assert offer is frozen for those units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e97e0844-f263-4f1e-a7f3-c0b9f200bef7?mode=deep",
+    "timestamp": "2026-05-31 20:56:03.692664",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback] Can an unprivileged taker, under the precondition that a buy offer has a maker callback that reenters cancelRoot(maker, root) during the callback execution, observe that after the callback the root is canceled, but the current take() has already passed the isRatified check (which is called before the callback), so the current take succeeds but all subsequent takes revert with RootCanceled(), violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: the maker's offer is frozen after the first fill via callback-triggered root cancellation? Proof idea: deploy callback that calls cancelRoot, execute take(), assert first take succeeds but second take reverts with RootCanceled().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d507bba-36d8-4b4f-9d82-15c73e3d5d75?mode=deep",
+    "timestamp": "2026-05-31 20:56:16.562937",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback canceling root] Can an unprivileged maker, under the precondition that the maker has a callback that calls cancelRoot(maker, root) during onBuy(), observe that the take() call sequence is: (1) isRatified passes, (2) consumed updated, (3) positions updated, (4) callback called (cancelRoot executed), (5) token transfers, causing the root to be canceled mid-take but the current take to succeed, violating the invariant that root cancellation must prevent all fills including the current one, causing scoped impact: the maker can cancel their root mid-take to prevent the taker from completing the fill? Proof idea: deploy maker callback that calls cancelRoot, execute take(), assert take succeeds despite root being canceled during callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c56fa281-a25a-4711-bc13-9be0f9141ade?mode=deep",
+    "timestamp": "2026-05-31 20:56:29.622293",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed] Can an unprivileged maker, under the precondition that the maker has a callback that calls setConsumed(group, type(uint256).max, maker) during onBuy() to cancel all offers in the group, observe that the current take() has already updated consumed before the callback, so the callback's setConsumed sets consumed to max, freezing all subsequent fills in the group, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: maker can freeze all group offers mid-take via callback? Proof idea: deploy callback that calls setConsumed(group, max), execute take(), assert subsequent takes revert with ConsumedAssets().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_935f33df-8686-478e-acf0-8e9b2e668ae1?mode=deep",
+    "timestamp": "2026-05-31 20:56:42.619823",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setIsAuthorized] Can an unprivileged maker, under the precondition that the maker has a callback that calls setIsAuthorized(ecrecoverRatifier, false, maker) during onBuy() to deauthorize the EcrecoverRatifier, observe that the current take() has already passed the RatifierUnauthorized check, so the current take succeeds, but all subsequent takes revert with RatifierUnauthorized(), violating the invariant that ratifier authorization must be stable during a take, causing scoped impact: maker can freeze all subsequent fills via callback-triggered deauthorization? Proof idea: deploy callback that deauthorizes ratifier, execute take(), assert subsequent takes revert with RatifierUnauthorized().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_095381d8-2e30-465e-b06a-e474bac95b09?mode=deep",
+    "timestamp": "2026-05-31 20:56:55.725802",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback cancelRoot then re-sign] Can an unprivileged maker, under the precondition that the maker has a callback that calls cancelRoot(maker, root) and then signs a new root with different maxAssets, observe that the old root is canceled mid-take but the new root is not yet available on-chain, causing a temporary freeze of all fills until the new root is distributed off-chain, violating the invariant that offer availability must not be disrupted by mid-take state changes, causing scoped impact: takers experience a temporary freeze between root cancellation and new root distribution? Proof idea: simulate root rotation via callback, measure the window during which no fills are possible.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e6589d73-5f0b-42cd-b4ad-e49e9e7b9aec?mode=deep",
+    "timestamp": "2026-05-31 20:57:09.426420",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback multicall] Can an unprivileged taker, under the precondition that the taker's callback calls Midnight.multicall() with a cancelRoot call for the maker's root, observe that the multicall executes cancelRoot during the take() callback, freezing all subsequent fills, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: taker can freeze maker's offers via multicall-triggered root cancellation in callback? Proof idea: deploy callback that calls multicall([cancelRoot(maker, root)]), execute take(), assert subsequent takes revert with RootCanceled().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_303c24e8-ed75-4d07-a920-1e13d9e2efa0?mode=deep",
+    "timestamp": "2026-05-31 20:57:24.421025",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback multicall cancelRoot] Can an unprivileged authorized address, under the precondition that isAuthorized[maker][attacker] == true and the attacker is the taker's callback, call cancelRoot(maker, root) via multicall during the take() callback, freezing all subsequent fills, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: maker's offers are frozen via callback-triggered multicall? Proof idea: deploy callback that calls multicall([cancelRoot]), execute take(), assert RootCanceled() on subsequent takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a3059ded-01b3-4318-9922-7fd2daa42272?mode=deep",
+    "timestamp": "2026-05-31 20:57:38.402371",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback flashLoan] Can an unprivileged taker, under the precondition that the taker's callback uses flashLoan to borrow assets and then calls cancelRoot(maker, root) during the flashLoan callback, observe that the root is canceled mid-take, freezing all subsequent fills, violating the invariant that flashLoan callbacks must not corrupt offer state, causing scoped impact: maker's offers are frozen via flashLoan-triggered root cancellation? Proof idea: deploy flashLoan callback that calls cancelRoot, execute take() with flashLoan callback, assert subsequent takes revert with RootCanceled().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e8680a48-5e5f-4b0c-ad7c-09ecf3be3316?mode=deep",
+    "timestamp": "2026-05-31 20:57:53.909352",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback repay] Can an unprivileged taker, under the precondition that the taker's callback calls repay() to reduce the seller's debt, observe that the repay() call updates position[id][seller].debt before the health check in take(), potentially causing the health check to pass when it should fail, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: seller's health check is bypassed via callback-triggered repay? Proof idea: deploy callback that calls repay() for seller, execute take() with seller near health threshold, assert health check passes after callback repay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1affff8d-cdbe-4e2a-b288-d35faccb852a?mode=deep",
+    "timestamp": "2026-05-31 20:58:08.137407",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback withdrawCollateral] Can an unprivileged taker, under the precondition that the taker's callback calls withdrawCollateral() for the seller during the take() callback (before the health check), observe that the seller's collateral is reduced, potentially making the seller unhealthy and causing the health check to fail with SellerIsLiquidatable(), violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: seller's position is griefed by callback-triggered collateral withdrawal? Proof idea: deploy callback that calls withdrawCollateral for seller, execute take() with seller near health threshold, assert SellerIsLiquidatable().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b383c11c-0234-476d-8359-8249e24a25a5?mode=deep",
+    "timestamp": "2026-05-31 20:58:21.072692",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback liquidate] Can an unprivileged taker, under the precondition that the taker's callback calls liquidate() for the seller during the take() callback, observe that liquidationLocked(id, seller) == true (set by take() before callbacks), causing liquidate() to revert with NotLiquidatable(), but the callback revert propagates to take() reverting with WrongSellCallbackReturnValue(), violating the invariant that liquidation lock must prevent liquidation during take callbacks, causing scoped impact: taker's fill is griefed by a callback that attempts to liquidate the seller? Proof idea: deploy callback that calls liquidate(seller), execute take(), assert WrongSellCallbackReturnValue() due to NotLiquidatable().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c56303b5-a5cd-473e-a400-6dd482aa913e?mode=deep",
+    "timestamp": "2026-05-31 20:58:34.953936",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback take same offer] Can an unprivileged taker, under the precondition that the taker's callback reenters take() with the same offer and a different units amount, observe that the reentrant take() updates consumed[maker][group] again, potentially causing the outer take() to fail the ConsumedAssets check after the callback returns, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: the outer take() is griefed by a reentrant fill that exhausts the offer's capacity? Proof idea: deploy callback that reenters take() with same offer, execute outer take(), assert outer take() reverts with ConsumedAssets() after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ab08a816-97dc-4d3b-bfb9-64350ec6d12a?mode=deep",
+    "timestamp": "2026-05-31 20:58:49.157863",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback take different offer same group] Can an unprivileged taker, under the precondition that the taker's callback reenters take() with a different offer in the same group, observe that the reentrant take() updates consumed[maker][group], potentially exhausting the group budget and causing the outer take() to fail the ConsumedAssets check, violating the invariant that group budget must be enforced atomically, causing scoped impact: the outer take() is griefed by a reentrant fill of a different offer in the same group? Proof idea: deploy callback that reenters take() with different offer in same group, execute outer take(), assert outer take() reverts with ConsumedAssets().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbdf1e46-cd59-488e-bca4-596934db79be?mode=deep",
+    "timestamp": "2026-05-31 20:59:02.095649",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to 0] Can an unprivileged maker, under the precondition that the maker's callback calls setConsumed(group, 0, maker) to reset consumed to 0 during onBuy(), observe that the outer take() has already updated consumed before the callback, so after the callback consumed is reset to 0, allowing the offer to be filled again from the beginning, violating the invariant that consumed state must be monotonically increasing, causing scoped impact: the offer's maxAssets cap is bypassed via callback-triggered consumed reset? Proof idea: deploy callback that calls setConsumed(group, 0), execute take(), assert consumed is reset to 0 after callback and offer can be filled again.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_55e2a552-c479-4cff-b8ce-9d8e080b6184?mode=deep",
+    "timestamp": "2026-05-31 20:59:16.088039",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to 0 then refill] Can an unprivileged maker, under the precondition that the maker's callback resets consumed to 0 and then immediately calls take() again with the same offer, observe that the reentrant take() succeeds (consumed is 0, so the fill is valid), effectively doubling the fill amount, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: the offer is over-filled beyond maxAssets via callback-triggered consumed reset and reentrant fill? Proof idea: deploy callback that resets consumed and reenters take(), execute outer take(), assert total consumed > maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c1efc0d4-367a-4909-bb2a-b266b54405c5?mode=deep",
+    "timestamp": "2026-05-31 20:59:30.596327",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max] Can an unprivileged taker, under the precondition that the taker's callback calls setConsumed(group, type(uint256).max, maker) (if the taker is authorized for the maker), observe that consumed is set to max, freezing all subsequent fills in the group, violating the invariant that consumed state must only be increased by fills, causing scoped impact: maker's offers are frozen via callback-triggered consumed max? Proof idea: authorize taker for maker, deploy callback that calls setConsumed(group, max), execute take(), assert subsequent takes revert with ConsumedAssets().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4702e4f7-09c7-49d3-a111-17629988fb77?mode=deep",
+    "timestamp": "2026-05-31 20:59:45.821910",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified + Midnight.take partial fill with maxAssets and reentrancy via callback setConsumed to max then cancelRoot] Can an unprivileged taker, under the precondition that the taker is authorized for the maker, deploy a callback that calls setConsumed(group, max) and cancelRoot(maker, root) during onBuy(), observe that both operations succeed during the callback, freezing all maker offers in the group and under the root, violating the invariant that callbacks must not corrupt offer state, causing scoped impact: maker's entire offer book is frozen via a single callback? Proof idea: deploy callback that calls setConsumed(max) and cancelRoot, execute take(), assert all subsequent takes revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_df2c17fb-98a0-4df7-8148-e9196845b119?mode=deep",
+    "timestamp": "2026-05-31 21:00:00.957015",
+    "report_generated": false
+  }
+]
