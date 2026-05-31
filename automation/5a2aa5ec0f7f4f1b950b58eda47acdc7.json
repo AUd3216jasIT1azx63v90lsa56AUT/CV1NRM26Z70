@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral] Can an unprivileged borrower under the precondition that MAX_COLLATERALS_PER_BORROWER (16) bits are set call supplyCollateral(market, i, assets, borrower) for an already-active index i (bit i already set, collateral[i] > 0) to add more collateral without triggering the setBit path (since oldCollateral > 0), and verify that countBits is not re-checked, allowing unlimited collateral increase on active indices? Proof idea: unit test with 16 active collaterals, assert supplyCollateral on existing active index succeeds and bitmap unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_674f3c85-6a84-49b0-8f64-afca48cb9832?mode=deep",
+    "timestamp": "2026-05-31 22:01:35.944239",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / isHealthy] Can an unprivileged liquidator under the precondition that a borrower has a multi-collateral position where one collateral's oracle returns type(uint256).max / ORACLE_PRICE_SCALE (near-overflow price) call liquidate to trigger the bitmap loop computing maxDebt += collateral[i].mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD), and verify that overflow in maxDebt accumulation does not corrupt the health check result or allow a healthy borrower to appear unhealthy? Proof idea: fuzz oracle prices near overflow boundary and assert maxDebt computation does not overflow uint256.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a3bf1036-9c30-4866-8885-3aed38b7d8bb?mode=deep",
+    "timestamp": "2026-05-31 22:01:47.793890",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has exactly one active collateral (bit i set) call liquidate(market, i, collateral[i], 0, borrower, ...) to seize all collateral (newCollateral == 0, bit i cleared), leaving bitmap == 0, and verify that subsequent calls to isHealthy with debt > 0 return false (maxDebt == 0 < debt) making the borrower permanently liquidatable with no collateral to seize? Proof idea: state test asserting after full seizure bitmap == 0 and isHealthy returns false when debt > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01a748e0-49da-4896-9b2d-e260b72a1433?mode=deep",
+    "timestamp": "2026-05-31 22:02:00.179132",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: take / isHealthy] Can an unprivileged taker under the precondition that a seller's bitmap has bit i set for a collateral whose oracle returns a price such that collateral[i] * price / ORACLE_PRICE_SCALE * lltv / WAD rounds down to 0 (dust collateral) call take() to increase seller debt by 1 unit, causing isHealthy to compute maxDebt == 0 due to rounding, making the seller appear unhealthy and causing the take to revert with SellerIsLiquidatable? Proof idea: fuzz dust collateral amounts and oracle prices, assert take does not revert for healthy sellers due to rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5e41cd0-2182-4584-b484-1fb6480e1222?mode=deep",
+    "timestamp": "2026-05-31 22:02:12.799172",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has two active collaterals (bits i and j set) call liquidate(market, i, seizedAssets, 0, borrower, false, ...) where the bitmap loop computes maxDebt using BOTH collaterals but the RCF check uses only collateral[i] (the liquidated collateral), and verify that the RCF condition correctly accounts for multi-collateral maxDebt when determining if repaidUnits exceeds maxRepaid? Proof idea: unit test with two collaterals, assert RCF uses combined maxDebt from both collaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d09eb160-e357-4a86-bfd0-ee73e3f44e88?mode=deep",
+    "timestamp": "2026-05-31 22:02:26.265831",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has two active collaterals and is unhealthy due to collateral[i] price drop call liquidate(market, j, seizedAssets, 0, borrower, false, ...) to seize collateral[j] (the healthy collateral) while the unhealthy collateral[i] remains, and verify that the bitmap loop correctly includes both collaterals in maxDebt/badDebt computation even though only collateral[j] is seized? Proof idea: unit test seizing non-liquidated collateral, assert bitmap loop visits both indices.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75da16ce-f648-4de5-9f7f-9a6a726840a5?mode=deep",
+    "timestamp": "2026-05-31 22:02:39.481109",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverRatifier.isRatified / take] Can an unprivileged taker under the precondition that a maker signed an offer tree for a market with N collateral params call take() with a market struct that has a different collateralParams array (different oracle addresses) but the same loanToken and maturity, causing toId() to produce a different id, and verify that the bitmap for the original market id is not affected by the take on the spoofed market? Proof idea: unit test with two markets differing only in oracle, assert bitmaps are independent per market id.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_020ee845-89b5-4db3-a06a-f4d884f7b467?mode=deep",
+    "timestamp": "2026-05-31 22:02:53.036672",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has a multi-collateral position and is in post-maturity mode call liquidate(market, collateralIndex, 0, 0, borrower, true, ...) to realize bad debt without seizing any collateral, and verify that the bitmap is unchanged while position.debt decreases, potentially leaving the borrower with active bitmap bits but reduced debt that makes them appear healthy in subsequent isHealthy calls? Proof idea: state test with post-maturity bad debt realization, assert isHealthy result after debt reduction with unchanged bitmap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd751bd7-2719-44f2-b8a5-32f6227583ad?mode=deep",
+    "timestamp": "2026-05-31 22:03:06.899840",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / withdrawCollateral] Can an unprivileged borrower under the precondition of a market with 128 collateral params supply 1 unit to each of 16 indices (bits 0,1,...,15 set), then withdraw all from index 0 (bit 0 cleared), then supply to index 16 (bit 16 set, now 16 bits set again), and verify that countBits correctly tracks the active count and TooManyActivatedCollaterals is enforced at exactly 17 active collaterals? Proof idea: invariant test asserting countBits(bitmap) <= MAX_COLLATERALS_PER_BORROWER at all times.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9b7b5eb0-20e6-4743-acee-c255e81d467a?mode=deep",
+    "timestamp": "2026-05-31 22:03:20.778651",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / isHealthy] Can an unprivileged liquidator under the precondition that a borrower has 16 active collaterals (maximum) and is liquidatable call liquidate in a loop (via multicall) to seize each collateral one by one, and verify that after each liquidation the bitmap correctly reflects the remaining active collaterals and isHealthy uses only the remaining collaterals in its loop? Proof idea: invariant test over sequential liquidations asserting bitmap bit count decreases by 1 per full seizure.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb2fa6ab-6d11-4975-b04f-5ef435365cdc?mode=deep",
+    "timestamp": "2026-05-31 22:03:35.310737",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: take / isHealthy] Can an unprivileged taker under the precondition that a seller (maker of EcrecoverRatifier-signed sell offer) has a multi-collateral position where one oracle reverts call take() to increase seller debt, causing isHealthy to revert when it calls the reverting oracle during the bitmap loop, and verify that the liquidation lock (tExchange) is correctly released even when isHealthy reverts? Proof idea: unit test with reverting oracle in seller bitmap, assert take reverts and liquidation lock is not permanently set.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b59fe469-94c8-4f40-8412-c08643338cc3?mode=deep",
+    "timestamp": "2026-05-31 22:03:49.561135",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has a single active collateral (bit i set) and bad debt call liquidate(market, i, collateral[i], 0, borrower, false, ...) to realize bad debt AND seize all collateral in one call, and verify that the bitmap bit i is cleared (newCollateral == 0 && seizedAssets > 0) and position.debt is correctly reduced by both badDebt and repaidUnits? Proof idea: state test with bad debt + full seizure, assert bitmap == 0 and debt == 0 after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d3edac3a-c50b-43df-9a9d-98d0de27b04b?mode=deep",
+    "timestamp": "2026-05-31 22:04:03.702597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / liquidate] Can an unprivileged attacker under the precondition that a borrower has two active collaterals with different maxLif values call liquidate to verify that the badDebt computation in the bitmap loop uses mulDivUp(WAD, maxLif) for each collateral independently, and that a missing bit for one collateral causes badDebt to be overstated (since that collateral's repayable value is excluded), potentially triggering premature bad debt socialization? Proof idea: differential test comparing badDebt with and without a missing bit, assert badDebt is overstated when a bit is missing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7c227324-cfb7-491c-8b36-a1cbe1784c71?mode=deep",
+    "timestamp": "2026-05-31 22:04:17.733463",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral] Can an unprivileged attacker under the precondition that they are authorized for a borrower's account call supplyCollateral(market, collateralIndex, assets, borrower) where collateralIndex >= market.collateralParams.length to trigger an array out-of-bounds revert at market.collateralParams[collateralIndex].token, and verify that the bitmap is not modified before the revert (atomicity of the setBit operation)? Proof idea: unit test with collateralIndex == collateralParams.length, assert revert and bitmap unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0fc5893d-2d27-4d46-aa2c-bf18d5c9d0bc?mode=deep",
+    "timestamp": "2026-05-31 22:04:32.831858",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has two active collaterals and is unhealthy call liquidate(market, collateralIndex, 0, repaidUnits, borrower, false, ...) where repaidUnits == maxRepaid (RCF boundary), and verify that after the liquidation the borrower is just healthy (debt <= maxDebt) with both bitmap bits still set (since no collateral was seized)? Proof idea: unit test at RCF boundary with two collaterals, assert post-liquidation isHealthy returns true and bitmap unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_330f9fd8-9454-4672-80b4-324f92a77774?mode=deep",
+    "timestamp": "2026-05-31 22:04:47.927623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / isHealthy] Can an unprivileged liquidator under the precondition that a borrower has a multi-collateral position where collateral[i] == 1 (dust) and bit i is set call liquidate(market, i, 1, 0, borrower, ...) to seize the 1-unit dust collateral (newCollateral == 0, bit i cleared), and verify that subsequent isHealthy calls exclude index i from the maxDebt loop, potentially making the borrower appear less healthy and enabling further liquidation? Proof idea: unit test with dust collateral, assert bit cleared after 1-unit seizure and isHealthy excludes index i.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c457468-be62-4ae8-b3db-6f2dd9757be9?mode=deep",
+    "timestamp": "2026-05-31 22:05:02.999012",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: take / isHealthy] Can an unprivileged taker under the precondition that a seller has a multi-collateral position and the liquidation lock is active (seller is in a callback) call take() to increase seller debt, and verify that the liquidation lock check (liquidationLocked) prevents the SellerIsLiquidatable revert even if isHealthy would return false due to bitmap-related maxDebt undercount? Proof idea: unit test with active liquidation lock and corrupted bitmap, assert take succeeds due to lock bypass of health check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c13d23a4-aa9d-4fe2-b326-772937a69dd6?mode=deep",
+    "timestamp": "2026-05-31 22:05:17.557772",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has a multi-collateral position and is in post-maturity mode call liquidate(market, collateralIndex, seizedAssets, 0, borrower, true, ...) where the lif grows linearly from WAD to maxLif over TIME_TO_MAX_LIF (15 minutes), and verify that the bitmap loop correctly computes badDebt using maxLif (not the time-adjusted lif) while the seizure uses the time-adjusted lif, ensuring no bitmap-related accounting desync? Proof idea: unit test at various timestamps within TIME_TO_MAX_LIF, assert badDebt uses maxLif and seizure uses time-adjusted lif.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_16fc1aac-dd9e-404c-a78b-8670bf44b137?mode=deep",
+    "timestamp": "2026-05-31 22:05:31.669972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverRatifier.cancelRoot / take] Can an unprivileged maker under the precondition that they have an active sell offer (EcrecoverRatifier-signed) with a multi-collateral market call cancelRoot to cancel the offer root, then have a taker attempt take() which reverts with RootCanceled, and verify that the seller's bitmap and collateral state are unchanged (no partial state update) since the revert is in the ratifier before any state changes? Proof idea: unit test with cancelRoot before take, assert bitmap and collateral unchanged after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2513682a-75ef-4444-8b48-a0c59df2eb12?mode=deep",
+    "timestamp": "2026-05-31 22:05:46.008960",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has two active collaterals (bits i and j set) and is unhealthy call liquidate(market, i, seizedAssets_i, 0, borrower, false, ...) followed by liquidate(market, j, seizedAssets_j, 0, borrower, false, ...) in a multicall, and verify that after the first liquidation the bitmap correctly reflects the updated state (bit i cleared if fully seized) before the second liquidation's bitmap loop runs? Proof idea: multicall with two sequential liquidations, assert second liquidation's maxDebt computation uses updated bitmap from first.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8747233d-1543-44fa-a2b8-a26f38eb1a2d?mode=deep",
+    "timestamp": "2026-05-31 22:06:02.535950",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / liquidate] Can an unprivileged attacker under the precondition that a borrower has a multi-collateral position where one collateral's oracle returns a price causing collateral[i] * price / ORACLE_PRICE_SCALE to overflow uint256 call isHealthy or liquidate to trigger an overflow in the maxDebt accumulation loop, and verify that mulDivDown does not overflow due to intermediate multiplication of collateral (uint128) * price (uint256) exceeding uint256? Proof idea: fuzz collateral amounts and oracle prices near type(uint256).max / ORACLE_PRICE_SCALE boundary, assert no overflow in maxDebt loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70079ab0-81fb-4bb5-879b-35b13fc9d821?mode=deep",
+    "timestamp": "2026-05-31 22:06:18.815230",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: withdrawCollateral / isHealthy] Can an unprivileged borrower under the precondition that they have debt and multiple active collaterals call withdrawCollateral(market, i, collateral[i], borrower, receiver) to clear bit i and reduce maxDebt, causing isHealthy to return false (UnhealthyBorrower revert), and verify that the bitmap bit i is NOT cleared (revert before storage write) since the clearBit happens before the isHealthy check? Proof idea: unit test withdrawing collateral that makes position unhealthy, assert revert with UnhealthyBorrower and bitmap unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_702a59ff-04aa-4fda-a470-e6b412efe274?mode=deep",
+    "timestamp": "2026-05-31 22:06:34.013425",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: withdrawCollateral] Can an unprivileged borrower under the precondition that they have debt and multiple active collaterals call withdrawCollateral(market, i, collateral[i] - 1, borrower, receiver) to reduce collateral[i] to 1 (bit i NOT cleared since newCollateral > 0), and verify that isHealthy includes index i in the maxDebt loop with the reduced collateral amount, correctly enforcing health? Proof idea: unit test partial withdrawal leaving 1 unit, assert bitmap bit i still set and isHealthy uses updated collateral[i] == 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a005dba-f0c7-4786-9e60-d21abae34681?mode=deep",
+    "timestamp": "2026-05-31 22:06:48.445349",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator under the precondition that a borrower has a single active collateral (bit i set) and is liquidatable call liquidate(market, i, 0, 0, borrower, false, ...) to realize bad debt only (no seizure), and verify that the bitmap bit i is NOT cleared (since seizedAssets == 0), leaving the borrower with debt reduced by badDebt but collateral[i] unchanged and bit i still set? Proof idea: state test with bad-debt-only liquidation, assert bitmap unchanged and collateral[i] unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a4123abf-75ab-4459-bdfc-534dfb67e5e9?mode=deep",
+    "timestamp": "2026-05-31 22:07:04.683026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / isHealthy] Can an unprivileged liquidator under the precondition that a borrower has two active collaterals with the same oracle address call liquidate to verify that the bitmap loop calls the oracle twice (once per bit), and that if the oracle is stateful and returns different prices on successive calls within the same transaction, the maxDebt and badDebt computations use inconsistent prices, potentially causing incorrect liquidatability determination? Proof idea: unit test with stateful oracle returning different prices per call, assert liquidate uses consistent prices per collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a240e2e-2154-478f-a971-e926e3a6661b?mode=deep",
+    "timestamp": "2026-05-31 22:07:19.386161",
+    "report_generated": false
+  }
+]
