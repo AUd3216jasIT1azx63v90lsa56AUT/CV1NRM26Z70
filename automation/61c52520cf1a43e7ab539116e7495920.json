@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who holds a coarse-grained Midnight authorization over the maker (e.g., authorized for repay) call setIsRootRatified(maker, root, false) under the precondition that maker has previously ratified root and has live offers using SetterRatifier, triggering a single-transaction de-ratification that causes all subsequent take() calls for those offers to revert with NotRatified(), violating the invariant that a maker's published and ratified offers must remain fillable until expiry or explicit cancellation, causing scoped impact: permanent low-cost DoS on take() for all offers under that root? Proof idea: fuzz (maker, root, authorizedAttacker) and assert that after setIsRootRatified(maker, root, false) by authorizedAttacker, take() with valid ratifierData reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6af9dd79-3623-43f0-86e1-a02a2d76f1c9?mode=deep",
+    "timestamp": "2026-05-31 23:30:11.695096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + take] Can an unprivileged ATTACKER front-run a pending take() transaction by calling setIsRootRatified(maker, root, false) in the same block under the precondition that attacker is authorized by maker (isAuthorized[maker][attacker] == true) and a taker's take() is in the mempool, triggering the sequence [attacker: setIsRootRatified(maker, root, false)] → [taker: take() reverts with NotRatified()], violating the invariant that ratified offers must be fillable by any taker before expiry, causing scoped impact: griefing DoS on take() with cost of one transaction? Proof idea: state-test with two sequential calls in same block and assert take() reverts after de-ratification.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74f3fd34-1d69-4cb8-85fb-48cf62078ea4?mode=deep",
+    "timestamp": "2026-05-31 23:30:23.620588",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker for any purpose (e.g., to call repay() on maker's behalf) call setIsRootRatified(maker, root, false) under the precondition that Midnight's isAuthorized[maker][attacker] == true and maker uses SetterRatifier for their offers, triggering de-ratification of all roots for that maker, violating the invariant that authorization for one action (repay) must not grant power to block unrelated actions (take via ratifier), causing scoped impact: cross-action DoS where repay-authorized operator blocks all maker's take-based market activity? Proof idea: unit test authorizing attacker only for repay, then assert attacker can call setIsRootRatified(maker, root, false) and block take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f42193f6-e15e-4025-a42a-b98b04c314b0?mode=deep",
+    "timestamp": "2026-05-31 23:30:36.922026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified] Can an unprivileged ATTACKER pass malformed ratifierData (e.g., truncated bytes that cause abi.decode to revert) to take() under the precondition that offer.ratifier == address(setterRatifier) and isAuthorized[offer.maker][offer.ratifier] == true, triggering abi.decode(ratifierData, (bytes32, uint256, bytes32[])) to revert inside isRatified(), causing take() to revert with a low-level error rather than RatifierFail(), violating the invariant that invalid ratifier data must produce a clean revert without corrupting state, causing scoped impact: DoS on take() for any taker who passes malformed data? Proof idea: fuzz ratifierData with truncated/random bytes and assert take() reverts cleanly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d45b1b6-eb26-45f7-b6ec-e12863c3f2f5?mode=deep",
+    "timestamp": "2026-05-31 23:30:49.502131",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified via HashLib.isLeaf] Can an unprivileged ATTACKER pass a proof array of length > 20 to take() under the precondition that offer.ratifier == address(setterRatifier), triggering HashLib.offerTreeTypeHash(proof.length) to revert with TreeTooHigh() inside isRatified(), causing take() to revert, violating the invariant that any taker-supplied ratifierData must not be able to cause an unrecoverable revert in a valid market, causing scoped impact: DoS on take() for any offer using SetterRatifier when taker passes oversized proof? Proof idea: unit test with proof.length == 21 and assert take() reverts with TreeTooHigh.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ffb8b6f-3e53-4987-b09c-22d981e2baa5?mode=deep",
+    "timestamp": "2026-05-31 23:31:03.364125",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified via HashLib.isLeaf] Can an unprivileged ATTACKER pass a leafIndex that is out of range (leafIndex >> proof.length != 0) to take() under the precondition that offer.ratifier == address(setterRatifier) and isRootRatified[maker][root] == true, triggering HashLib.isLeaf to revert with LeafIndexOutOfRange() inside isRatified(), causing take() to revert, violating the invariant that taker-supplied proof parameters must not cause unrecoverable reverts in a ratified market, causing scoped impact: DoS on take() for any offer using SetterRatifier when taker passes out-of-range leafIndex? Proof idea: fuzz leafIndex and proof.length and assert revert when leafIndex >> proof.length != 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0513f6c5-81aa-4b1d-927b-05174d340b1a?mode=deep",
+    "timestamp": "2026-05-31 23:31:17.578469",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + take] Can an unprivileged ATTACKER who is an authorized operator of maker call setIsRootRatified(maker, root, false) under the precondition that maker has authorized SetterRatifier (isAuthorized[maker][setterRatifier] == true) and also authorized attacker (isAuthorized[maker][attacker] == true), triggering de-ratification of the root used by all of maker's live offers, causing all subsequent take() calls to revert with NotRatified(), violating the invariant that maker's authorization of SetterRatifier for offer validation must not implicitly allow any other authorized address to revoke that validation, causing scoped impact: low-cost DoS on all of maker's offers? Proof idea: state-test with maker authorizing both SetterRatifier and attacker, then assert attacker can de-ratify and block take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebe3d49f-879b-47d0-95ce-520e875f6ed4?mode=deep",
+    "timestamp": "2026-05-31 23:31:31.729385",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) for a root that covers a Merkle tree of N offers under the precondition that all N offers share the same root and are live, triggering a single-transaction de-ratification that blocks all N take() calls simultaneously, violating the invariant that offer cancellation cost must be proportional to the number of offers cancelled, causing scoped impact: O(1)-cost DoS on O(N) offers, blocking all market activity for maker? Proof idea: construct a Merkle tree of 2^k offers, de-ratify root in one tx, assert all take() calls revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f9564d39-fe42-48b0-a0c2-98cbaef0b879?mode=deep",
+    "timestamp": "2026-05-31 23:31:46.671191",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + take (sell offer)] Can an unprivileged ATTACKER who is authorized by a borrower-maker call setIsRootRatified(borrower, root, false) under the precondition that borrower has live sell offers (offer.buy == false) using SetterRatifier and has outstanding debt, triggering de-ratification that blocks all take() calls on borrower's sell offers, preventing borrower from reducing debt via take(), violating the invariant that a borrower must always be able to exit debt positions via valid market mechanisms, causing scoped impact: DoS on debt reduction via take(), potentially leaving borrower unable to repay and subject to liquidation? Proof idea: state-test with borrower having debt and sell offers, de-ratify, assert take() reverts and debt cannot be reduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c66d248-5354-4727-a668-144dc9a46f66?mode=deep",
+    "timestamp": "2026-05-31 23:32:02.976034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + take (buy offer)] Can an unprivileged ATTACKER who is authorized by a lender-maker call setIsRootRatified(lender, root, false) under the precondition that lender has live buy offers (offer.buy == true) using SetterRatifier and has outstanding credit, triggering de-ratification that blocks all take() calls on lender's buy offers, preventing lender from exiting credit positions via take(), violating the invariant that a lender must always be able to exit credit positions via valid market mechanisms, causing scoped impact: DoS on credit exit via take(), blocking lender's path to withdraw()? Proof idea: state-test with lender having credit and buy offers, de-ratify, assert take() reverts and credit cannot be reduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac5a7e56-03f1-4955-b176-d61b5747a478?mode=deep",
+    "timestamp": "2026-05-31 23:32:17.657417",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + take (post-maturity)] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) at block.timestamp == market.maturity under the precondition that maker has live offers for post-maturity unwinding (trading_after_maturity_allowed == true) and the market has unhealthy positions needing liquidation via take(), triggering de-ratification that blocks all post-maturity take() calls, violating the invariant that post-maturity unwinding must remain available to facilitate liquidations when they are unprofitable, causing scoped impact: DoS on post-maturity unwinding and liquidation? Proof idea: warp to maturity, de-ratify, assert take() reverts for unwinding offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eb51feaf-26a5-489c-9af0-fc0b175a0eb8?mode=deep",
+    "timestamp": "2026-05-31 23:32:31.513203",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers share a consumption group (offer.group) with other offers across multiple markets, triggering de-ratification that blocks all take() calls across all markets using that root, violating the invariant that a consumption group's budget enforcement must not be weaponizable to block cross-market activity, causing scoped impact: cross-market DoS on all offers sharing the same root and group? Proof idea: create two markets with offers sharing a root, de-ratify, assert take() reverts in both markets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4067ddc1-3b50-44cd-8d70-8df8689d6d89?mode=deep",
+    "timestamp": "2026-05-31 23:32:46.805709",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified via multicall] Can an unprivileged ATTACKER who is authorized by maker use Midnight's multicall() to atomically call [setIsRootRatified(maker, root, false), take(offer, ...)] under the precondition that attacker is authorized by maker and wants to grief a specific taker, triggering de-ratification and immediate take() revert in the same transaction, violating the invariant that multicall must not allow atomic state manipulation that bypasses per-action invariants, causing scoped impact: atomic DoS on take() with no window for victim to react? Proof idea: multicall test with de-ratification followed by take() and assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7bfff89-5e09-47b6-add7-c91a921b8542?mode=deep",
+    "timestamp": "2026-05-31 23:33:01.623405",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified + take callback] Can an unprivileged ATTACKER who is an authorized operator of maker call setIsRootRatified(maker, root, false) from within an onBuy or onSell callback during a take() under the precondition that attacker is the callback contract and is authorized by maker, triggering de-ratification mid-take that affects all subsequent take() calls using that root, violating the invariant that callbacks must not be able to corrupt the ratification state for future takes, causing scoped impact: callback-based DoS on all future takes using that root? Proof idea: implement callback that calls setIsRootRatified(false), execute take(), assert subsequent take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40392e0f-d7dd-411e-9c4a-23e54a26f3b5?mode=deep",
+    "timestamp": "2026-05-31 23:33:17.039742",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker is a liquidator who uses take() as part of their liquidation strategy (e.g., buying units to offset debt before liquidating), triggering de-ratification that blocks the liquidator's take() calls, violating the invariant that liquidation must remain available for unhealthy positions, causing scoped impact: indirect DoS on liquidation by blocking liquidator's preparatory take() calls? Proof idea: state-test with unhealthy borrower, liquidator's take-based strategy, de-ratify, assert liquidation flow fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ddd588c-c8db-48ed-ba56-f2650c2ab875?mode=deep",
+    "timestamp": "2026-05-31 23:33:30.887295",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) and then setIsRootRatified(maker, root, true) in rapid succession under the precondition that a taker's take() is in the mempool, triggering a sandwich attack where de-ratification blocks the pending take() and re-ratification restores state, violating the invariant that ratification state must be stable within a block for pending transactions, causing scoped impact: sandwich-based DoS on specific take() transactions? Proof idea: simulate mempool sandwich with de-ratify/re-ratify and assert targeted take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9b3f23a8-8f67-484b-92f3-915060995aca?mode=deep",
+    "timestamp": "2026-05-31 23:33:45.249590",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker has a reduce-only offer (offer.reduceOnly == true) that is the only mechanism for maker to reduce their credit or debt, triggering de-ratification that blocks the reduce-only take(), violating the invariant that reduce-only offers must remain fillable to allow position unwinding, causing scoped impact: DoS on position reduction via reduce-only offers? Proof idea: state-test with reduce-only offer, de-ratify, assert take() reverts and position cannot be reduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63c836ce-1922-422d-b78c-5c20ec5a6de9?mode=deep",
+    "timestamp": "2026-05-31 23:33:59.755890",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: isRatified] Can an unprivileged ATTACKER pass a proof array of maximum allowed length (20) with all-zero sibling hashes to take() under the precondition that offer.ratifier == address(setterRatifier) and isRootRatified[maker][root] == true, triggering maximum gas consumption in HashLib.isLeaf's loop (20 iterations of keccak256), violating the invariant that ratifier gas cost must be bounded and predictable, causing scoped impact: gas griefing DoS on take() by maximizing isRatified() gas cost? Proof idea: fuzz proof.length from 0 to 20 and measure gas consumption, assert no out-of-gas revert at block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc53d91c-3cfb-43a5-a5f9-0d2b4a082466?mode=deep",
+    "timestamp": "2026-05-31 23:34:13.569803",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's root covers offers in a market with an enterGate that is currently blocking new entries, triggering de-ratification that blocks the only available exit path (take() with sellerDebtIncrease == 0 or buyerCreditIncrease == 0), violating the invariant that exit paths must remain available even when enter gate reverts, causing scoped impact: combined gate + ratifier DoS that traps users in the market? Proof idea: state-test with gated market, de-ratify exit offers, assert no exit path remains.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_084af625-842e-41fe-b180-5f5551912419?mode=deep",
+    "timestamp": "2026-05-31 23:34:29.239679",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are the only liquidity in a market and borrowers depend on them to repay debt via take(), triggering de-ratification that removes all available liquidity, violating the invariant that borrowers must always have a path to repay debt before maturity, causing scoped impact: market-wide DoS on repayment via take() when maker is sole liquidity provider? Proof idea: single-maker market, de-ratify, assert no take() path exists for borrowers to reduce debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5e9f8a9a-9f38-41ae-a6ce-6028076b3a15?mode=deep",
+    "timestamp": "2026-05-31 23:34:44.805283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's sell offers (offer.buy == false) are the only mechanism for lenders to exit credit positions before maturity, triggering de-ratification that blocks all credit exit paths, violating the invariant that lenders must always be able to exit credit positions via valid market mechanisms, causing scoped impact: DoS on lender credit exit, forcing lenders to wait until maturity to withdraw? Proof idea: state-test with lender credit and only sell offers available, de-ratify, assert no credit exit path.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ef997fdf-c627-4e2c-9094-fa09a6571462?mode=deep",
+    "timestamp": "2026-05-31 23:34:58.529262",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified + isRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker has authorized SetterRatifier (isAuthorized[maker][setterRatifier] == true) and the market has a liquidatorGate that only allows specific liquidators, triggering de-ratification that blocks liquidator's take()-based liquidation strategy, violating the invariant that liquidator gate must not be bypassable but also must not be weaponizable to block legitimate liquidations, causing scoped impact: DoS on gated liquidation via ratifier de-ratification? Proof idea: gated market with liquidator using take(), de-ratify, assert liquidation fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_94374ff3-a82e-4d66-9fd3-b737c28d0af4?mode=deep",
+    "timestamp": "2026-05-31 23:35:12.612734",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used by a MidnightBundles-style periphery contract that calls take() internally, triggering de-ratification that causes the periphery's bundled operations to revert, violating the invariant that periphery contracts must not be DoS-able via ratifier state manipulation, causing scoped impact: DoS on bundled market operations (supplyCollateralAndSell, etc.) via ratifier de-ratification? Proof idea: state-test with periphery bundle, de-ratify, assert bundle reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d820c37c-2f3e-4cb8-ad57-6fcce4f17e57?mode=deep",
+    "timestamp": "2026-05-31 23:35:29.314345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are the only source of liquidity for a borrower approaching the health threshold (debt ≈ maxDebt), triggering de-ratification that blocks the borrower's ability to buy units to reduce debt, causing the borrower to become liquidatable, violating the invariant that healthy accounts must not become liquidatable due to external state manipulation, causing scoped impact: indirect liquidation enablement via ratifier DoS? Proof idea: state-test with near-threshold borrower, de-ratify buy offers, assert borrower becomes liquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce6187e6-f49c-493f-b98f-11bc988d0b3e?mode=deep",
+    "timestamp": "2026-05-31 23:35:44.884345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that the market is approaching maturity (block.timestamp == market.maturity - 1) and maker's offers are needed for last-minute debt repayment, triggering de-ratification at the maturity boundary that blocks all last-minute take() calls, violating the invariant that maturity boundary must not allow debt to become unrepayable due to external state manipulation, causing scoped impact: maturity-boundary DoS on debt repayment via take()? Proof idea: warp to maturity - 1, de-ratify, assert take() reverts and debt cannot be reduced before maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b58674d-f6a8-44b3-83dc-bc80b2a45254?mode=deep",
+    "timestamp": "2026-05-31 23:36:00.602317",
+    "report_generated": false
+  }
+]
