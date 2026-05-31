@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a ratifierData payload where the Signature struct is valid but the root does not correspond to any offer the maker actually signed, yet the Merkle proof is crafted to pass isLeaf by exploiting second-preimage resistance weaknesses in keccak256 used in hashNode, under the precondition that keccak256 is collision-resistant but second-preimage attacks are theoretically possible, by attempting to find a proof path that reconstructs the signed root from a different leaf, violating the invariant that only offers in the signed Merkle tree can be ratified, causing scoped impact: unauthorized offer ratification via Merkle second-preimage? Proof idea: differential fuzz test comparing hashNode outputs for all (left, right) pairs near known values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bcbfd532-c46c-4ed6-ab18-56b11a61f442?mode=deep",
+    "timestamp": "2026-05-31 22:48:13.520887",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setDefaultSettlementFee] Can an attacker who is an authorized operator for the feeSetter call setDefaultSettlementFee(loanToken, index, 0) to zero out fees for a loan token, then take offers at zero settlement fee, under the precondition that feeSetter has authorized an operator via setIsAuthorized, by calling setDefaultSettlementFee with newSettlementFee=0, violating the invariant that fee configuration must only be modifiable by the designated feeSetter address, causing scoped impact: market parameter setter access-control failure enabling fee zeroing? Proof idea: unit test where feeSetter's authorized operator calls setDefaultSettlementFee, assert it reverts with OnlyFeeSetter since isAuthorized does not grant feeSetter role.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4c1ae35-91d9-4925-b175-f59fc9d5833c?mode=deep",
+    "timestamp": "2026-05-31 22:48:25.602929",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit an offer where offer.ratifier = address(EcrecoverRatifier) but the ratifierData is ABI-encoded with extra trailing bytes beyond the (Signature, bytes32, uint256, bytes32[]) tuple, under the precondition that abi.decode ignores trailing bytes, by appending extra data to ratifierData, violating the invariant that ratifierData must be exactly the expected encoding, causing scoped impact: confirms abi.decode leniency does not enable any bypass; fuzz ratifierData length and content? Proof idea: unit test with ratifierData having 32 extra bytes appended, assert isRatified still succeeds or fails consistently.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_409fa37c-160a-4dda-a18a-10306f61a432?mode=deep",
+    "timestamp": "2026-05-31 22:48:38.433704",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: cancelRoot + Midnight.setIsAuthorized] Can an attacker use Midnight.multicall to atomically (1) call setIsAuthorized(attacker, true, victim) on behalf of victim (if attacker is already authorized for victim), (2) call EcrecoverRatifier.cancelRoot(victim, root), and (3) call setIsAuthorized(attacker, false, victim) to erase the trace, under the precondition that multicall executes all steps atomically, by batching all three calls in one multicall, violating the invariant that authorization grants must be auditable and not used transiently to cancel roots, causing scoped impact: stealth root cancellation via transient authorization in multicall? Proof idea: multicall PoC with three steps, assert isRootCanceled[victim][root]=true after execution.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_297c83f8-d904-4d05-a958-1a43c8cd087a?mode=deep",
+    "timestamp": "2026-05-31 22:48:51.132513",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a valid signature for a root that contains a different offer (offer2) at the same leafIndex as the target offer (offer1), where both offers hash to the same EIP-712 leaf hash due to a crafted collision in hashOffer, under the precondition that OFFER_TYPEHASH is fixed and abi.encode is deterministic, by finding two Offer structs with identical hashOffer output, violating the invariant that each offer's hash uniquely identifies it, causing scoped impact: offer substitution attack enabling ratification of unintended offers? Proof idea: fuzz Offer fields with fixed OFFER_TYPEHASH to find abi.encode collisions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_487e45e4-d754-4495-8dfa-dc0a42a50504?mode=deep",
+    "timestamp": "2026-05-31 22:49:03.918694",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.claimContinuousFee] Can an attacker who gains feeClaimer role (not via isAuthorized but via roleSetter compromise - excluded) instead test whether claimContinuousFee's accounting can be manipulated by an authorized operator calling setMarketContinuousFee to zero before claim, reducing the claimable amount, under the precondition that feeSetter can set continuousFee=0 and feeClaimer claims continuousFeeCredit, by calling setMarketContinuousFee(id, 0) before claimContinuousFee, violating the invariant that fee claimer must receive the full accrued continuous fee regardless of subsequent fee parameter changes, causing scoped impact: market parameter setter interaction with fee claimer accounting? Proof idea: set continuousFee=0 after accrual, assert claimContinuousFee still returns correct accrued amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06e7e0e5-0335-491d-8a04-36375fe87884?mode=deep",
+    "timestamp": "2026-05-31 22:49:16.831726",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a Merkle proof where all proof elements are bytes32(0), and the leafHash is crafted such that the reconstructed root matches a root the maker has signed, under the precondition that hashNode(x, bytes32(0)) and hashNode(bytes32(0), x) produce predictable outputs, by precomputing a root from all-zero siblings, violating the invariant that zero-value proof elements must not enable forged proofs, causing scoped impact: forged Merkle proof with zero siblings enabling unauthorized ratification? Proof idea: compute expected root for all-zero proof, sign it, submit with crafted leafHash, assert isLeaf returns true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_066b08e7-272b-4d87-827e-e5b3ef98f7e2?mode=deep",
+    "timestamp": "2026-05-31 22:49:29.816297",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: cancelRoot + Midnight.setIsAuthorized] Can an attacker who is authorized for maker A use setIsAuthorized(attacker, true, makerA) to ensure persistent authorization, then use that authorization to cancel roots for makerA across multiple markets simultaneously via multicall, under the precondition that cancelRoot is not market-scoped (it cancels the root globally for the maker), by calling cancelRoot for the same root across multiple markets in one multicall, violating the invariant that root cancellation must be scoped to prevent cross-market griefing, causing scoped impact: global root cancellation affecting all markets where maker uses the same signed root? Proof idea: unit test canceling a root used across two markets, assert both markets' isRatified revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f948b5ab-fe4f-4d6f-a688-53cbc32293fe?mode=deep",
+    "timestamp": "2026-05-31 22:49:42.762859",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit ratifierData where the Signature has v not in {27, 28} (e.g., v=0 or v=1), relying on ecrecover returning address(0) for invalid v values, under the precondition that ecrecover returns address(0) for invalid v, by submitting v=0, violating the invariant that invalid v values must always produce address(0) and be rejected by the _signer != address(0) check, causing scoped impact: confirms v validation is handled by ecrecover+zero-check; fuzz v in {0,1,2,26,27,28,29,255}? Proof idea: unit test with v=0 and v=1, assert InvalidSignature revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4b57574-d68b-4056-8f5b-520bbf8f0a12?mode=deep",
+    "timestamp": "2026-05-31 22:49:56.583804",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setRoleSetter] Can an attacker verify that setRoleSetter(newRoleSetter) is strictly gated by require(msg.sender == roleSetter) with no isAuthorized bypass, under the precondition that roleSetter is an EOA, by attempting to call setRoleSetter from an authorized operator of roleSetter, violating the invariant that role setter changes must only be executable by the current roleSetter address directly, causing scoped impact: role setter access-control failure if isAuthorized is incorrectly consulted? Proof idea: unit test calling setRoleSetter from authorized operator of roleSetter, assert OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7b3a341a-1aa5-42bc-a22e-7481627fe23b?mode=deep",
+    "timestamp": "2026-05-31 22:50:09.932434",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setFeeSetter] Can an attacker verify that setFeeSetter(newFeeSetter) is strictly gated by require(msg.sender == roleSetter) with no isAuthorized bypass, under the precondition that roleSetter has authorized an operator, by attempting to call setFeeSetter from an authorized operator of roleSetter, violating the invariant that fee setter role assignment must only be executable by roleSetter directly, causing scoped impact: fee setter role assignment access-control failure? Proof idea: unit test calling setFeeSetter from authorized operator of roleSetter, assert OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd9eea22-831d-4786-a756-bb5274fe89e3?mode=deep",
+    "timestamp": "2026-05-31 22:50:25.142619",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setFeeClaimer] Can an attacker verify that setFeeClaimer(newFeeClaimer) is strictly gated by require(msg.sender == roleSetter) with no isAuthorized bypass, under the precondition that roleSetter has authorized an operator, by attempting to call setFeeClaimer from an authorized operator of roleSetter, violating the invariant that fee claimer role assignment must only be executable by roleSetter directly, causing scoped impact: fee claimer role assignment access-control failure? Proof idea: unit test calling setFeeClaimer from authorized operator of roleSetter, assert OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c88cc28-3378-4085-b2e3-8fddc8a21a6d?mode=deep",
+    "timestamp": "2026-05-31 22:50:38.996672",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setTickSpacingSetter] Can an attacker verify that setTickSpacingSetter(newTickSpacingSetter) is strictly gated by require(msg.sender == roleSetter) with no isAuthorized bypass, under the precondition that roleSetter has authorized an operator, by attempting to call setTickSpacingSetter from an authorized operator of roleSetter, violating the invariant that tick spacing setter role assignment must only be executable by roleSetter directly, causing scoped impact: tick-spacing setter role assignment access-control failure? Proof idea: unit test calling setTickSpacingSetter from authorized operator of roleSetter, assert OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bcb40d24-2772-4596-b37f-d5ccc5badfe2?mode=deep",
+    "timestamp": "2026-05-31 22:50:51.830555",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setIsAuthorized] Can an attacker call Midnight.setIsAuthorized(attacker, true, victim) directly (not on behalf of victim) when attacker is not authorized for victim, under the precondition that setIsAuthorized requires onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], by calling setIsAuthorized(attacker, true, victim) from attacker's address, violating the invariant that only the user or their authorized operator can modify authorization state, causing scoped impact: authorization setter access-control failure enabling self-authorization? Proof idea: unit test calling setIsAuthorized(attacker, true, victim) from attacker, assert Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5983d85d-5e8c-42f0-b969-fa0d0619fff6?mode=deep",
+    "timestamp": "2026-05-31 22:51:05.311395",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit an offer where offer.maker is a contract that implements isAuthorized to always return true for any address, and the EcrecoverRatifier calls IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) which goes through Midnight's storage (not the maker contract), under the precondition that isAuthorized is a Midnight storage mapping not delegated to the maker, by crafting an offer with a contract maker that has pre-set isAuthorized[maker][signer]=true in Midnight, violating the invariant that maker authorization must be validated through Midnight's canonical isAuthorized mapping, causing scoped impact: confirms authorization check uses Midnight storage; fuzz maker addresses that are contracts? Proof idea: deploy contract as maker, set isAuthorized in Midnight, verify isRatified uses Midnight's mapping.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5eb9a810-e38f-463f-8b11-f66b1a6fe8e8?mode=deep",
+    "timestamp": "2026-05-31 22:51:19.032351",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: cancelRoot + Midnight.setIsAuthorized] Can an attacker exploit the fact that Midnight.setIsAuthorized allows an authorized operator to authorize additional addresses (isAuthorized[onBehalf][msg.sender]=true allows calling setIsAuthorized(newAddr, true, onBehalf)), creating an unbounded authorization chain, under the precondition that authorization is coarse-grained and not action-scoped, by building a chain: maker authorizes A, A authorizes B, B calls cancelRoot(maker, root), violating the invariant that authorization delegation must be limited to direct grants from the original user, causing scoped impact: transitive authorization enabling unauthorized root cancellation? Proof idea: invariant test asserting cancelRoot(maker, root) can only succeed if msg.sender == maker or isAuthorized[maker][msg.sender] is directly set by maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e615724-3a38-4e5e-a8b3-c458948b190f?mode=deep",
+    "timestamp": "2026-05-31 22:51:32.113854",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.take] Can an attacker submit an offer with offer.ratifier = address(EcrecoverRatifier) where the ratifierData contains a valid signature from an authorized signer, but the offer.market fields have been modified after signing (e.g., different maturity), causing hashOffer to produce a different leaf hash that does not match the Merkle proof, under the precondition that hashOffer includes all market fields, by modifying offer.market.maturity before calling take(), violating the invariant that all offer fields must be bound by the signature, causing scoped impact: confirms offer field binding; fuzz each Offer field independently to verify all are included in hashOffer? Proof idea: sign offer, modify one field, assert isRatified reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ca4f053-ebd8-48cf-b3e3-c7f0892cc028?mode=deep",
+    "timestamp": "2026-05-31 22:51:45.926118",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setMarketContinuousFee] Can an attacker who is an authorized operator for the feeSetter call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) to maximize the continuous fee for a market, increasing the pendingFee for all future lenders, under the precondition that feeSetter has authorized an operator via setIsAuthorized, by calling setMarketContinuousFee directly as the authorized operator, violating the invariant that continuous fee changes must only be executable by the feeSetter address directly (not via isAuthorized), causing scoped impact: market parameter setter access-control failure via authorized operator? Proof idea: unit test calling setMarketContinuousFee from authorized operator of feeSetter, assert OnlyFeeSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_772e6cce-dd58-4099-89b3-04e00306cb43?mode=deep",
+    "timestamp": "2026-05-31 22:51:59.673501",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a ratifierData where the Signature is valid for a different root (root2) than the one provided (root1), but the Merkle proof is crafted to make isLeaf(root1, leafHash, leafIndex, proof) return true, under the precondition that the proof is constructed to reconstruct root1 from the offer's leaf hash, by providing a valid signature for root2 but a proof that reconstructs root1, violating the invariant that the signed root must match the root used in Merkle verification, causing scoped impact: signature-proof mismatch enabling ratification with an unsigned root? Proof idea: unit test with sig over root2 but proof reconstructing root1, assert ecrecover returns signer who signed root2 but structHash uses root1, so digest mismatch causes Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_906c39c7-e1af-4754-9582-477a2f43840c?mode=deep",
+    "timestamp": "2026-05-31 22:52:14.174455",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: cancelRoot] Can an attacker call cancelRoot(maker, root) where root is a root that has already been canceled (isRootCanceled[maker][root]=true), under the precondition that cancelRoot does not check if root is already canceled, by calling cancelRoot twice for the same root, violating the invariant that double-cancellation must be a no-op and not emit misleading events, causing scoped impact: event log pollution and potential off-chain monitoring confusion from duplicate CancelRoot events? Proof idea: unit test calling cancelRoot twice, assert second call succeeds (no revert) but state is unchanged, check event emission.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3bf4edda-da23-4e95-88db-1b8db68e0ede?mode=deep",
+    "timestamp": "2026-05-31 22:52:28.924278",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setIsAuthorized] Can an attacker use a flash loan callback to temporarily gain authorization, call cancelRoot within the callback, and then have the authorization revoked after the callback, under the precondition that flashLoan callbacks can call arbitrary functions including setIsAuthorized and cancelRoot, by using Midnight.flashLoan with a callback that calls setIsAuthorized(attacker, true, victim) (if attacker is already authorized) then cancelRoot(victim, root), violating the invariant that flash loan callbacks must not enable transient authorization abuse, causing scoped impact: flash loan + authorization setter enabling root cancellation? Proof idea: PoC using flashLoan callback to chain setIsAuthorized + cancelRoot.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d8061c6d-b789-4144-ae29-d4855f1d6e8b?mode=deep",
+    "timestamp": "2026-05-31 22:52:43.478326",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a ratifierData where the proof array is empty (height=0) and root = hashOffer(offer), and the signature is over the offerTreeTypeHash(0) struct hash, under the precondition that a height-0 tree is a single leaf where root == leafHash, by signing keccak256(abi.encode(offerTreeTypeHash(0), hashOffer(offer))) and submitting with empty proof, violating the invariant that single-offer trees must be valid and not enable any bypass, causing scoped impact: confirms height-0 tree is a valid and intentional design; fuzz whether height-0 enables any unintended ratification? Proof idea: unit test with height-0 tree, valid signature, assert isRatified succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cffc7ff1-92a1-4c26-b2d9-8d1a43eed0bc?mode=deep",
+    "timestamp": "2026-05-31 22:52:57.361503",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.setIsAuthorized] Can an attacker who is authorized for a maker use setIsAuthorized(EcrecoverRatifier, false, maker) to revoke the ratifier's authorization, then re-authorize it with setIsAuthorized(EcrecoverRatifier, true, maker) after canceling a root, effectively performing a root cancellation that the maker did not intend, under the precondition that authorized operators have full control over the maker's authorization state, by calling setIsAuthorized(EcrecoverRatifier, false, maker) → cancelRoot(maker, root) → setIsAuthorized(EcrecoverRatifier, true, maker), violating the invariant that ratifier authorization changes must not enable indirect root manipulation, causing scoped impact: authorization setter abuse enabling indirect root cancellation via ratifier de/re-authorization? Proof idea: three-step PoC, assert root is canceled after sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6fbd7f47-09e1-462d-97b6-c688567cd378?mode=deep",
+    "timestamp": "2026-05-31 22:53:11.060219",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified + Midnight.claimSettlementFee] Can an attacker verify that claimSettlementFee(token, amount, receiver) strictly requires msg.sender == feeClaimer with no isAuthorized bypass, and that claimableSettlementFee[token] -= amount cannot underflow due to Solidity 0.8 checked arithmetic, under the precondition that feeClaimer is set and claimableSettlementFee has accrued, by attempting to call claimSettlementFee from a non-feeClaimer address including authorized operators of feeClaimer, violating the invariant that fee claiming must be strictly role-gated, causing scoped impact: fee claimer access-control failure if any bypass exists? Proof idea: invariant test asserting claimableSettlementFee only decreases when msg.sender == feeClaimer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c608138-40de-4d10-ad8e-398933be365a?mode=deep",
+    "timestamp": "2026-05-31 22:53:24.824650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: isRatified] Can an attacker submit a ratifierData where the Signature is valid but for a structHash computed with a different offerTreeTypeHash (e.g., height=5 instead of the actual proof.length=3), under the precondition that the structHash uses offerTreeTypeHash(proof.length) where proof.length is attacker-controlled, by submitting a proof of length 5 with a signature over the height-5 typehash but the actual offer is at a different position, violating the invariant that the typehash must correspond to the actual tree height used in verification, causing scoped impact: typehash mismatch enabling signature reuse across different tree heights? Proof idea: sign offer with height-5 typehash, submit with proof.length=5 but different leafIndex, assert isLeaf fails or ecrecover mismatch.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_653cf6d6-a0ae-4a82-bf98-a8bf4b903fe1?mode=deep",
+    "timestamp": "2026-05-31 22:53:38.586683",
+    "report_generated": false
+  }
+]
