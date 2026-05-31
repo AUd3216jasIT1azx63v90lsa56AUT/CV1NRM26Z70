@@ -1,0 +1,32 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + repay + take (sell, same borrower)] Can an unprivileged borrower under the precondition that they have existing debt compose a multicall([take(sellOffer1, ratifierData1, units1, borrower, ...), repay(market, units1, borrower, address(0), ''), take(sellOffer2, ratifierData2, units2, borrower, ...)]) so that the borrower creates debt, repays it, and creates new debt in the same transaction, violating the invariant that the net debt after the multicall must correctly reflect all three operations and that the health check is applied after each take, causing scoped impact: bad debt creation where the intermediate repayment masks the true debt level during health checks? Proof idea: fuzz units1 and units2; assert debtOf(id, borrower) after multicall equals expected net value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7420c591-4972-4da3-808e-f4dd16fc7879?mode=deep",
+    "timestamp": "2026-05-31 23:40:08.920371",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (with IRatifier that reads offer.expiry) + take (same offer, different expiry)] Can an unprivileged taker under the precondition that the ratifier validates offer.expiry compose a multicall([take(offer_expiry_T1, ratifierData1, units1, ...), take(offer_expiry_T2, ratifierData2, units2, ...)]) so that two takes with different expiry values but the same group are executed in the same transaction, violating the invariant that the ratifier must bind the correct offer parameters including expiry, causing scoped impact: offer replay where a taker uses a ratifier that accepts multiple expiry values to fill offers that should have expired? Proof idea: deploy a ratifier that checks offer.expiry; compose multicall with two takes using different expiry values; assert the ratifier correctly rejects the expired offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a2e85199-fbb5-4be8-98e1-14786751805f?mode=deep",
+    "timestamp": "2026-05-31 23:40:20.766641",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (sell, same seller, different collateral index health check)] Can an unprivileged taker under the precondition that the seller has multiple collaterals with different LLTVs compose a multicall([take(sellOffer1, ratifierData1, units1, taker, ...), take(sellOffer2, ratifierData2, units2, taker, ...)]) so that both takes increase the seller's debt and the health check after each take uses the multi-collateral valuation, violating the invariant that multi-collateral valuation must not skip or double count collateral, causing scoped impact: bad debt creation where the health check incorrectly sums collateral values across multiple takes in the same multicall? Proof idea: fuzz units1 and units2 with different collateral compositions; assert isHealthy(market, id, seller) after each take in the multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60505cb0-c538-49a5-ad7d-7cdab55b68a5?mode=deep",
+    "timestamp": "2026-05-31 23:40:33.050733",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + take (buy, same lender, pendingFee overflow)] Can an unprivileged taker under the precondition that the lender's pendingFee is near type(uint128).max compose a multicall([take(buyOffer1, ratifierData1, units1, lender, ...), take(buyOffer2, ratifierData2, units2, lender, ...)]) so that both takes increase the lender's pendingFee in the same transaction, violating the invariant that pendingFee must not exceed credit and must not overflow uint128, causing scoped impact: accounting corruption where the pendingFee overflow wraps around and the lender's effective credit is incorrectly computed? Proof idea: fuzz units1 and units2 near type(uint128).max; assert pendingFee[lender] <= credit[lender] and no overflow after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6ef7513-038b-4eb0-a13a-ec923150d3d1?mode=deep",
+    "timestamp": "2026-05-31 23:40:45.741164",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (sell, same seller, tick spacing change)] Can an unprivileged taker under the precondition that the tick spacing setter changes the market's tick spacing between two takes in a multicall compose a multicall([take(sellOffer1_tick_T1, ratifierData1, units1, ...), setMarketTickSpacing(id, newSpacing), take(sellOffer2_tick_T2, ratifierData2, units2, ...)]) so that the second take uses a tick that was not accessible before the spacing change, violating the invariant that offers can only be placed at ticks that are multiples of the market's spacing, causing scoped impact: accounting corruption where a take at a previously inaccessible tick executes within the same multicall as the spacing change? Proof idea: assert TickNotAccessible reverts on the second take if the tick is not a multiple of the new spacing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6fe6ad1c-5cdc-49b5-bf4f-7d45a540602a?mode=deep",
+    "timestamp": "2026-05-31 23:40:58.671804",
+    "report_generated": false
+  }
+]
