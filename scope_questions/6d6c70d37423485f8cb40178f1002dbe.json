@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9fb15023-53dc-4c3b-9474-a619a0888557?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f215fdc0-c44f-4f4c-97bf-02ee1354a50a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_23ac7861-d5b8-4bfa-960c-8948cdc7f08b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0d5ddf44-6afc-4d64-870b-b0bddc96c08c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4adb62be-e79b-4d12-a2aa-b360cc6c018d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2757d50a-7e62-4b30-96f8-afb2964c06ea?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_fc33f350-cf5e-420d-b78c-c38d69a98a07?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_28329e74-9aad-450a-9b66-7a873de8dd76?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_47be9a1f-eeb0-49ec-8417-a813b4867836?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_870d6c1c-73f4-468b-ae4f-b0bd7b4f13f4?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_bbb840fb-cbbd-43ed-89ea-bceef529626e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_01ac399f-031b-4e8f-a53c-cdec4a42547a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_729a7f03-f151-4750-a87c-6ab55c18d42b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5f827bc5-0e27-47d7-88b7-1831b4f2a945?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_eff719da-eae6-498b-ae18-3d02ef5df00d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_750a20b3-3ce2-4e42-9567-4932d60ec1c8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7a6b398f-80f7-479b-a0d0-42175c3b2aad?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3d50cc4e-e78d-4515-a297-ac83388daf1b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b72db906-714e-4656-a8fd-c4704ca730ad?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3f87c079-3cc3-4359-b9a5-b2fd89f5d020?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3028c48b-780d-4af8-966a-a34a94505114?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_970d778e-835a-42af-9411-2433036d3f7f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2255be88-d52b-4a4d-95d3-69a59d09a37d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5f97eecc-ab1f-4342-999d-54ea69c5999b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cead4b36-9066-4569-807f-1eaf1bf62dca?mode=deep",
+    "questions_generated": false
+  }
+]
