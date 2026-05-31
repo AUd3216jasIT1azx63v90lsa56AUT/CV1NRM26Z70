@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker call buyWithUnitsTargetAndWithdrawCollateral where the loan token is USDT (which requires allowance to be set to 0 before re-approval), and forceApproveMax first calls safeApprove(token, MIDNIGHT, 0) then safeApprove(token, MIDNIGHT, type(uint256).max), but if the current allowance is exactly type(uint96).max / 2 - 1 (just below the threshold), forceApproveMax skips the approval, and a subsequent take that consumes more than the remaining allowance fails, causing the take to be caught by try/catch and skipped, leading to OutOfOffers revert? Proof idea: unit test with USDT-like token and allowance near threshold, assert forceApproveMax correctly handles edge case.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_89768d17-c814-4c7f-9d5a-85641be6c47a?mode=deep",
+    "timestamp": "2026-05-31 19:42:29.946789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker (seller) call supplyCollateralAndSellWithAssetsTarget where the market has matured (block.timestamp > market.maturity), and the take call for a buy offer (offer.buy = true) succeeds because the seller (taker) is reducing existing credit (sellerDebtIncrease = 0), but the taker has no existing credit, causing sellerCreditDecrease = 0 and sellerDebtIncrease = units, and Midnight.take to revert with CannotIncreaseDebtPostMaturity, which is caught by try/catch, skipping all offers and reverting with OutOfOffers after collateral has been supplied, violating the invariant that post-maturity bundler calls must not lock collateral? Proof idea: state test at block.timestamp = maturity + 1, assert collateral is stuck after OutOfOffers revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_250437d0-9733-4585-bde7-fdf539c32c7e?mode=deep",
+    "timestamp": "2026-05-31 19:42:41.743465",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker call buyWithUnitsTargetAndWithdrawCollateral where the taker has authorized the bundler (isAuthorized[taker][bundler] = true) and the bundler has authorized a malicious contract (isAuthorized[bundler][malicious] = true, set by the taker who authorized the bundler), allowing the malicious contract to call Midnight functions on behalf of the bundler (which acts on behalf of the taker), creating a transitive authorization chain that allows the malicious contract to drain the taker's position, violating the invariant that authorization must not be transitively exploitable through the bundler? Proof idea: PoC with taker -> bundler -> malicious authorization chain, assert malicious contract cannot act on taker's behalf.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cae72ecd-2102-4849-b3ae-f077e9ebdac4?mode=deep",
+    "timestamp": "2026-05-31 19:42:54.412193",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower call repayAndWithdrawCollateral where the market's continuousFee is non-zero and the borrower also has credit (net lender-borrower), causing the repay call to not trigger _updatePosition (repay does not call _updatePosition), so the borrower's credit is not reduced by the accrued continuous fee before the collateral withdrawal, and isHealthy uses the stale (pre-fee) credit to compute maxDebt, potentially allowing the borrower to withdraw more collateral than their post-fee position supports, violating the invariant that health checks must use up-to-date credit balances? Proof idea: state test with non-zero continuousFee and borrower.credit > 0, assert isHealthy uses updated credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6f5d55b9-44d2-4bdf-9d5b-a70a32e4df80?mode=deep",
+    "timestamp": "2026-05-31 19:43:06.994063",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker call buyWithUnitsTargetAndWithdrawCollateral where the settlement fee at maturity (settlementFeeCbp0 * CBP) is non-zero, and the taker buys credit units post-maturity at a price that includes the settlement fee, but the settlement fee is added to claimableSettlementFee[loanToken] (not to withdrawable), so the lenders' withdrawable balance does not increase by the settlement fee portion, causing the total withdrawable to be less than the total credit, violating the invariant that withdrawable must cover all redeemable credit? Proof idea: invariant test asserting withdrawable >= sum of all lender credits after post-maturity takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a621b73-e88c-406e-98e0-43616fec0e22?mode=deep",
+    "timestamp": "2026-05-31 19:43:20.274522",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker (seller) call supplyCollateralAndSellWithUnitsTarget where the taker's position has MAX_COLLATERALS_PER_BORROWER (16) activated collaterals, and the collateralSupplies array contains a new collateral index not yet activated, causing Midnight.supplyCollateral to revert with TooManyActivatedCollaterals, which propagates out of the bundler (not caught by try/catch since it's not in the take loop), reverting the entire call after some collaterals have already been supplied, leaving the taker's position in a partially updated state? Proof idea: unit test with 16 activated collaterals and a new collateral supply, assert revert propagates correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9934d91-985d-4b2a-ba73-db3bf1209d36?mode=deep",
+    "timestamp": "2026-05-31 19:43:33.104992",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker call buyWithAssetsTargetAndWithdrawCollateral where the loop fills exactly targetFilledBuyerAssets across multiple offers, but the last offer's take yields filledBuyerAssets = targetFilledBuyerAssets + 1 wei (due to mulDivUp rounding in Midnight.take for sell offers), causing the exact equality check require(filledBuyerAssets == targetFilledBuyerAssets, OutOfOffers()) to fail, even though the taker has economically filled the target, violating the invariant that the bundler must accept fills within 1 wei of the target? Proof idea: fuzz offer tick and targetBuyerAssets near rounding boundaries, assert exact equality check handles 1-wei rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d3281bda-907d-4cfa-bffe-44132120ba6e?mode=deep",
+    "timestamp": "2026-05-31 19:43:46.486765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker call buyWithUnitsTargetAndWithdrawCollateral where the market's withdrawable is 0 (no repayments have been made), and the taker acquires credit units through the bundler, then immediately calls Midnight.withdraw, which requires withdrawable >= units, causing the withdraw to revert because no loan tokens are available for withdrawal (all debt is still outstanding), violating the invariant that credit units acquired through the bundler must be immediately withdrawable? Proof idea: state test with withdrawable = 0, assert withdraw(filledUnits) reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c15b98b2-59c7-4298-9bc9-bd5593c5b825?mode=deep",
+    "timestamp": "2026-05-31 19:43:59.584714",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker (seller) call supplyCollateralAndSellWithAssetsTarget where the market's rcfThreshold is 0, disabling the recovery close factor, and the taker's position is near the health boundary, causing the take to succeed (sellerDebtIncrease > 0) but the subsequent isHealthy check in Midnight.take to fail (SellerIsLiquidatable), which is caught by try/catch, skipping the offer, and the loop continues, potentially failing to reach targetFilledSellerAssets and reverting with OutOfOffers after collateral has been supplied, violating the invariant that the bundler must not lock collateral when health checks fail? Proof idea: state test with rcfThreshold = 0 and near-health position, assert collateral is not locked on OutOfOffers revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0fbd988e-88b4-4f94-8f87-9e000e83b87e?mode=deep",
+    "timestamp": "2026-05-31 19:44:12.612419",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyWithUnitsTargetAndWithdrawCollateral / repayAndWithdrawCollateral] Can an unprivileged attacker call buyWithUnitsTargetAndWithdrawCollateral to acquire credit units in a market with high lossFactor, then call repayAndWithdrawCollateral to repay debt in the same market, and observe that the credit acquired through buyWithUnitsTargetAndWithdrawCollateral is slashed by the lossFactor at the next _updatePosition call, while the debt repaid through repayAndWithdrawCollateral is not slashed (repay reduces debt 1:1), creating an asymmetry where the attacker repays more debt than the credit they can redeem, violating the invariant that credit and debt must be symmetrically affected by loss factor? Proof idea: state test with non-zero lossFactor, assert credit after slash equals debt repaid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f52f02e3-4a46-4be1-9c2f-e9fce52bff0a?mode=deep",
+    "timestamp": "2026-05-31 19:44:26.232705",
+    "report_generated": false
+  }
+]
