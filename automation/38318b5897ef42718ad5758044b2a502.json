@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take, withdrawCollateral])] Can an unprivileged router/composer, holding a pre-signed Authorization granting itself operator rights over a borrower, submit a single transaction that calls EcrecoverAuthorizer.setIsAuthorized then Midnight.multicall([take(sellOffer, borrower), withdrawCollateral(market, 0, fullCollateral, borrower, attacker)]), violating the invariant that collateral cannot be withdrawn if it would leave debt unhealthy, causing scoped impact: unauthorized collateral seizure and bad debt creation? Proof idea: fuzz collateral amount and LLTV (0.77e18), assert isHealthy(market, id, borrower) == true after withdrawCollateral and debtOf(id, borrower) == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1994b69e-383a-4fe4-a57b-802f5255dd0b?mode=deep",
+    "timestamp": "2026-05-31 18:07:43.740780",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.setIsAuthorized (via multicall)] Can an attacker who holds a valid Authorization(authorizer=victim, authorized=attacker, isAuthorized=true, nonce=N) compose a single transaction: EcrecoverAuthorizer.setIsAuthorized(auth, sig) → Midnight.multicall([setIsAuthorized(attacker2, true, victim)]), violating the invariant that isAuthorized changes must only reflect the authorizer's intent, causing scoped impact: attacker chains a second unauthorized delegation in the same tx before victim can react? Proof idea: assert isAuthorized(victim, attacker2) == false after the sequence if victim never signed for attacker2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_35f909d6-a349-4475-aefd-703e7e02848c?mode=deep",
+    "timestamp": "2026-05-31 18:07:55.738573",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([setConsumed, take])] Can an authorized operator, in a single multicall-composed transaction, call EcrecoverAuthorizer.setIsAuthorized to grant itself operator rights, then Midnight.multicall([setConsumed(group, 0, maker), take(offer, ...)]) to reset a maker's consumed counter and immediately re-fill an already-exhausted offer, violating the invariant that consumed[maker][group] must never decrease except via setConsumed by an authorized caller, causing scoped impact: offer replay and overfill? Proof idea: assert consumed[maker][group] >= offer.maxUnits after the sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_91db745f-a214-4756-9e9d-4869b8bf1717?mode=deep",
+    "timestamp": "2026-05-31 18:08:08.164360",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized (nonce increment) + Midnight.multicall([setIsAuthorized(revoke)])] Can an attacker who intercepts a victim's signed Authorization(nonce=N, isAuthorized=true) front-run it with a multicall that first calls EcrecoverAuthorizer.setIsAuthorized(auth_nonce_N_grant) then immediately Midnight.multicall([setIsAuthorized(attacker, false, victim)]) to revoke, leaving the nonce incremented but the authorization revoked, violating the invariant that a successfully submitted authorization must result in the intended isAuthorized state, causing scoped impact: authorization state desync and fund freeze for victim's pending operations? Proof idea: assert isAuthorized(victim, attacker) == true after EcrecoverAuthorizer.setIsAuthorized succeeds with isAuthorized=true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_486d1f69-0c1a-49de-88a3-61e04bafdf9a?mode=deep",
+    "timestamp": "2026-05-31 18:08:21.099188",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([repay, withdrawCollateral])] Can an attacker holding a signed Authorization(authorizer=borrower, authorized=attacker, isAuthorized=true) compose a single transaction: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([repay(market, debt, borrower, address(0), ''), withdrawCollateral(market, 0, fullCollateral, borrower, attacker)]), violating the invariant that collateral withdrawal requires the caller to be onBehalf or authorized, causing scoped impact: attacker drains borrower's collateral after repaying their debt on their behalf? Proof idea: assert collateralToken.balanceOf(attacker) == 0 if attacker was not authorized before the sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9c990d1-4823-426e-bef0-a68baaa9ac3d?mode=deep",
+    "timestamp": "2026-05-31 18:08:34.700414",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([withdraw])] Can an attacker holding a signed Authorization(authorizer=lender, authorized=attacker, isAuthorized=true) compose a single transaction: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([withdraw(market, lenderCredit, lender, attacker)]), violating the invariant that withdraw requires onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], causing scoped impact: direct theft of lender's credit/loan tokens? Proof idea: assert loanToken.balanceOf(attacker) == 0 before the sequence and > 0 after, with lender's credit reduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b10b6387-58a1-46ca-a85f-6608620694d1?mode=deep",
+    "timestamp": "2026-05-31 18:08:48.480429",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized (signer check uses isAuthorized at call time) + Midnight.multicall([setIsAuthorized(delegate, true), EcrecoverAuthorizer.setIsAuthorized via callback])] Can an attacker compose a transaction where Midnight.multicall([setIsAuthorized(attacker, true, victim)]) is called first (requires attacker already authorized), then within a callback EcrecoverAuthorizer.setIsAuthorized is called with a signature from a delegate who was just authorized in the same tx, violating the invariant that EcrecoverAuthorizer.setIsAuthorized's signer check reads isAuthorized state that was mutated earlier in the same transaction, causing scoped impact: signature authorization bypass via intra-transaction state manipulation? Proof idea: assert signer must be authorizer or pre-tx-authorized delegate, not one authorized mid-tx.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3254bb8-27ec-4b9a-9e2b-1650c786935f?mode=deep",
+    "timestamp": "2026-05-31 18:09:02.166518",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(buyOffer), take(buyOffer)]) same offer group] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant operator over maker) → Midnight.multicall([setConsumed(group, 0, maker), take(offer, units1), take(offer, units2)]) where units1 + units2 > offer.maxUnits, violating the invariant that consumed[maker][group] + units <= offer.maxUnits for any sequence of takes, causing scoped impact: offer overfill and accounting corruption? Proof idea: fuzz units1 and units2, assert consumed[maker][group] <= offer.maxUnits after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ae97fbe-7874-4145-8a4b-63354ac82f41?mode=deep",
+    "timestamp": "2026-05-31 18:09:16.925765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([liquidate, liquidate]) bad debt double realization] Can a liquidator compose a transaction: EcrecoverAuthorizer.setIsAuthorized (grant liquidator gate bypass) → Midnight.multicall([liquidate(market, 0, 0, 0, borrower, false, ...), liquidate(market, 0, 0, 0, borrower, false, ...)]) where both calls realize bad debt on the same position, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: double lossFactor update and protocol insolvency? Proof idea: assert marketState[id].lossFactor after two liquidations equals the value after one liquidation with the same badDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_14a8ade8-f24f-40a4-af30-a929364e58a4?mode=deep",
+    "timestamp": "2026-05-31 18:09:32.179901",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) maturity boundary] Can an attacker compose a transaction at block.timestamp == market.maturity - 1: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([take(sellOffer, units1), take(sellOffer, units2)]) where the second take is submitted with block.timestamp == market.maturity (via timestamp manipulation or same-block boundary), violating the invariant that debt must not increase after maturity, causing scoped impact: debt increase post-maturity via multicall sequencing? Proof idea: assert debtOf(id, seller) after both takes equals debtOf before plus units1 only if maturity boundary is crossed between calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c899f03d-50e3-48de-aa21-724817db619c?mode=deep",
+    "timestamp": "2026-05-31 18:09:48.026711",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([flashLoan, take])] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over lender) → Midnight.multicall([flashLoan([loanToken], [amount], attackerCallback, data), take(buyOffer, units, attacker, ...)]) where the flashLoan callback calls EcrecoverAuthorizer.setIsAuthorized again to chain a second authorization, violating the invariant that flashLoan callbacks must not corrupt authorization state used by subsequent multicall entries, causing scoped impact: authorization state corruption enabling unauthorized credit withdrawal? Proof idea: assert isAuthorized state after flashLoan callback matches expected state before take executes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9347c0cf-df01-4e4a-877d-1665ea69625d?mode=deep",
+    "timestamp": "2026-05-31 18:10:05.133811",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([supplyCollateral, take, withdrawCollateral])] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over borrower) → Midnight.multicall([supplyCollateral(market, 0, collateral, borrower), take(sellOffer, units, borrower, ...), withdrawCollateral(market, 0, collateral, borrower, attacker)]) to atomically borrow and extract collateral in one tx, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy, causing scoped impact: bad debt creation and unauthorized collateral seizure? Proof idea: assert isHealthy(market, id, borrower) == true after withdrawCollateral with fuzzed LLTV in {0.625e18, 0.77e18, 0.86e18, 0.915e18, 0.945e18, 0.965e18, 0.98e18, 0.99e18}.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ec2e49b-b5f8-4a68-be39-38b19a4d31d5?mode=deep",
+    "timestamp": "2026-05-31 18:10:22.892102",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([setIsAuthorized(ecrecoverAuthorizer, true), EcrecoverAuthorizer.setIsAuthorized via callback])] Can an attacker who is already authorized over a victim compose a transaction: Midnight.multicall([setIsAuthorized(address(ecrecoverAuthorizer), true, victim)]) to enable EcrecoverAuthorizer as a delegate for victim, then immediately submit a pre-signed Authorization from victim via EcrecoverAuthorizer.setIsAuthorized in the same tx, violating the invariant that EcrecoverAuthorizer must only be usable after the authorizer has explicitly enabled it, causing scoped impact: attacker bootstraps EcrecoverAuthorizer delegation without victim's prior consent? Proof idea: assert that EcrecoverAuthorizer.setIsAuthorized cannot succeed for victim unless isAuthorized(victim, ecrecoverAuthorizer) was true before the current tx.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_12b26f8f-b591-41f7-b834-964354458582?mode=deep",
+    "timestamp": "2026-05-31 18:10:39.207073",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized (nonce++) + same-tx replay attempt via multicall] Can an attacker submit two calls to EcrecoverAuthorizer.setIsAuthorized with the same Authorization struct (same nonce N) within a single composed transaction (e.g., via a router that calls EcrecoverAuthorizer twice), violating the invariant that nonce[authorizer] must increment exactly once per successful setIsAuthorized call and the same nonce cannot be reused, causing scoped impact: authorization replay enabling double-grant or grant-then-revoke in one tx? Proof idea: assert the second call reverts with InvalidNonce() and nonce[authorizer] == N+1 after the first call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9b6dcda4-a4eb-4b6d-a79d-b12c90fa6464?mode=deep",
+    "timestamp": "2026-05-31 18:10:52.927009",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(buyOffer, maker=victim), withdraw(market, credit, victim, attacker)])] Can an attacker holding a signed Authorization(authorizer=victim/lender, authorized=attacker) compose a transaction: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([take(buyOffer where victim is maker, units), withdraw(market, units, victim, attacker)]) to force victim to lend and immediately withdraw their credit, violating the invariant that withdraw requires explicit authorization and credit must not be drained without the lender's consent, causing scoped impact: direct theft of lender funds? Proof idea: assert loanToken.balanceOf(attacker) == 0 before and > 0 after, with creditOf(id, victim) == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_50b119db-7ea3-4533-b37e-e5dd97ac75be?mode=deep",
+    "timestamp": "2026-05-31 18:11:06.692200",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([liquidate(postMaturityMode=false), liquidate(postMaturityMode=true)])] Can a liquidator compose a transaction: EcrecoverAuthorizer.setIsAuthorized (grant liquidator gate bypass) → Midnight.multicall([liquidate(market, 0, seizedAssets, 0, borrower, false, ...), liquidate(market, 0, seizedAssets2, 0, borrower, true, ...)]) where the first liquidation uses pre-maturity LIF and the second uses post-maturity LIF in the same block, violating the invariant that LIF mode must correspond to block.timestamp relative to market.maturity, causing scoped impact: liquidator extracts more collateral than allowed by the correct LIF? Proof idea: assert total seizedAssets across both calls does not exceed what a single liquidation with the correct LIF would allow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc9713b8-8d89-4944-a37f-bd359a71c30b?mode=deep",
+    "timestamp": "2026-05-31 18:11:22.505063",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), repay]) net-zero debt with consumed offer] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over borrower) → Midnight.multicall([take(sellOffer, units, borrower, ...), repay(market, units, borrower, address(0), '')]) to create and immediately repay debt in one tx, violating the invariant that consumed[maker][group] must reflect actual net exposure (offer is consumed even though debt is zero), causing scoped impact: offer capacity permanently consumed with no net protocol benefit, enabling DoS of maker's offer? Proof idea: assert consumed[maker][group] == units after the sequence and debtOf(id, borrower) == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0dbb3e4d-b141-4416-8a74-8244902dd2bc?mode=deep",
+    "timestamp": "2026-05-31 18:11:36.601355",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(buy)]) credit/debt netting in same tx] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([take(sellOffer, units, borrower, ...), take(buyOffer, units, borrower, ...)]) where the sell creates debt and the buy immediately nets it to zero, violating the invariant that buying units must reduce existing debt before increasing credit and the net accounting must be consistent with token transfers, causing scoped impact: accounting desync between credit/debt state and actual token balances? Proof idea: assert loanToken.balanceOf(address(midnight)) after both takes equals the expected net transfer amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ff8ce87-0a2c-4392-b7b0-1b8a4d67bd3b?mode=deep",
+    "timestamp": "2026-05-31 18:11:49.772207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([setIsAuthorized(ratifier, true), take(offer with ratifier)])] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over maker) → Midnight.multicall([setIsAuthorized(maliciousRatifier, true, maker), take(offer where offer.ratifier=maliciousRatifier, ...)]) to authorize a malicious ratifier for the maker and immediately use it to fill an offer, violating the invariant that isAuthorized[offer.maker][offer.ratifier] must be true before take and must reflect the maker's pre-tx intent, causing scoped impact: ratifier bypass enabling unauthorized offer fill? Proof idea: assert that take cannot succeed with a ratifier authorized only within the same tx as the take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_283516df-d3f6-4a69-8783-8eb3227489e6?mode=deep",
+    "timestamp": "2026-05-31 18:12:03.176578",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([withdraw, withdraw]) double-withdraw] Can an attacker holding a signed Authorization(authorizer=lender) compose a transaction: EcrecoverAuthorizer.setIsAuthorized → Midnight.multicall([withdraw(market, credit/2, lender, attacker), withdraw(market, credit/2, lender, attacker)]) to withdraw the lender's full credit in two steps, violating the invariant that creditOf(id, lender) must not go below zero and withdrawable must cover all withdrawals, causing scoped impact: protocol insolvency if withdrawable < total withdrawn? Proof idea: assert marketState[id].withdrawable >= 0 after both withdrawals and loanToken.balanceOf(address(midnight)) >= marketState[id].withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63191c16-b483-4982-813f-c2ffdc2690c3?mode=deep",
+    "timestamp": "2026-05-31 18:12:19.232490",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([updatePosition, withdraw])] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over lender) → Midnight.multicall([updatePosition(market, lender), withdraw(market, updatedCredit, lender, attacker)]) to first crystallize the lender's post-slash credit and then withdraw it, violating the invariant that updatePosition must be called before credit reads in withdraw (UpdateBeforeCredit invariant), causing scoped impact: attacker withdraws stale pre-slash credit amount exceeding actual post-slash credit? Proof idea: assert withdraw amount <= creditOf(id, lender) after updatePosition.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86df16db-265e-4315-bdf0-a9ae9122478a?mode=deep",
+    "timestamp": "2026-05-31 18:12:34.269160",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), withdrawCollateral]) liquidation lock bypass] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over borrower) → Midnight.multicall([take(sellOffer, units, borrower, sellerCallback=attacker, ...), withdrawCollateral(market, 0, collateral, borrower, attacker)]) where the sellerCallback is the attacker and the withdrawCollateral is the second multicall entry, violating the invariant that liquidationLocked(id, seller) prevents liquidation during take callbacks but does not prevent withdrawCollateral, causing scoped impact: collateral drained while debt is being created in the same tx? Proof idea: assert isHealthy(market, id, borrower) == true after withdrawCollateral when debtOf(id, borrower) > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c78235ff-afce-4e0c-8a70-3f2a245ab0ac?mode=deep",
+    "timestamp": "2026-05-31 18:12:50.515752",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(buy), claimContinuousFee])] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self as feeClaimer) → Midnight.multicall([take(buyOffer, units, ...), claimContinuousFee(market, amount, attacker)]) where the take increases continuousFeeCredit and the claimContinuousFee immediately drains it, violating the invariant that continuousFeeCredit must not be claimable by unauthorized parties and must remain solvent, causing scoped impact: fee overclaim draining protocol reserves? Proof idea: assert claimableSettlementFee[loanToken] + marketState[id].withdrawable <= loanToken.balanceOf(address(midnight)) after the sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4861daff-9b34-45ac-810f-57c469f88c4e?mode=deep",
+    "timestamp": "2026-05-31 18:13:07.035493",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) two sells same borrower same market] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over borrower) → Midnight.multicall([take(sellOffer1, units1, borrower, ...), take(sellOffer2, units2, borrower, ...)]) where both takes increase borrower's debt, violating the invariant that the health check at the end of each take must pass independently, causing scoped impact: borrower ends up unhealthy after the second take because the first take's debt was not checked against the second take's collateral? Proof idea: assert isHealthy(market, id, borrower) == true after each individual take and after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c75d8c93-7a3e-4766-a28e-af025192b0dc?mode=deep",
+    "timestamp": "2026-05-31 18:13:24.805140",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([liquidate(collateral0), liquidate(collateral1)]) multi-collateral] Can a liquidator compose a transaction: EcrecoverAuthorizer.setIsAuthorized (grant liquidator gate bypass) → Midnight.multicall([liquidate(market, 0, 0, repaidUnits1, borrower, false, ...), liquidate(market, 1, 0, repaidUnits2, borrower, false, ...)]) where the first liquidation realizes bad debt and updates lossFactor, and the second liquidation uses the updated lossFactor to compute maxDebt, violating the invariant that repay amount, seize amount, LIF, close factor, dust, and bad-debt realization must be mutually consistent across a multi-collateral liquidation sequence, causing scoped impact: liquidator over-liquidates or under-liquidates due to stale maxDebt after first liquidation? Proof idea: assert debtOf(id, borrower) after both liquidations equals originalDebt - repaidUnits1 - repaidUnits2 - badDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e9375d0-64d8-4198-9b83-4ffc87db0a58?mode=deep",
+    "timestamp": "2026-05-31 18:13:40.973630",
+    "report_generated": false
+  }
+]
