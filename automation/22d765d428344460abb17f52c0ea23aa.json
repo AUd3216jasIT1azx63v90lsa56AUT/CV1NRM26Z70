@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: take (offer with market.enterGate) + setIsAuthorized (gate bypass via callback)] Can an unprivileged taker under the precondition that an enterGate restricts canIncreaseDebt for the seller trigger a take where the onSell callback calls setIsAuthorized(seller, true, onBehalf=seller) to grant the seller self-authorization, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: the gate check in take uses the seller's address directly; if the gate checks isAuthorized state and the callback grants authorization mid-take, a subsequent take in the same multicall could bypass the gate for the seller? Proof idea: implement a gate that checks isAuthorized[seller][msg.sender] and assert that the gate cannot be bypassed by granting authorization in a callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc9384e7-03c5-4cdc-a12c-36091948c64f?mode=deep",
+    "timestamp": "2026-05-31 17:54:43.954407",
+    "report_generated": false
+  }
+]
