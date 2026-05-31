@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower, acting as onBehalf, pass assets=0 (or referralFeePct such that mulDivDown(assets, referralFeePct, WAD) == assets) so that units=0 is passed to IMidnight.repay, making repay a no-op while collateralWithdrawals still executes, allowing full collateral withdrawal without reducing any debt, violating the invariant that collateral withdrawal requires debt to be covered post-withdrawal? Proof idea: fuzz (assets in [0,1], referralFeePct in [WAD-1, WAD-1]) and assert position[id][onBehalf].debt is unchanged while collateral decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0f5103a-2958-41ed-9ae5-320d616b2a3c?mode=deep",
+    "timestamp": "2026-05-31 21:32:37.537572",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: repayAndWithdrawCollateral] Can an unprivileged operator (authorized by onBehalf) call repayAndWithdrawCollateral with referralFeePct = WAD-1 and assets = 1, causing units = 1 - mulDivDown(1, WAD-1, WAD) = 1 to be passed to repay, but the referralFeeAssets rounding causes the bundler to hold a residual loan token balance, violating the invariant that loanToken.balanceOf(address(midnightBundles)) == 0 after every call? Proof idea: unit test with assets=1, referralFeePct=WAD-1, assert bundler residual balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c8386d1-a0bc-42d6-a9a7-8b6564ee15ed?mode=deep",
+    "timestamp": "2026-05-31 21:32:49.562365",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower bypass the required _updatePosition call (which applies lossFactor slashing and continuous fee accrual to credit) by calling repayAndWithdrawCollateral, since Midnight.repay does not call _updatePosition, allowing the borrower to repay debt and withdraw collateral while their credit (if any, stale in storage) is never reconciled with the current lossFactor, violating the invariant that position state must be consistent with marketState.lossFactor before any exit operation? Proof idea: realize bad debt to advance lossFactor, then call repayAndWithdrawCollateral and assert position.lastLossFactor != marketState.lossFactor after the call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b18f135e-de72-4e05-a24f-f541daf5be10?mode=deep",
+    "timestamp": "2026-05-31 21:33:02.081793",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: repayAndWithdrawCollateral] Can an unprivileged user with credit (not debt) call repayAndWithdrawCollateral with assets=0 (units=0), causing repay(0) to be a no-op, and then execute collateralWithdrawals to drain all collateral, even though the user's credit is stale (not yet slashed via _updatePosition), violating the invariant that collateral withdrawal must not be possible when the position has unreconciled credit slashing? Proof idea: advance lossFactor via bad debt, call repayAndWithdrawCollateral(assets=0) for a credit holder, assert collateral is withdrawn without _updatePosition being called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_492667f2-cb43-4b5c-b340-c6452751a213?mode=deep",
+    "timestamp": "2026-05-31 21:33:15.179062",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower exploit the formula units = assets - mulDivDown(assets, referralFeePct, WAD) to repay fewer debt units than the loan tokens consumed, creating a state where the bundler transfers referralFeeAssets to referralFeeRecipient but the protocol's withdrawable increases by only units (not assets), causing a permanent accounting desync between loanToken.balanceOf(midnight) and marketState.withdrawable + claimableSettlementFee? Proof idea: fuzz (assets, referralFeePct) and assert midnight.withdrawable(id) delta == units, not assets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f9b773dd-3fa2-49d1-9695-a2bf23902c6f?mode=deep",
+    "timestamp": "2026-05-31 21:33:29.604259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker (buyer) with existing debt call buyWithUnitsTargetAndWithdrawCollateral with targetUnits <= taker.debt, causing _updatePosition to be skipped in Midnight.take (condition: !hasCredit(id, buyer) && units <= buyerPos.debt), so that the buyer's stale lastLossFactor and lastAccrual are never updated, and then immediately call withdrawCollateral, which calls isHealthy using the raw (stale) debt value, violating the invariant that position state must be reconciled before any collateral exit? Proof idea: advance lossFactor, call buyWithUnitsTargetAndWithdrawCollateral with units <= debt, assert position.lastLossFactor != marketState.lossFactor after the call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8fcb7d2d-da31-4999-b704-571020ef5f0b?mode=deep",
+    "timestamp": "2026-05-31 21:33:44.053381",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker with debt = D call buyWithUnitsTargetAndWithdrawCollateral with targetUnits = D+1 (crossing from borrower to lender), causing _updatePosition to be called (units > debt), and then immediately withdraw all collateral (since debt becomes 0 after the take), violating the invariant that collateral withdrawal should only be allowed if the position remains healthy after the withdrawal, when the health check in withdrawCollateral uses the post-take debt of 0? Proof idea: set up a borrower with debt=D, buy D+1 units, then withdraw all collateral and assert isHealthy returns true with debt=0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_48208227-10fa-4387-b1ae-1281fdd1e7e9?mode=deep",
+    "timestamp": "2026-05-31 21:33:57.806795",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker with existing credit call supplyCollateralAndSellWithUnitsTarget with targetUnits > taker.credit, causing the netting in Midnight.take to first reduce credit to 0 and then increase debt by (targetUnits - credit), while _updatePosition is called (hasCredit(id, seller) == true), but the _updatePosition call uses the stale credit value before slashing, causing sellerCreditDecrease to be computed on the stale credit, violating the invariant that netting must use the post-update credit value? Proof idea: advance lossFactor to slash credit, then call supplyCollateralAndSellWithUnitsTarget and assert sellerCreditDecrease == updatedCredit (not raw credit).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60ae6afd-9866-40b1-b1b1-9d75e755e480?mode=deep",
+    "timestamp": "2026-05-31 21:34:11.569510",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker exploit the try/catch around IMidnight.take to supply collateral (via supplyCollateral) but have all take calls revert (caught), so that filledUnits == 0 != targetUnits, causing the function to revert with OutOfOffers, but the collateral supplied in the loop is NOT refunded, leaving the taker's collateral locked in Midnight without any corresponding debt, violating the invariant that collateral supplied via the bundler must either result in debt creation or be refundable? Proof idea: craft takes that all revert, call supplyCollateralAndSellWithUnitsTarget, assert collateral is locked and no debt was created.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9711aebb-1a9d-48b3-9367-a356bc1d86ff?mode=deep",
+    "timestamp": "2026-05-31 21:34:25.184917",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker exploit the try/catch around IMidnight.take to supply collateral but have all take calls revert, causing the function to revert with OutOfOffers while the collateral supplied in the loop remains locked in Midnight, violating the invariant that a failed bundle must not leave the taker in a worse position than before the call? Proof idea: craft takes that all revert, call supplyCollateralAndSellWithAssetsTarget, assert collateral is locked and no debt was created.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f06bb60c-e83b-410e-9d14-22833092c6ea?mode=deep",
+    "timestamp": "2026-05-31 21:34:38.978085",
+    "report_generated": false
+  }
+]
