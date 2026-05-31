@@ -1,0 +1,74 @@
+[
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.setMarketTickSpacing] Can the tickSpacingSetter under the precondition that a market exists trigger the sequence (1) tickSpacingSetter calls setMarketTickSpacing(id, newSpacing) where newSpacing is a divisor of current spacing, (2) new ticks become accessible, (3) offers at new ticks are placed, (4) tickSpacingSetter tries to increase spacing back, violating the invariant that tick spacing can only decrease (never increase), causing scoped impact: state inconsistency where offers at fine-grained ticks become inaccessible if spacing could be increased? Proof idea: assert setMarketTickSpacing reverts when newTickSpacing > marketState[id].tickSpacing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81e6cf87-9cb1-4ef0-925b-01dcfcc60e29?mode=deep",
+    "timestamp": "2026-05-31 23:00:59.433082",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized] Can an unprivileged attacker under the precondition that authorization.authorized == address(EcrecoverAuthorizer) trigger the sequence (1) authorizer A signs Authorization{authorizer=A, authorized=EcrecoverAuthorizer, isAuthorized=true}, (2) EcrecoverAuthorizer.setIsAuthorized is called, (3) Midnight.setIsAuthorized(EcrecoverAuthorizer, true, A) is called, (4) EcrecoverAuthorizer is now authorized for A in Midnight, violating the invariant that EcrecoverAuthorizer must be pre-authorized in Midnight before it can call setIsAuthorized on behalf of A, causing scoped impact: circular authorization where EcrecoverAuthorizer authorizes itself, enabling future gasless authorizations without A's direct Midnight authorization? Proof idea: assert the call sequence succeeds and EcrecoverAuthorizer is authorized for A after step 3.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e670b06a-6baa-4567-ae22-e75328af0e99?mode=deep",
+    "timestamp": "2026-05-31 23:01:11.404814",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.take] Can an authorized operator B under the precondition that A has authorized B via EcrecoverAuthorizer trigger the sequence (1) B calls Midnight.take on behalf of A as taker, (2) B calls Midnight.withdrawCollateral on behalf of A, (3) B calls Midnight.setIsAuthorized(C, true, A) to authorize C, violating the invariant that EcrecoverAuthorizer-granted authorization must be scoped to the intended actions, causing scoped impact: state inconsistency where B's authorization (intended for specific actions) is used to expand A's authorization set to include C, enabling further unauthorized state changes? Proof idea: assert isAuthorized[A][C] == true after B calls setIsAuthorized(C, true, A) on behalf of A.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8723558c-9320-46d6-be97-5cb9dc53b6ad?mode=deep",
+    "timestamp": "2026-05-31 23:01:23.860574",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + settlementFee] Can an unprivileged market creator under the precondition that feeSetter sets defaultSettlementFeeCbp[loanToken][0] > defaultSettlementFeeCbp[loanToken][1] (inverted breakpoints) trigger the sequence (1) market is created with inverted fee breakpoints, (2) settlementFee is computed via piecewise linear interpolation, (3) for TTM between 0 and 1 day, the fee decreases as TTM increases, violating the invariant that settlement fee must be monotonically non-decreasing with TTM, causing scoped impact: state inconsistency where fee schedule is inverted, enabling takers to exploit lower fees at longer TTM? Proof idea: fuzz all 7 breakpoint values and assert settlementFee(id, ttm1) <= settlementFee(id, ttm2) when ttm1 < ttm2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0392140a-7a3e-4cf3-8ae3-6f81dfa3e275?mode=deep",
+    "timestamp": "2026-05-31 23:01:36.326871",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket] Can an unprivileged market creator under the precondition that defaultSettlementFeeCbp[loanToken] is all zeros trigger the sequence (1) market is created with all-zero settlement fees, (2) feeSetter calls setMarketSettlementFee(id, i, newFee) to set non-zero fees, (3) another market M2 is created for the same loanToken with all-zero fees (default unchanged), violating the invariant that per-market fee overrides must not affect the default fee snapshot for new markets, causing scoped impact: state inconsistency where M1 has non-zero fees and M2 has zero fees for the same loanToken? Proof idea: assert defaultSettlementFeeCbp[loanToken][i] == 0 after setMarketSettlementFee(M1.id, i, newFee).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7fb467d8-23fb-4c87-8770-353d5be08279?mode=deep",
+    "timestamp": "2026-05-31 23:01:49.155395",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.updatePosition] Can an unprivileged user under the precondition that a market's continuousFee was changed after the user's last interaction trigger the sequence (1) user has credit with pendingFee based on old continuousFee, (2) feeSetter calls setMarketContinuousFee(id, newFee), (3) user calls updatePosition, (4) pendingFee is updated based on old continuousFee (not newFee), violating the invariant that pendingFee must reflect the continuousFee at the time of credit creation, causing scoped impact: state inconsistency where pendingFee does not match the market's current continuousFee, leading to under- or over-accrual of fees? Proof idea: assert updatePositionView returns pendingFee consistent with the continuousFee at credit creation time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75b46e54-af00-4186-b3c5-90eab8a42200?mode=deep",
+    "timestamp": "2026-05-31 23:02:01.787628",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + Midnight.setDefaultSettlementFee] Can the feeSetter under the precondition that defaultSettlementFeeCbp[loanToken][i] is set to a value not divisible by CBP trigger the sequence (1) feeSetter calls setDefaultSettlementFee(loanToken, i, newFee) where newFee % CBP != 0, violating the invariant that settlement fees must be multiples of CBP, causing scoped impact: if the check is bypassable, a market created with a non-CBP-aligned default fee would have an inconsistent fee state that cannot be reproduced by setMarketSettlementFee? Proof idea: assert setDefaultSettlementFee reverts with FeeNotMultipleOfFeeCbp when newFee % CBP != 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82ed0318-b0f3-47d9-9c95-f0acd9fb0029?mode=deep",
+    "timestamp": "2026-05-31 23:02:15.253625",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + Midnight.setDefaultContinuousFee] Can the feeSetter under the precondition that defaultContinuousFee[loanToken] is set to MAX_CONTINUOUS_FEE + 1 trigger the sequence (1) feeSetter calls setDefaultContinuousFee(loanToken, MAX_CONTINUOUS_FEE + 1), violating the invariant that continuous fees must not exceed MAX_CONTINUOUS_FEE, causing scoped impact: if the check is bypassable, a market created with an above-max default continuous fee would have an inconsistent fee state that cannot be set via setMarketContinuousFee? Proof idea: assert setDefaultContinuousFee reverts with ContinuousFeeTooHigh when newFee > MAX_CONTINUOUS_FEE.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71d9c6bb-e197-473b-9e1f-3a31b6bcd4c8?mode=deep",
+    "timestamp": "2026-05-31 23:02:29.950460",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket] Can an unprivileged market creator under the precondition that defaultSettlementFeeCbp[loanToken] is set to maximum values for all breakpoints trigger the sequence (1) market is created with max fees, (2) taker executes a take with TTM near 0, (3) settlement fee is MAX_SETTLEMENT_FEE_0_DAYS = 0.000014e18, (4) buyerAssets - sellerAssets is computed, violating the invariant that claimableSettlementFee must equal the sum of (buyerAssets - sellerAssets) across all takes, causing scoped impact: state inconsistency where claimableSettlementFee does not match actual fee accrual due to rounding in fee computation? Proof idea: fuzz units and TTM values and assert claimableSettlementFee[loanToken] == sum of (buyerAssets - sellerAssets) across all takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9a56cb0-57b3-4258-b674-2620b7ffeab6?mode=deep",
+    "timestamp": "2026-05-31 23:02:43.166781",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + Midnight.settlementFee] Can an unprivileged taker under the precondition that a market's settlement fee breakpoints are set such that feeLower > feeUpper for some interval trigger the sequence (1) market is created with feeCbp[i] > feeCbp[i+1] for some i, (2) taker calls take with TTM in the [i, i+1] interval, (3) settlementFee returns a value computed by linear interpolation between feeLower and feeUpper, violating the invariant that settlement fee must be non-negative, causing scoped impact: if feeLower > feeUpper, the interpolated fee could underflow or produce unexpected values, creating a state inconsistency in fee accounting? Proof idea: fuzz breakpoint values with feeCbp[i] > feeCbp[i+1] and assert settlementFee >= 0 for all TTM values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f9d628e0-9a7f-4590-979a-0880d69be3a8?mode=deep",
+    "timestamp": "2026-05-31 23:02:55.868630",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + Midnight.take] Can an unprivileged taker under the precondition that a market's settlement fee is changed between offer signing and take execution trigger the sequence (1) maker signs offer at tick T with expected settlement fee F1, (2) feeSetter calls setMarketSettlementFee(id, i, newFee) changing fee to F2, (3) taker executes take, (4) effective price is computed with F2 instead of F1, violating the invariant that the settlement fee used in take must match the fee at the time of offer signing, causing scoped impact: state inconsistency where maker's intended price is different from the executed price due to fee change between signing and execution? Proof idea: assert buyerAssets and sellerAssets differ when fee changes between signing and take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4b3d114-273e-44de-9620-8a3f1899923d?mode=deep",
+    "timestamp": "2026-05-31 23:03:08.934247",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsAuthorized + Midnight.touchMarket + Midnight.claimContinuousFee] Can the feeClaimer under the precondition that continuousFeeCredit > 0 and totalUnits > 0 trigger the sequence (1) feeClaimer calls claimContinuousFee(market, amount, receiver) where amount > continuousFeeCredit, violating the invariant that continuousFeeCredit must not underflow, causing scoped impact: state inconsistency where continuousFeeCredit, totalUnits, and withdrawable are decremented by more than their actual values, corrupting market accounting? Proof idea: assert claimContinuousFee reverts or underflows when amount > continuousFeeCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_094deebd-45fc-4468-a78b-3dfd0022c844?mode=deep",
+    "timestamp": "2026-05-31 23:03:21.988562",
+    "report_generated": false
+  }
+]
