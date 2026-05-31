@@ -22,5 +22,29 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c795d484-d613-47c2-91ee-debf50cb14d6?mode=deep",
     "timestamp": "2026-05-31 21:12:19.446729",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap desync via onLiquidate callback supplyCollateral] Can an unprivileged liquidator's onLiquidate callback call supplyCollateral(market, newIndex, largeAmount, borrower) (if authorized) to add a new collateral after the maxDebt/badDebt loop has already run, causing the new collateral to not be counted in badDebt, so badDebt is overestimated and lenders are over-slashed, under preconditions where the liquidator is authorized for the borrower and the callback adds high-value collateral, via the sequence liquidate() → loop computes badDebt without newIndex → onLiquidate callback → supplyCollateral(newIndex, largeAmount, borrower) → callback returns → debt reduced by repaidUnits → borrower now has extra collateral not counted in badDebt, violating the invariant that bad debt realization must account for all collateral present after the liquidation, causing scoped impact: lenders over-slashed by badDebt that is larger than the true shortfall? Proof idea: unit test with callback that supplies collateral and assert badDebt == max(0, debt - true_collateral_value_after_callback).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4de30bf4-1801-470b-bf8c-e66846bd53c6?mode=deep",
+    "timestamp": "2026-05-31 21:14:44.884085",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / take (multicall bitmap manipulation)] Can an unprivileged borrower use multicall to atomically: (1) take a sell offer (increasing debt), (2) withdraw collateral j (clearing bit j), within the same transaction, where the take's isHealthy check at Midnight.sol:476 runs after the debt increase but the withdrawCollateral's isHealthy check at Midnight.sol:568 runs after the collateral withdrawal, under preconditions where the borrower's position is borderline healthy, via the sequence multicall([take(sell, units=X), withdrawCollateral(j, amount)]) → take updates debt → isHealthy(seller) passes → withdrawCollateral reduces collateral → isHealthy(borrower) passes, violating the invariant that the combined effect of take + withdrawCollateral must leave the position healthy, causing scoped impact: borrower ends up undercollateralized after the multicall? Proof idea: fuzz multicall sequences combining take and withdrawCollateral and assert final position is healthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eedb5e69-66e7-40d2-bd95-372ed676628e?mode=deep",
+    "timestamp": "2026-05-31 21:14:56.797085",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap loop with 16 active collaterals at MAX_COLLATERALS_PER_BORROWER] Can the liquidate loop correctly iterate all 16 active collaterals (MAX_COLLATERALS_PER_BORROWER) when the bitmap has exactly 16 bits set at arbitrary positions within [0, 127], computing maxDebt as the sum of all 16 contributions, under preconditions where the market has 128 collaterals and the borrower has 16 active at non-contiguous indices, via a fuzz test with arbitrary 16-bit bitmaps and assert the loop visits exactly 16 indices, violating the invariant that the loop must visit exactly countBits(collateralBitmap) indices, causing scoped impact: if any index is skipped or visited twice, maxDebt is wrong and health check is incorrect? Proof idea: fuzz 16-bit bitmaps and assert loop visit count == countBits(bitmap) and each index visited exactly once.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3892d04-9842-4a39-ba57-c4bd7eef11bd?mode=deep",
+    "timestamp": "2026-05-31 21:15:09.322218",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / ILiquidatorGate.canLiquidate called before bitmap loop] Can an unprivileged liquidator exploit the ordering of checks in liquidate (gate check at line 597-600 before bitmap loop at 607-618) to pass the gate check and then have the bitmap loop revert due to a phantom bit with a reverting oracle, causing the liquidation to fail after the gate check has already been evaluated, under preconditions where the liquidatorGate is a stateful contract that records the liquidation attempt, via the sequence liquidate() → canLiquidate(msg.sender) returns true (gate records attempt) → bitmap loop calls reverting oracle → revert → gate state is now inconsistent (recorded attempt but liquidation failed), violating the invariant that gate state must not be modified for failed liquidations, causing scoped impact: gate state corruption if the gate has side effects? Proof idea: unit test with stateful gate and reverting oracle, assert gate state is unchanged after failed liquidation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4f57c8b8-c2d2-4d07-a0fc-b318706540af?mode=deep",
+    "timestamp": "2026-05-31 21:15:22.078117",
+    "report_generated": false
   }
 ]
