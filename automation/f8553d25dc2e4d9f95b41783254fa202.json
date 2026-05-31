@@ -1,0 +1,140 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / isHealthy] Can an unprivileged market creator create a market where collateralParams[i].oracle is set to an EOA address (no code), causing IOracle(eoa).price() to return 0 (EVM call to codeless address returns empty bytes, decoded as 0 for uint256), making maxDebt = 0 for that collateral, so any borrower with debt and that collateral activated is immediately unhealthy, and confirm this is indistinguishable from oracle=address(0) behavior? Proof idea: create market with oracle=EOA, supply collateral, borrow, call isHealthy, assert false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_42505d49-fdd1-48e0-96cc-741d0401b067?mode=deep",
+    "timestamp": "2026-05-31 23:19:44.051765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker pass takes[0].offer.market with rcfThreshold = type(uint256).max to buyWithUnitsTargetAndWithdrawCollateral, creating a market where RCF is always disabled, then after borrowing, any liquidator can fully liquidate the taker's position in normal mode regardless of how close it is to health, violating the invariant that healthy accounts must not be over-liquidated? Proof idea: create market via bundle with rcfThreshold=type(uint256).max, make position slightly unhealthy, liquidate full debt, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b02240de-e98f-456f-a424-67d52fbc1cd9?mode=deep",
+    "timestamp": "2026-05-31 23:19:55.845165",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create two markets that differ only in rcfThreshold (e.g., rcfThreshold=0 vs rcfThreshold=type(uint256).max), confirm they have different market IDs (since rcfThreshold is included in abi.encode(market) used in IdLib.toId), and that a borrower who signed an offer for the rcfThreshold=0 market cannot have their offer filled in the rcfThreshold=type(uint256).max market (different ID), but a taker who constructs the offer struct with the wrong rcfThreshold could accidentally create the wrong market? Proof idea: create two markets differing only in rcfThreshold, assert different IDs, attempt cross-market offer fill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c640f1d-e3df-4a1a-afc9-54198a7fd415?mode=deep",
+    "timestamp": "2026-05-31 23:20:08.108848",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator create a market with maturity = block.timestamp + 1 (1 second TTM), causing the settlement fee to use the cbp0 breakpoint (TTM < 1 day), and if the default settlement fee at cbp0 is set to MAX_SETTLEMENT_FEE_0_DAYS = 0.000014e18, confirm that the settlement fee is applied correctly, and fuzz TTM across [0, 1 day] to find rounding errors in the piecewise linear interpolation formula (feeLower * (end - TTM) + feeUpper * (TTM - start)) / (end - start)? Proof idea: fuzz TTM in [0, 1 day], assert settlementFee is monotone and within [cbp0, cbp1] bounds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb11a815-472b-4a71-afb6-766c507d81a4?mode=deep",
+    "timestamp": "2026-05-31 23:20:21.109544",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker pass collateralSupplies[i].collateralIndex >= market.collateralParams.length to supplyCollateralAndSellWithUnitsTarget, causing market.collateralParams[collateralSupplies[i].collateralIndex] to revert with array out-of-bounds, and confirm this is a DoS on the bundle but not a fund loss, since the revert prevents any state changes? Proof idea: call supplyCollateralAndSellWithUnitsTarget with out-of-bounds collateralIndex, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a89cb5bb-27fc-459d-b0a9-6a0195ea658c?mode=deep",
+    "timestamp": "2026-05-31 23:20:33.866141",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker pass collateralWithdrawals[i].collateralIndex >= market.collateralParams.length to buyWithUnitsTargetAndWithdrawCollateral, causing withdrawCollateral to call market.collateralParams[collateralIndex].token with an out-of-bounds index, reverting the entire bundle transaction after the takes have already been executed (since takes use try/catch but withdrawCollateral does not), leaving the taker with credit but no collateral withdrawal? Proof idea: execute takes successfully, then pass out-of-bounds collateralIndex in withdrawal, assert revert after takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a432f3c-882c-4826-b1bc-c2500d9f46f9?mode=deep",
+    "timestamp": "2026-05-31 23:20:47.411224",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create a market with collateralParams[0].token = address(1) (minimum non-zero address, satisfying collateralToken > previousCollateralToken where previousCollateralToken starts at address(0)), and confirm that address(1) has no code, causing SafeTransferLib.safeTransferFrom(address(1), ...) to revert (since SafeTransferLib checks code size), permanently preventing collateral supply in that market? Proof idea: create market with collateral token=address(1), attempt supplyCollateral, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6d0df14-96b1-4ce3-9fa3-e8c0609dce0a?mode=deep",
+    "timestamp": "2026-05-31 23:21:01.939818",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with maturity = 0 and rcfThreshold = type(uint256).max, then confirm that post-maturity liquidation is immediately available (block.timestamp > 0 is always true), RCF is always disabled, and the LIF ramps from 1 to maxLif over TIME_TO_MAX_LIF = 15 minutes, so after 15 minutes any borrower can be fully liquidated at maxLif incentive, creating a market designed to maximize liquidation extraction? Proof idea: create market with maturity=0 and rcfThreshold=max, warp 15 minutes, liquidate full position, assert seizedAssets = repaidUnits * maxLif / WAD * ORACLE_PRICE_SCALE / price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_17ead533-50df-497f-ace0-d07dd175e85a?mode=deep",
+    "timestamp": "2026-05-31 23:21:15.943121",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles] Can an unprivileged taker call buyWithUnitsTargetAndWithdrawCollateral with takes[0].offer.market having maturity = block.timestamp + 100 * 365 days (exact max), confirm touchMarket succeeds, then warp to maturity + 1 and confirm post-maturity liquidation is available, and fuzz maturity across [block.timestamp, block.timestamp + 100 * 365 days] to confirm the maturity boundary check is inclusive (<=) and the exact max is accepted? Proof idea: fuzz maturity in [block.timestamp, block.timestamp + 100 * 365 days + 1], assert touchMarket reverts iff maturity > block.timestamp + 100 * 365 days.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_862bcbb0-5a57-4d2f-b0f7-12107d94d0ba?mode=deep",
+    "timestamp": "2026-05-31 23:21:29.941600",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take / liquidate] Can an unprivileged market creator create a market with all collaterals having LLTV=1e18 (WAD), where maxLif=1e18 (no incentive), then a borrower borrows at price=1 (tick=MAX_TICK), and confirm that any price drop makes the position unhealthy (since maxDebt = collateral * price * 1 = collateral * price < debt when price < 1), but liquidators have no incentive (seizedAssets = repaidUnits * 1 * ORACLE_PRICE_SCALE / price = repaidUnits / price, no bonus), so bad debt is always realized, and fuzz price to find the exact threshold? Proof idea: LLTV=1 market, drop price below 1, liquidate, assert lossFactor increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5caf8968-c1c1-42b3-92aa-9c939d680928?mode=deep",
+    "timestamp": "2026-05-31 23:21:44.661517",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.repayAndWithdrawCollateral] Can an unprivileged caller pass a market with maturity = 0 to repayAndWithdrawCollateral, which calls repay(market, units, onBehalf, ...) that internally calls touchMarket, creating an already-expired market, then the subsequent withdrawCollateral calls isHealthy which (with no debt after repay) skips the oracle loop and returns true, allowing collateral withdrawal from an expired market without any oracle validation? Proof idea: call repayAndWithdrawCollateral with maturity=0 market, assert market created and collateral withdrawn.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73b1d5cf-1319-449a-9d3d-052aeda424a8?mode=deep",
+    "timestamp": "2026-05-31 23:21:57.961955",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create a market where collateralParams has exactly MAX_COLLATERALS = 128 entries, each with a different valid token address (sorted ascending), and confirm that IdLib.storeInCode stores abi.encode(market) as runtime bytecode at the CREATE2 address, and that the stored bytecode size equals abi.encode(market).length which must be < 24576 bytes (EIP-170 limit), and fuzz the number of collaterals to find the exact limit where storeInCode would fail due to EIP-170? Proof idea: create market with 128 collaterals, assert code.length < 24576, then compute abi.encode size for 129 collaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_41b24463-f3df-4d3c-9f35-1f53e3c52b9d?mode=deep",
+    "timestamp": "2026-05-31 23:22:11.986806",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator create a market with enterGate set to a contract that reverts on canIncreaseCredit but returns true for canIncreaseDebt, then a lender's credit increase via a buy offer is blocked (BuyerGatedFromIncreasingCredit), but a borrower's debt increase via a sell offer is allowed, creating an asymmetric market where only borrowing is possible but lending is gated? Proof idea: create market with asymmetric enterGate, attempt buy offer take (assert revert), attempt sell offer take (assert success).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9de632b6-80a5-4bb6-806a-f873cf48d5d3?mode=deep",
+    "timestamp": "2026-05-31 23:22:26.108838",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker pass referralFeePct = WAD - 1 (maximum allowed, just below WAD) to buyWithUnitsTargetAndWithdrawCollateral, causing referralFeeAssets = filledBuyerAssets.mulDivDown(WAD - 1, WAD - (WAD - 1)) = filledBuyerAssets.mulDivDown(WAD - 1, 1) ≈ filledBuyerAssets * (WAD - 1), which could overflow or result in referralFeeAssets >> filledBuyerAssets, causing the final transfer maxBuyerAssets - filledBuyerAssets - referralFeeAssets to underflow? Proof idea: fuzz referralFeePct near WAD-1, assert no underflow in final transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd20183e-5fff-4933-947a-917311404f6d?mode=deep",
+    "timestamp": "2026-05-31 23:22:41.222880",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker pass referralFeePct = WAD - 1 to supplyCollateralAndSellWithAssetsTarget, causing referralFeeAssets = targetSellerAssets.mulDivDown(WAD - 1, WAD - (WAD - 1)) = targetSellerAssets * (WAD - 1), and targetFilledSellerAssets = targetSellerAssets + referralFeeAssets ≈ targetSellerAssets * WAD, which could overflow uint256 for large targetSellerAssets, causing the loop condition filledSellerAssets < targetFilledSellerAssets to never terminate or behave unexpectedly? Proof idea: fuzz targetSellerAssets and referralFeePct near WAD-1, assert no overflow in targetFilledSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e1434a8-9f99-46b1-9faf-5ecb54e6ba34?mode=deep",
+    "timestamp": "2026-05-31 23:22:55.433810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create a market where collateralParams[0].token and collateralParams[1].token are both valid ERC20 tokens but collateralParams[0].oracle and collateralParams[1].oracle point to the same oracle contract, and confirm that isHealthy correctly sums maxDebt for both collaterals using the same oracle price, and fuzz oracle prices to find a state where the shared oracle creates unexpected health check behavior compared to independent oracles? Proof idea: create market with shared oracle, fuzz price, assert isHealthy matches manual maxDebt computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a7e48afd-7c24-4ab6-bac6-22fc6f002b71?mode=deep",
+    "timestamp": "2026-05-31 23:23:10.976617",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with maturity = block.timestamp + 1 (1 second TTM), then a borrower borrows, and 2 seconds later (post-maturity) a liquidator calls liquidate with postMaturityMode=true and repaidUnits=0, seizedAssets=0 (zero-input liquidation to realize bad debt), and confirm that if badDebt > 0 the lossFactor is updated even with zero seized/repaid, and fuzz the timing to find the exact LIF ramp value at maturity + 1 second? Proof idea: create near-maturity market, borrow, warp past maturity, call liquidate(0,0), assert lossFactor changes if badDebt > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb2d2f0f-e685-40c8-965e-cc2ee43702a2?mode=deep",
+    "timestamp": "2026-05-31 23:23:25.597460",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles] Can an unprivileged taker call supplyCollateralAndSellWithUnitsTarget where takes[0].offer.market has enterGate set to a contract that blocks canIncreaseDebt, causing all take attempts to revert (caught by try/catch), resulting in filledUnits = 0 < targetUnits, triggering OutOfOffers revert, but the collateral has already been supplied to the malformed market (supplyCollateral is called before the take loop), permanently locking the taker's collateral in a market where borrowing is impossible? Proof idea: create market with debt-blocking enterGate, call supplyCollateralAndSellWithUnitsTarget, assert OutOfOffers revert and collateral locked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3552bfc-1b5e-4998-b344-113b5511272e?mode=deep",
+    "timestamp": "2026-05-31 23:23:40.099896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create two markets M1 and M2 that are identical except M1 has maturity = T and M2 has maturity = T+1, confirm they have different IDs (maturity is included in toId), and that a maker who signed an offer for M1 cannot have their offer replayed in M2 (different market hash in ratifier), but a taker who constructs the offer struct with maturity=T+1 instead of T would create M2 instead of filling M1, effectively griefing the maker by creating an unintended market? Proof idea: sign offer for M1, construct take with M2 params, assert InconsistentMarket or RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2fc6cec-4b77-4b11-9df5-df5dad101518?mode=deep",
+    "timestamp": "2026-05-31 23:23:54.439496",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / isHealthy / liquidate] Can an unprivileged market creator create a market with collateralParams[0].lltv = LLTV_0 = 0.385e18 and maxLif = maxLif(0.385e18, 0.5e18) (high cursor), compute maxLif = WAD * WAD / (WAD - 0.5 * (WAD - 0.385 * WAD)) = WAD / (1 - 0.5 * 0.615) = WAD / 0.6925 ≈ 1.4440e18, and confirm that lif * lltv = 1.4440e18 * 0.385e18 / WAD ≈ 0.556e18 < WAD, so the RCF formula WAD * WAD - lif * lltv > 0 is valid, and fuzz repaidUnits near maxRepaid to find off-by-one rounding in the RCF check? Proof idea: fuzz repaidUnits in [maxRepaid-2, maxRepaid+2], assert RecoveryCloseFactorConditionsViolated at correct boundary.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53bcdc1e-15cc-4ff4-9344-053e57982e4f?mode=deep",
+    "timestamp": "2026-05-31 23:24:10.266218",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker pass targetBuyerAssets = 0 to buyWithAssetsTargetAndWithdrawCollateral, causing referralFeeAssets = 0.mulDivDown(referralFeePct, WAD) = 0 and targetFilledBuyerAssets = 0, so the take loop condition filledBuyerAssets < 0 is immediately false, filledBuyerAssets = 0 == targetFilledBuyerAssets passes the OutOfOffers check, filledUnits = 0 >= minUnits only if minUnits = 0, and then collateral withdrawals proceed without any takes, effectively allowing collateral withdrawal without borrowing? Proof idea: call buyWithAssetsTargetAndWithdrawCollateral with targetBuyerAssets=0 and minUnits=0, assert collateral withdrawn without any take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ae676cc-2729-476b-ac0e-42fea0783ac8?mode=deep",
+    "timestamp": "2026-05-31 23:24:24.145853",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create a market where collateralParams has exactly 1 entry with token = address(type(uint160).max) (maximum address), satisfying collateralToken > address(0), and confirm that touchMarket succeeds, but if address(type(uint160).max) has no code, SafeTransferLib.safeTransferFrom will revert, and fuzz collateral token addresses across [address(1), address(type(uint160).max)] to find which addresses have code and which don't? Proof idea: fuzz collateral token address, assert supplyCollateral reverts iff token has no code.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5baa56e8-c8b5-43e2-bbf6-b3c70be1f3a8?mode=deep",
+    "timestamp": "2026-05-31 23:24:37.437704",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take / liquidate] Can an unprivileged market creator create a market with maturity = block.timestamp + 15 minutes (exactly TIME_TO_MAX_LIF), then a borrower borrows, and at maturity + TIME_TO_MAX_LIF the post-maturity LIF reaches maxLif exactly (lif = WAD + (maxLif - WAD) * TIME_TO_MAX_LIF / TIME_TO_MAX_LIF = maxLif), and fuzz the delay in [0, TIME_TO_MAX_LIF] to confirm the LIF ramp is linear and that at delay=0 lif=WAD (no incentive) and at delay=TIME_TO_MAX_LIF lif=maxLif? Proof idea: fuzz delay, compute expected lif, assert seizedAssets matches repaidUnits * lif / WAD * ORACLE_PRICE_SCALE / price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_580e5b1a-9ae2-409a-a2cf-dacf6bdc3d4e?mode=deep",
+    "timestamp": "2026-05-31 23:24:51.135740",
+    "report_generated": false
+  }
+]
