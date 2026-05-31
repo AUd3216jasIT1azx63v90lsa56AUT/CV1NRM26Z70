@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdraw] Can an unprivileged lender calling withdraw() be permanently blocked when the loan token's transfer() returns returndata of length 1 to 31 bytes (non-empty, non-32-byte), causing abi.decode(returndata, (bool)) in SafeTransferLib to revert with an ABI decoding panic, even though the transfer itself succeeded, violating the invariant that a lender with valid credit and withdrawable units must always be able to exit the market? Proof idea: deploy a MockERC20 whose transfer() returns abi.encodePacked(uint8(1)) (1 byte), call withdraw() with valid credit, assert revert with ABI decode error rather than success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ac04462-05dd-44d6-9346-8449a03c8b8d?mode=deep",
+    "timestamp": "2026-05-31 17:47:29.606301",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker calling take() be blocked when the loan token's transferFrom() returns returndata of length 1 to 31 bytes, causing abi.decode(returndata, (bool)) in SafeTransferLib.safeTransferFrom to revert with an ABI decoding panic even though the transfer succeeded, violating the invariant that a valid offer with correct ratifier approval and sufficient payer balance must always be fillable? Proof idea: deploy MockERC20 returning 16-byte returndata from transferFrom, call take() with valid offer, assert unexpected revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a9e93a3-07cc-4404-b3f5-06f9ab0649c5?mode=deep",
+    "timestamp": "2026-05-31 17:47:41.410974",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdraw] Can a lender be blocked from withdraw() when the loan token's transfer() returns exactly 32 bytes encoding a uint256 value greater than 1 (e.g., uint256(2)), causing Solidity 0.8.x's strict bool ABI decoder in abi.decode(returndata, (bool)) to revert with a decoding error, even though the transfer was successful, violating the fund-exit invariant? Proof idea: deploy MockERC20 returning abi.encode(uint256(2)) from transfer, call withdraw(), assert revert is ABI decode error not TransferReturnedFalse.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0b24583-5fb9-467b-9402-d00a05962fcb?mode=deep",
+    "timestamp": "2026-05-31 17:47:53.734833",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / repay] Can a borrower calling repay() be blocked when the loan token's transferFrom() returns 32 bytes encoding uint256(2) or any value > 1, causing Solidity 0.8.x strict bool ABI decoding to revert, even though the transfer succeeded and the debt should be cleared, violating the invariant that a borrower with sufficient balance and allowance must always be able to repay debt? Proof idea: MockERC20 returning abi.encode(uint256(2)) from transferFrom, call repay(), assert revert blocks debt clearance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd987569-d60e-4b67-a222-0304096c6111?mode=deep",
+    "timestamp": "2026-05-31 17:48:06.525605",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdrawCollateral] Can a borrower calling withdrawCollateral() be blocked when the collateral token's transfer() returns 32 bytes encoding uint256(0) (false), triggering TransferReturnedFalse in SafeTransferLib even though the transfer was semantically successful (some tokens use 0 to indicate success in non-standard conventions), violating the invariant that a healthy borrower must always be able to withdraw collateral? Proof idea: deploy MockCollateral returning abi.encode(uint256(0)) from transfer, call withdrawCollateral() with healthy position, assert TransferReturnedFalse blocks exit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9c6ac2b3-c38f-4cd2-9fa4-ba62eb4995d7?mode=deep",
+    "timestamp": "2026-05-31 17:48:20.505782",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / liquidate] Can a liquidator calling liquidate() be blocked when the collateral token's transfer() to the receiver returns 32 bytes encoding uint256(0), triggering TransferReturnedFalse in SafeTransferLib, even though the position is unhealthy and the liquidation state has already been partially updated (debt reduced, collateral bitmap cleared), violating the invariant that unhealthy positions must remain liquidatable and that partial state updates must not leave accounting desynced? Proof idea: MockCollateral returning false from transfer, call liquidate() on unhealthy position, assert revert after state mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_21ee04f6-1f46-4130-ae7b-e549fd239186?mode=deep",
+    "timestamp": "2026-05-31 17:48:35.397853",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / claimSettlementFee] Can the feeClaimer calling claimSettlementFee() be permanently blocked when the loan token's transfer() to the receiver reverts (e.g., receiver is blacklisted by USDC/USDT), causing claimableSettlementFee[token] to have already been decremented before the revert, violating the invariant that fee accounting must stay consistent with actual token balances and that valid fee claims must not be permanently frozen? Proof idea: USDC-like token with blacklist, blacklist receiver, call claimSettlementFee, assert revert after storage decrement.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5e3ecc7b-6158-4f6b-a996-d70b88add8b3?mode=deep",
+    "timestamp": "2026-05-31 17:48:48.778378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / claimContinuousFee] Can the feeClaimer calling claimContinuousFee() be blocked when the loan token's transfer() reverts after continuousFeeCredit, totalUnits, and withdrawable have already been decremented in MarketState, violating the invariant that market accounting (totalUnits, withdrawable, continuousFeeCredit) must stay consistent with actual token balances and that the fee claim must not corrupt market solvency? Proof idea: MockERC20 reverting on transfer, call claimContinuousFee, assert storage decremented but tokens not sent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f07688be-4878-4ce5-9d30-3927687d0207?mode=deep",
+    "timestamp": "2026-05-31 17:49:02.028555",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / supplyCollateral] Can a borrower calling supplyCollateral() be blocked when the collateral token's transferFrom() reverts on zero-value transfers (some tokens revert on amount=0), even though the protocol allows no-op calls, violating the invariant that no-ops must not revert and that collateral bitmap state must not be corrupted by a partial update where collateralBitmap was set but no tokens transferred? Proof idea: MockCollateral reverting on transferFrom(amount=0), call supplyCollateral(assets=0), assert revert after bitmap mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2474e7cf-a7ff-4938-aad3-0bcb3baa0744?mode=deep",
+    "timestamp": "2026-05-31 17:49:14.885835",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdraw] Can a lender calling withdraw() be blocked when the loan token's transfer() reverts on zero-value transfers (amount=0), even though the protocol explicitly allows no-op withdrawals (units=0), violating the invariant that no-ops are always allowed and must not revert? Proof idea: MockERC20 reverting on transfer(to, 0), call withdraw(units=0), assert unexpected revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae6aaf06-c7ed-44c5-b3b9-89e51a51bd46?mode=deep",
+    "timestamp": "2026-05-31 17:49:28.013912",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / take (payer=buyerCallback)] Can a taker calling take() with a buyerCallback set be blocked when the loan token's transferFrom() is called with payer=buyerCallback but buyerCallback has not approved Midnight for the required buyerAssets - sellerAssets amount, causing safeTransferFrom to revert after all position state (credit, debt, pendingFee, totalUnits, consumed) has already been updated, violating the invariant that partial state updates from a reverted take must not persist? Proof idea: set buyerCallback to a contract without allowance, call take(), assert all state mutations are rolled back by the revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e65e63f-7824-44ba-bd25-c92a123c7b97?mode=deep",
+    "timestamp": "2026-05-31 17:49:40.987766",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / repay (payer=callback)] Can a borrower calling repay() with a callback set be blocked when the loan token's transferFrom() is called with payer=callback but callback has not approved Midnight for the repaid units, causing safeTransferFrom to revert after position.debt has already been decremented and marketState.withdrawable has already been incremented, violating the invariant that debt and withdrawable accounting must stay consistent? Proof idea: set repay callback to contract without allowance, call repay(), assert debt decremented but tokens not received.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e3d85dfb-8e39-4cfb-8809-8d61a9545d66?mode=deep",
+    "timestamp": "2026-05-31 17:49:54.441803",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / liquidate (payer=callback)] Can a liquidator calling liquidate() with a callback set be blocked when the loan token's transferFrom() is called with payer=callback but callback has not approved Midnight for repaidUnits, causing safeTransferFrom to revert after collateral has already been transferred to receiver, debt decremented, withdrawable incremented, and bad debt realized, violating the invariant that liquidation state must be atomic and consistent? Proof idea: liquidate callback without allowance, assert collateral sent but loan token not received and state partially mutated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f50cb377-e435-4179-a315-8e3206978757?mode=deep",
+    "timestamp": "2026-05-31 17:50:08.019496",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / flashLoan repayment] Can a flashLoan caller be blocked when the loan token's transferFrom() is called on the callback for repayment but the callback has not approved Midnight, causing safeTransferFrom to revert after tokens have already been sent to the callback via safeTransfer, violating the invariant that flashLoan must be atomic and that Midnight's token balance must not decrease without repayment? Proof idea: flashLoan callback without allowance, assert tokens sent but not returned, Midnight balance decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2eecdd14-8fce-40e5-9ecf-30393dcdc4d8?mode=deep",
+    "timestamp": "2026-05-31 17:50:21.998549",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / flashLoan] Can a flashLoan caller be blocked when the loan token's transfer() to the callback reverts (e.g., callback is blacklisted), causing the entire flashLoan to revert before the callback is even invoked, violating the invariant that a valid flashLoan request with sufficient protocol balance must not be blocked by token-level restrictions on the receiver? Proof idea: blacklist flashLoan callback in token, call flashLoan, assert revert before onFlashLoan is called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af11c593-3ae8-4a25-84ef-a4cc5d61352e?mode=deep",
+    "timestamp": "2026-05-31 17:50:35.239189",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdraw, NoCode check] Can a lender calling withdraw() be permanently blocked when the loan token address has no deployed code (e.g., token was self-destructed or market was created with an EOA address as loanToken), causing SafeTransferLib.safeTransfer to revert with NoCode() before any transfer is attempted, violating the invariant that a lender with valid credit must always be able to exit? Proof idea: create market with loanToken pointing to a self-destructable contract, self-destruct it, call withdraw(), assert NoCode() revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_823c9cab-a0c0-47e6-a79d-ecfcf961d1de?mode=deep",
+    "timestamp": "2026-05-31 17:50:48.726317",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / supplyCollateral, NoCode check] Can a borrower calling supplyCollateral() be blocked when the collateral token address has no deployed code, causing SafeTransferLib.safeTransferFrom to revert with NoCode() even though the collateralBitmap has not been mutated yet (assets=0 path skips bitmap), but for assets>0 the call reverts before transfer, violating the invariant that a valid collateral supply must not be blocked by token deployment state? Proof idea: collateral token self-destructed, call supplyCollateral(assets>0), assert NoCode() revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bcd29b4d-43f9-4c51-a7f2-8a9da8b34185?mode=deep",
+    "timestamp": "2026-05-31 17:51:02.666074",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdrawCollateral] Can a borrower calling withdrawCollateral() be blocked when the collateral token's transfer() reverts because the receiver is a contract that reverts in its receive/fallback function (ERC777-style tokensReceived hook), even though the position is healthy and the withdrawal is valid, violating the invariant that a healthy borrower must always be able to withdraw collateral? Proof idea: receiver contract reverting in tokensReceived, call withdrawCollateral() with healthy position, assert revert blocks valid exit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9239403e-881d-4d32-94eb-16b7c0c4acd1?mode=deep",
+    "timestamp": "2026-05-31 17:51:17.216515",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / take] Can a taker calling take() be blocked when the loan token's transferFrom() reverts because the token implements a tx.origin == msg.sender check (blocking contract-to-contract transfers), causing safeTransferFrom to revert after all position state has been updated, violating the invariant that take() must be callable from smart contract integrations and that partial state updates must not persist? Proof idea: MockERC20 reverting when tx.origin != msg.sender, call take() from a contract, assert revert after state mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1970f37f-bc05-41e5-b1f5-2e77b7f0764d?mode=deep",
+    "timestamp": "2026-05-31 17:51:29.916889",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / withdraw] Can a lender calling withdraw() be blocked when the loan token's transfer() reverts because the token is paused (e.g., USDC emergency pause), causing all withdrawals to be frozen even though the lender has valid credit and the market has sufficient withdrawable balance, violating the invariant that valid withdrawals must not be permanently frozen by token-level restrictions? Proof idea: pausable MockERC20, pause token, call withdraw() with valid credit, assert revert; unpause, assert withdraw succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e25cd62-c9d6-49e0-ab17-b80a457b2a5b?mode=deep",
+    "timestamp": "2026-05-31 17:51:43.511471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / take] Can a taker calling take() be blocked when the loan token's transferFrom() reverts because the token is paused, causing the take to revert after all position accounting (credit, debt, pendingFee, totalUnits, consumed, claimableSettlementFee) has been updated, violating the invariant that take() must be atomic and that partial state updates must not persist? Proof idea: pausable MockERC20, pause after ratifier check, call take(), assert all state mutations rolled back.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77940fb9-fbe4-4611-bc86-fb15b21a7e4f?mode=deep",
+    "timestamp": "2026-05-31 17:51:57.493022",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / take] Can a taker calling take() be blocked when the loan token's transferFrom() reverts because the payer (msg.sender or buyerCallback) is blacklisted by the token (e.g., USDC blacklist), even though the taker has valid authorization and the offer is valid, violating the invariant that a valid offer with correct ratifier approval must be fillable by any authorized taker? Proof idea: USDC-like token with blacklist, blacklist taker, call take(), assert revert after state mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbf8c78d-005c-4b52-89a9-0e571d811666?mode=deep",
+    "timestamp": "2026-05-31 17:52:11.438920",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / liquidate] Can a liquidator calling liquidate() be blocked when the collateral token's transfer() to the receiver reverts because the receiver is blacklisted, causing the liquidation to revert after bad debt has already been realized (lossFactor updated, totalUnits decremented, continuousFeeCredit adjusted), violating the invariant that bad debt realization must be atomic and that lossFactor must not be updated without completing the full liquidation? Proof idea: blacklist liquidator receiver in collateral token, call liquidate() on position with bad debt, assert lossFactor updated but collateral not transferred.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_41b95a6e-64ed-49ae-93c4-14d7c8479261?mode=deep",
+    "timestamp": "2026-05-31 17:52:26.925754",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransferFrom / liquidate] Can a liquidator calling liquidate() be blocked when the loan token's transferFrom() reverts because the liquidator (payer) is blacklisted, causing the liquidation to revert after collateral has already been transferred to the receiver via safeTransfer, violating the invariant that liquidation must be atomic and that collateral must not be transferred without receiving loan token repayment? Proof idea: blacklist liquidator in loan token, call liquidate() with seizedAssets>0 and repaidUnits>0, assert collateral sent but loan token not received.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d974c622-fa7a-437b-9cb0-a6168c102047?mode=deep",
+    "timestamp": "2026-05-31 17:52:41.602787",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: SafeTransferLib.safeTransfer / take (sellerAssets transfer)] Can a taker calling take() be blocked when the loan token's transfer() to the seller's receiver reverts because the receiver is blacklisted, causing the take to revert after all position state and consumed amounts have been updated, violating the invariant that take() must be atomic and that a valid offer fill must not leave consumed state incremented without completing the transfer? Proof idea: blacklist offer.receiverIfMakerIsSeller in loan token, call take() on sell offer, assert consumed incremented but transfer reverted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_138363b5-b445-4321-bad1-5f405cdab834?mode=deep",
+    "timestamp": "2026-05-31 17:52:55.243751",
+    "report_generated": false
+  }
+]
