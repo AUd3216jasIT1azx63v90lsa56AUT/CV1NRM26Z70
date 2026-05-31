@@ -1,0 +1,122 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.callbackData is a large bytes array (e.g., 10KB) trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.hashOffer where keccak256(offer.callbackData) hashes the full callbackData array, causing gas cost proportional to callbackData.length, violating the invariant that ratifier gas cost should not scale with callbackData size, causing scoped impact: unnecessary gas cost when offer.callbackData is large? Proof idea: fuzz test varying offer.callbackData.length from 0 to 10000 bytes, measure isRatified gas, assert linear growth with callbackData size.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_29b89d07-6e98-4e10-871c-865236170a80?mode=deep",
+    "timestamp": "2026-05-31 20:55:24.401520",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the storage write isRootRatified[maker][root] = newIsRootRatified occurs before the event emission emit SetIsRootRatified(...), causing the event to accurately reflect the post-write state, violating the invariant that events should reflect the state at emission time, causing scoped impact: non-critical behavior divergence confirming event ordering is correct? Proof idea: unit test asserting isRootRatified[maker][root] == true at the time the SetIsRootRatified event is emitted, verify no reordering issue.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e3266005-3b07-4c7e-85f9-126979383813?mode=deep",
+    "timestamp": "2026-05-31 20:55:36.394207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where ratifierData encodes a proof with proof.length == 255 and leafIndex == type(uint256).max >> 1 trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.isLeaf where leafIndex >> 255 == 1 (non-zero), causing LeafIndexOutOfRange to revert, then with proof.length == 256 and same leafIndex causing leafIndex >> 256 == 0 (EVM SHR behavior), causing the check to pass, violating the invariant that the bounds check should be consistent across the 255/256 boundary, causing scoped impact: non-critical behavior divergence at the proof.length == 256 boundary? Proof idea: unit test with proof.length in [255, 256] and leafIndex = type(uint256).max, assert revert for 255 and no revert for 256.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_125024b5-d2dc-4fe1-a928-67461eb61b3b?mode=deep",
+    "timestamp": "2026-05-31 20:55:49.256442",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker has not ratified any root trigger the call sequence setIsRootRatified(maker, root, false) on a cold storage slot causing a 20000 gas SSTORE to write false to a slot that already contains false (default value), violating the invariant that writing the default value to a cold slot should be avoided, causing scoped impact: unnecessary gas cost of 20000 gas for a no-op de-ratification? Proof idea: unit test calling setIsRootRatified(maker, root, false) on a fresh deployment, measure gas and assert it includes the cold SSTORE cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d53604fa-7af6-4f44-9ddc-9c3bf89cf63f?mode=deep",
+    "timestamp": "2026-05-31 20:56:01.990342",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where the same offer is taken multiple times (partial fills) trigger the call sequence Midnight.take → SetterRatifier.isRatified called on each take, causing HashLib.hashOffer to recompute the same offer hash on every take, violating the invariant that repeated computation of the same value should be cached, causing scoped impact: unnecessary gas cost from redundant offer hashing across multiple partial fills of the same offer? Proof idea: unit test with n partial fills of the same offer, measure total isRatified gas across all takes, assert it scales linearly with n.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_51dd913c-83f2-4bb2-a2f2-32eb0d21b875?mode=deep",
+    "timestamp": "2026-05-31 20:56:14.627907",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where isRootRatified[maker][root] is set without any validation that root corresponds to a valid Merkle tree of offers, causing any arbitrary bytes32 value to be ratifiable, violating the invariant that ratified roots should correspond to valid offer trees, causing scoped impact: non-critical behavior divergence where semantically invalid roots can be ratified? Proof idea: unit test ratifying root = keccak256('arbitrary'), assert isRootRatified[maker][root] == true, then attempt isRatified with a proof that resolves to this root.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f27b89fd-98a5-4361-b757-eeb8cbe2a385?mode=deep",
+    "timestamp": "2026-05-31 20:56:27.639333",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.market.maturity has passed (post-maturity) trigger the call sequence Midnight.take → SetterRatifier.isRatified where the ratifier does not check offer.market.maturity, causing isRatified to return CALLBACK_SUCCESS for post-maturity offers as long as the root is ratified and proof is valid, violating the invariant that ratifier behavior should be consistent pre- and post-maturity, causing scoped impact: non-critical behavior divergence confirming SetterRatifier is maturity-agnostic? Proof idea: unit test with block.timestamp > offer.market.maturity, assert isRatified returns CALLBACK_SUCCESS if root and proof are valid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e55a782c-3fc8-4766-b347-502fc999911a?mode=deep",
+    "timestamp": "2026-05-31 20:56:40.763138",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the root is not scoped to a specific market (loanToken, collateralParams, maturity), causing the same root to authorize offers across different markets if the offer hashes happen to be leaves in the tree, violating the invariant that root ratification should be market-scoped to prevent cross-market authorization confusion, causing scoped impact: non-critical behavior divergence where root namespace is global across all markets for a given maker? Proof idea: unit test constructing a tree with offers from two different markets, ratify the root, assert both offers pass isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a2720fa-30ab-43da-ae71-5facf86f4b0a?mode=deep",
+    "timestamp": "2026-05-31 20:56:54.214604",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where ratifierData encodes a proof array with proof.length > 20 (exceeding HashLib.offerTreeTypeHash cap) trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.isLeaf where isLeaf does not enforce the height-20 cap (only offerTreeTypeHash does), causing isLeaf to iterate more than 20 times without reverting, violating the invariant that proof depth should be capped at 20 consistently across all HashLib functions, causing scoped impact: non-critical behavior divergence where isLeaf accepts proofs deeper than the EIP-712 tree type supports? Proof idea: unit test with proof.length == 21, assert isLeaf does not revert with TreeTooHigh (only offerTreeTypeHash would), confirm the inconsistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_26b7ea94-fc44-4088-a369-16df5b3c76f7?mode=deep",
+    "timestamp": "2026-05-31 20:57:07.561127",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an authorized operator under preconditions where maker has authorized the SetterRatifier contract itself in Midnight (as shown in testTakeAuthorizedSetterCanRatifyOnBehalf) trigger the call sequence where SetterRatifier.setIsRootRatified is called by an address authorized by the maker, causing the SetterRatifier to act as both the ratifier and an authorized state-setter, violating the invariant that the ratifier contract should not have dual roles as both validator and state manager for the same maker, causing scoped impact: non-critical behavior divergence where the ratifier contract can modify its own validation state? Proof idea: unit test replicating testTakeAuthorizedSetterCanRatifyOnBehalf, assert SetterRatifier can ratify roots for a maker that has authorized it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7b6d9b68-8bd4-466e-8c39-0cb23959b192?mode=deep",
+    "timestamp": "2026-05-31 20:57:20.595847",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.maker == address(0) and isRootRatified[address(0)][root] == false trigger the call sequence Midnight.take → SetterRatifier.isRatified where isRootRatified[address(0)][root] is checked, causing NotRatified to revert, violating the invariant that address(0) maker offers should be handled consistently, causing scoped impact: non-critical behavior divergence confirming address(0) maker is treated as any other maker in root lookup? Proof idea: unit test with offer.maker = address(0) and isRootRatified[address(0)][root] = false, assert NotRatified revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce067d47-602d-4d89-bca7-7cae37b30c1e?mode=deep",
+    "timestamp": "2026-05-31 20:57:33.875559",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where no expiry timestamp is associated with the ratification, causing the root to remain valid indefinitely until explicitly revoked, violating the invariant that offer authorization should have a bounded lifetime (unlike EcrecoverRatifier where offer.expiry bounds validity), causing scoped impact: non-critical behavior divergence where SetterRatifier roots have no time-based expiry unlike offer.expiry fields? Proof idea: unit test ratifying a root, advancing block.timestamp by years, assert isRootRatified[maker][root] == true and isRatified still returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_da5ae4f9-d6b8-495b-8c3d-a1fb65585603?mode=deep",
+    "timestamp": "2026-05-31 20:57:47.409354",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where ratifierData encodes a proof with all-zero sibling hashes (proof[i] == bytes32(0) for all i) trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.isLeaf iterating with zero siblings, causing hashNode(currentHash, bytes32(0)) or hashNode(bytes32(0), currentHash) to produce deterministic hashes, violating the invariant that zero-value proof elements should not produce unexpected behavior, causing scoped impact: non-critical behavior divergence confirming zero-element proofs are handled consistently? Proof idea: unit test with all-zero proof array, assert isLeaf returns false unless the root happens to match the computed hash chain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a8b18bcb-8af0-451b-b28e-50a827f9edd1?mode=deep",
+    "timestamp": "2026-05-31 20:58:02.393810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the function does not return a value (void), causing callers to have no on-chain confirmation of the new state beyond reading isRootRatified[maker][root] separately, violating the invariant that state-mutating functions should return the new state for caller convenience, causing scoped impact: non-critical behavior divergence where callers must make an additional view call to confirm the new ratification state? Proof idea: unit test asserting setIsRootRatified returns nothing, compare with a version that returns the new bool value, document the extra view call overhead for callers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4fb1219d-1b4a-4b3d-b327-4095bbe165e4?mode=deep",
+    "timestamp": "2026-05-31 20:58:16.454276",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where two different offers (offerA and offerB) have the same HashLib.hashOffer output (hash collision, cryptographically infeasible but worth asserting the code path) trigger the call sequence Midnight.take → SetterRatifier.isRatified where isLeaf accepts either offer for the same leaf position, violating the invariant that distinct offers must produce distinct hashes, causing scoped impact: non-critical behavior divergence confirming the protocol relies on keccak256 collision resistance? Proof idea: differential test asserting hashOffer(offerA) != hashOffer(offerB) for all fuzzed offer pairs with at least one differing field.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bec1a54c-b6e2-4d07-b3ab-b857f86d4d40?mode=deep",
+    "timestamp": "2026-05-31 20:58:29.609492",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the Midnight.isAuthorized external call in the require check (line 25) is only made when maker != msg.sender due to short-circuit evaluation, causing the gas cost of setIsRootRatified to differ between the maker-direct path and the operator path by exactly the cost of one external isAuthorized call, violating the invariant that gas cost should be documented for both paths, causing scoped impact: minor gas cost divergence between maker-direct and operator-mediated ratification? Proof idea: unit test measuring gas for setIsRootRatified when msg.sender == maker vs msg.sender == operator, assert difference equals approximately one external call cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d152fa2d-ed2d-46d2-8724-e50d4ae8a46b?mode=deep",
+    "timestamp": "2026-05-31 20:58:42.708842",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.market has rcfThreshold, enterGate, and liquidatorGate fields set to non-zero values trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.hashMarket where all Market fields including rcfThreshold, enterGate, and liquidatorGate are included in the hash, causing the offer hash to be sensitive to all market parameters, violating the invariant that market hash should include all fields that define market identity, causing scoped impact: non-critical behavior divergence confirming full market struct is hashed? Proof idea: unit test asserting hashMarket produces different values when any single Market field differs, fuzz all Market fields.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_368333fe-2057-46ef-b5aa-83fb027e4aba?mode=deep",
+    "timestamp": "2026-05-31 20:58:55.741899",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the event SetIsRootRatified indexes caller, maker, and root (all three as indexed topics), causing the event to consume three topic slots plus one data slot (newIsRootRatified), violating the invariant that indexed topics should be chosen for fields most commonly filtered, causing scoped impact: non-critical behavior divergence where indexing all three address/bytes32 fields may be suboptimal for log filtering? Proof idea: unit test asserting event topics match expected indexed fields, compare with EcrecoverRatifier.CancelRoot event structure for consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_145a3035-d597-4686-bd99-326fba538d95?mode=deep",
+    "timestamp": "2026-05-31 20:59:08.896930",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.group == bytes32(0) and offer.maxUnits == 0 and offer.maxAssets == 0 trigger the call sequence Midnight.take → SetterRatifier.isRatified → HashLib.hashOffer where group, maxUnits, and maxAssets are all zero, causing the offer hash to include these zero values, violating the invariant that zero-value offer fields should hash consistently and not produce unexpected collisions, causing scoped impact: non-critical behavior divergence confirming zero-field offers hash correctly? Proof idea: unit test with all-zero optional offer fields, assert hashOffer produces a deterministic non-zero value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d41cc8d6-a518-4052-a334-9e92473c741d?mode=deep",
+    "timestamp": "2026-05-31 20:59:22.440884",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low'] [Function: setIsRootRatified] Can an unprivileged maker under preconditions where maker calls setIsRootRatified(maker, root, true) trigger the call sequence where the function is callable by anyone who is authorized in Midnight for the maker, including addresses authorized via EcrecoverAuthorizer.setIsAuthorized (which uses a signature), causing the root ratification to be grantable via off-chain signature without the maker's direct on-chain action, violating the invariant that root ratification should require explicit on-chain maker action, causing scoped impact: non-critical behavior divergence where off-chain-authorized operators can ratify roots? Proof idea: integration test where maker signs an EcrecoverAuthorizer authorization for operator, operator uses it to call setIsRootRatified, assert root is ratified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_96ddf70d-ad08-44fc-ab1d-ecb4dbb7a506?mode=deep",
+    "timestamp": "2026-05-31 20:59:36.885079",
+    "report_generated": false
+  }
+]
