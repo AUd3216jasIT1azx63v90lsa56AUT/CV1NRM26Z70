@@ -1,0 +1,42 @@
+[
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2a18f31e-badd-4446-a92e-d7b91258314f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9c5bf43c-3f60-4175-9e2f-4b1a976bdacb?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0f9fcb48-eb26-45d2-a6cb-1073136d0ca0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c4a0d573-99fd-4c08-81ef-da853e684cf3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4792e5e5-d104-4168-a014-9e5e5f33919f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_30788a6f-b0fc-456d-8fe9-d59744fefe99?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_de21b88f-6153-439e-b56d-c692dbf13185?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Liquidation bypass or incorrect liquidation that lets unhealthy borrowers avoid liquidation or lets liquidators seize excess collateral'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_fc4bd41a-c7ea-4724-8bb4-e2905abeade8?mode=deep",
+    "questions_generated": false
+  }
+]
