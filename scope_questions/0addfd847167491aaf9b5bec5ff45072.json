@@ -1,0 +1,72 @@
+[
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d7939673-9fc5-4b88-bd88-5710275449c2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5e70b9f8-c058-4914-9f81-3ec8b1f58d40?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7ed0ddb0-a81b-47e4-9894-7c4ba079d402?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e83995d7-2c0d-4543-b3ac-10b6ebb6ead0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2e71fb6a-09ba-40fe-a642-799e2ae06823?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5e61f77b-9461-4822-86c0-3da89619d2a7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5e79622d-bf21-4560-813a-97fa3817c76b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_bd601c8a-711e-4525-96eb-cca195d66639?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_eed12694-952d-4076-b1c1-5ae8510a7d89?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0ba6d256-af91-476e-9afa-404716c21f5c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_758825f6-cf45-43df-ba46-474c7a22b801?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_05b4049f-55eb-4bc2-b300-d66013454be1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b751a3e4-fe6d-40fb-a30c-59469c92b482?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_957e2083-5469-4ee4-8753-f3133a8628ae?mode=deep",
+    "questions_generated": false
+  }
+]
