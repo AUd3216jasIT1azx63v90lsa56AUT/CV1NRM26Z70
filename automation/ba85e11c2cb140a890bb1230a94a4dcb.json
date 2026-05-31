@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer where the taker uses MidnightBundles.supplyCollateralAndSellWithUnitsTarget() with a try/catch that silently skips failed takes, and the ConsumableUnitsLib.consumableUnits() computation returns a value that causes the bundler to attempt a take with units=0 (no-op), and does the no-op take still increment claimableSettlementFee by a non-zero amount due to rounding in buyerAssets - sellerAssets computation, causing fee accumulation without corresponding token inflow? Proof idea: fuzz units=0 in take, assert claimableSettlementFee is not incremented for no-op takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_953a560d-1c2f-4e91-927f-64e903aa741d?mode=deep",
+    "timestamp": "2026-05-31 18:54:25.793939",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a buy offer where the market has a high continuousFee and the buyer's lastAccrual is set to a timestamp far in the past (e.g., market creation time), causing the fee accrual in updatePositionView to compute fee = pendingFee.mulDivDown(accrualEnd - lastAccrual, maturity - lastAccrual) to be nearly equal to pendingFee, zeroing out the buyer's credit, and does this cause totalUnits to be decremented by creditDecrease while continuousFeeCredit is incremented by accruedFee, and if continuousFeeCredit > actual loanToken balance, does claimContinuousFee cause insolvency? Proof idea: fuzz lastAccrual far in past, assert continuousFeeCredit <= Midnight.balanceOf(loanToken) - withdrawable - claimableSettlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e1c21cc2-bee2-438c-922d-07da41cc8d52?mode=deep",
+    "timestamp": "2026-05-31 18:54:37.852906",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer where the market has multiple collateral assets and the borrower's collateralBitmap has bits set for collateral indices that have zero collateral balance (due to a previous withdrawCollateral that cleared the balance but not the bitmap, or vice versa), causing the isHealthy check to iterate over phantom collateral entries and compute maxDebt incorrectly, allowing an unhealthy position to appear healthy and avoid liquidation, accumulating bad debt that inflates lossFactor and desyncs continuousFeeCredit? Proof idea: fuzz collateralBitmap vs actual collateral balances, assert bitmap bits are set iff collateral[i] > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e927689a-8ea6-419c-adb1-c0e96c383f0c?mode=deep",
+    "timestamp": "2026-05-31 18:54:50.382471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a buy offer where the offer's market struct passed to take() has collateralParams in a different order than the market was created with (since touchMarket checks sorted order at creation but take uses the offer's market struct directly for isHealthy), causing the collateral index mapping to be wrong and the health check to use the wrong oracle price for each collateral, allowing an unhealthy position to pass the health check and accumulate bad debt that inflates lossFactor and desyncs continuousFeeCredit from the actual loanToken balance? Proof idea: create market with sorted collaterals, take with unsorted collaterals in offer.market, assert toId produces different id and take reverts or uses correct market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3643f17f-1517-47bf-a67c-e1c19a5c1f8e?mode=deep",
+    "timestamp": "2026-05-31 18:55:03.406748",
+    "report_generated": false
+  }
+]
