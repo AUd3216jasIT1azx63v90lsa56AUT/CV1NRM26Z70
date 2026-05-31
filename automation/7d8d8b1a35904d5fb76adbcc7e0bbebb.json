@@ -1,0 +1,140 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that ConsumableUnitsLib.consumableUnits returns 0 for all offers (all offers fully consumed), trigger the call sequence where unitsToTake = min(targetUnits - filledUnits, takes[i].units, 0) == 0 for every offer and take(offer, ..., 0, ...) is called with units == 0, violating the invariant that zero-unit takes are no-ops and do not corrupt accounting, causing scoped impact: zero-unit takes succeed (Midnight allows no-ops) but filledUnits never reaches targetUnits, causing OutOfOffers revert? Proof idea: state test where all offers are fully consumed and assert the bundler reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6e831792-106c-481b-bb4c-8866d4d1bbea?mode=deep",
+    "timestamp": "2026-05-31 20:29:30.906683",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker, under the precondition that minSellerAssets is set to filledSellerAssets (no referral fee expected) but referralFeePct > 0, trigger the call sequence where filledSellerAssets - referralFeeAssets < minSellerAssets causes SellerAssetsTooLow revert after collateral is supplied and takes succeed, violating the invariant that the user's minSellerAssets slippage protection accounts for the referral fee, causing scoped impact: user's transaction reverts after collateral is supplied and takes succeed, wasting gas and blocking the operation? Proof idea: unit test with minSellerAssets == filledSellerAssets and referralFeePct > 0 and assert SellerAssetsTooLow is triggered.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa33553b-65a6-4562-911e-8852bf8b833c?mode=deep",
+    "timestamp": "2026-05-31 20:29:42.762360",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that referralFeePct > 0 and targetBuyerAssets is set to exactly the amount needed to fill minUnits worth of offers at the current price, trigger the call sequence where targetFilledBuyerAssets = targetBuyerAssets - referralFeeAssets is less than the amount needed to fill minUnits, violating the invariant that the user receives at least minUnits when passing targetBuyerAssets, causing scoped impact: user pays targetBuyerAssets but receives fewer than minUnits, with the referral fee silently reducing the effective fill budget? Proof idea: fuzz referralFeePct and targetBuyerAssets and assert filledUnits >= minUnits when targetBuyerAssets is set to cover minUnits at the current price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0fff984-8351-44bc-a0b5-3f1ad9bc9e41?mode=deep",
+    "timestamp": "2026-05-31 20:29:55.790572",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker, under the precondition that referralFeePct > 0 and maxUnits is set to the expected number of units to sell targetSellerAssets worth, trigger the call sequence where targetFilledSellerAssets = targetSellerAssets + referralFeeAssets requires more units than maxUnits to fill, violating the invariant that the user sells at most maxUnits when passing targetSellerAssets, causing scoped impact: user sells more units than maxUnits due to the referral fee inflating the fill target, triggering UnitsTooHigh revert? Proof idea: fuzz referralFeePct and targetSellerAssets and assert filledUnits <= maxUnits when maxUnits is set to cover targetSellerAssets at the current price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec2f883b-0816-4013-a3df-97259d5a511c?mode=deep",
+    "timestamp": "2026-05-31 20:30:08.212314",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that referralFeeRecipient == address(0) and referralFeeAssets > 0, trigger the call sequence where safeTransfer(loanToken, address(0), referralFeeAssets) is called, violating the invariant that tokens are never sent to address(0), causing scoped impact: referral fee tokens are permanently burned or the transfer reverts depending on the token implementation, causing user loss? Proof idea: unit test with referralFeeRecipient == address(0) and referralFeePct > 0 and assert the call reverts or tokens are not burned.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a617e7b5-6d15-47de-a4c2-e13468aaf23b?mode=deep",
+    "timestamp": "2026-05-31 20:30:21.591543",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker, under the precondition that referralFeeRecipient == address(0) and referralFeeAssets > 0, trigger the call sequence where safeTransfer(loanToken, address(0), referralFeeAssets) is called, violating the invariant that tokens are never sent to address(0), causing scoped impact: referral fee tokens are permanently burned or the transfer reverts, causing user loss? Proof idea: unit test with referralFeeRecipient == address(0) and referralFeePct > 0 and assert the call reverts or tokens are not burned.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_843c314f-6d2a-4997-b61b-a28a72efebc2?mode=deep",
+    "timestamp": "2026-05-31 20:30:35.613107",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains duplicate offers (same offer struct repeated), trigger the call sequence where the same offer is taken multiple times until filledUnits == targetUnits, violating the invariant that each offer is taken at most once per bundler call, causing scoped impact: the maker's consumed amount is incremented multiple times for the same offer, potentially exceeding maxUnits or maxAssets and causing ConsumedUnits/ConsumedAssets revert on the second take (caught by try/catch), silently skipping the duplicate? Proof idea: unit test with duplicate offers and assert consumed[maker][group] is incremented correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03eb0cfc-41c3-4008-824a-ceddbb92247e?mode=deep",
+    "timestamp": "2026-05-31 20:30:48.631811",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains an offer with takes[i].units == 0 and ConsumableUnitsLib.consumableUnits returns a nonzero value, trigger the call sequence where unitsToTake = min(targetUnits - filledUnits, 0, consumableUnits) == 0 and take(offer, ..., 0, ...) is called, violating the invariant that zero-unit takes do not count toward filledUnits, causing scoped impact: the loop iterates over zero-unit takes without making progress, potentially exhausting the takes[] array and causing OutOfOffers revert? Proof idea: unit test with takes[i].units == 0 for all i and assert OutOfOffers is triggered.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_083d7ebd-bf23-440a-af54-3c15033e630e?mode=deep",
+    "timestamp": "2026-05-31 20:31:04.027789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: repayAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that collateralWithdrawals[] contains a withdrawal that would make onBehalf's position unhealthy (debt > 0 after repay), trigger the call sequence repay(market, units, onBehalf) -> withdrawCollateral(market, index, assets, onBehalf, collateralReceiver) where Midnight reverts with UnhealthyBorrower, violating the invariant that the bundler's repay-and-withdraw flow always succeeds when units == debt, causing scoped impact: user's transaction reverts after repay succeeds, leaving the position repaid but collateral not withdrawn? Proof idea: state test where collateralWithdrawals[0].assets > all collateral and assert UnhealthyBorrower is triggered.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f96b1ad-da6f-47d7-b264-a7b2893b17e6?mode=deep",
+    "timestamp": "2026-05-31 20:31:18.204382",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that the market has an enterGate that blocks the taker from increasing credit, trigger the call sequence where all take calls revert with BuyerGatedFromIncreasingCredit (caught by try/catch) and filledUnits never reaches targetUnits, violating the invariant that the bundler provides a meaningful error when the gate blocks all takes, causing scoped impact: user's transaction reverts with OutOfOffers instead of BuyerGatedFromIncreasingCredit, masking the root cause? Proof idea: state test with a blocking enterGate and assert the revert reason is OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9bfafceb-70d3-47fe-a284-00b8a29b58b9?mode=deep",
+    "timestamp": "2026-05-31 20:31:31.145472",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker, under the precondition that the market has an enterGate that blocks the taker from increasing debt, trigger the call sequence where all take calls revert with SellerGatedFromIncreasingDebt (caught by try/catch) and filledUnits never reaches targetUnits, violating the invariant that the bundler provides a meaningful error when the gate blocks all takes, causing scoped impact: user's transaction reverts with OutOfOffers instead of SellerGatedFromIncreasingDebt, masking the root cause and wasting gas after collateral is supplied? Proof idea: state test with a blocking enterGate and assert the revert reason is OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_042c672d-067c-4c82-a4ed-1a102dd66541?mode=deep",
+    "timestamp": "2026-05-31 20:31:45.945289",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that the market has matured (block.timestamp > market.maturity) and takes[] contains sell offers with sellerDebtIncrease > 0, trigger the call sequence where all take calls revert with CannotIncreaseDebtPostMaturity (caught by try/catch) and filledUnits never reaches targetUnits, violating the invariant that the bundler correctly handles post-maturity markets, causing scoped impact: user's transaction reverts with OutOfOffers after tokens are pulled, blocking a valid post-maturity buy flow? Proof idea: state test at block.timestamp > market.maturity with sell offers and assert OutOfOffers is triggered.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a138d558-9ff7-4ecb-be84-7682a9b5521b?mode=deep",
+    "timestamp": "2026-05-31 20:31:59.464276",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains a mix of valid and invalid offers (some revert, some succeed), trigger the call sequence where the try/catch silently skips reverted takes and filledUnits reaches targetUnits using only the valid offers, violating the invariant that the user is aware of which offers were skipped, causing scoped impact: user fills targetUnits but at a worse average price than expected because cheaper offers were skipped due to asynchrony? Proof idea: state test with a mix of valid and expired offers and assert filledUnits == targetUnits and average price is within expected bounds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_24d10e30-34b3-47d9-b486-d5f3c3e1bcb8?mode=deep",
+    "timestamp": "2026-05-31 20:32:12.812478",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker, under the precondition that collateralSupplies[] contains a collateralIndex that activates a new collateral for the taker (oldCollateral == 0), trigger the call sequence supplyCollateral (activates collateral, increments collateralBitmap) -> take loop fails -> require(filledSellerAssets == targetFilledSellerAssets) reverts, violating the invariant that a revert undoes the collateral activation, causing scoped impact: if the revert correctly undoes supplyCollateral, no fund loss occurs, but the collateral bitmap state is correctly reverted? Proof idea: state test where all takes revert and assert collateralBitmap(id, taker) is unchanged after the bundler call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2e7afcc-6daf-4c63-b00c-55cf68867f64?mode=deep",
+    "timestamp": "2026-05-31 20:32:27.310931",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that maxBuyerAssets is set to exactly filledBuyerAssets * WAD / (WAD - referralFeePct) (the exact total cost including referral fee), trigger the call sequence where the return transfer safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets) sends 0 tokens, violating the invariant that safeTransfer with value 0 is a no-op, causing scoped impact: if the loanToken reverts on zero-value transfers, the user's transaction fails even though the math is correct? Proof idea: unit test with a token that reverts on zero-value transfers and assert the bundler call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d396369-f73c-4a78-b981-00167f457618?mode=deep",
+    "timestamp": "2026-05-31 20:32:42.191507",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker, under the precondition that filledSellerAssets == 0 (all takes succeed with 0 sellerAssets due to zero-unit takes), trigger the call sequence where referralFeeAssets = 0.mulDivDown(referralFeePct, WAD) == 0 and safeTransfer(loanToken, receiver, 0) is called, violating the invariant that safeTransfer with value 0 is a no-op, causing scoped impact: if the loanToken reverts on zero-value transfers, the user's transaction fails even though all takes succeeded? Proof idea: unit test with a token that reverts on zero-value transfers and filledSellerAssets == 0 and assert the bundler call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0033b3c0-3f56-4f41-a2c3-a6c034814c41?mode=deep",
+    "timestamp": "2026-05-31 20:32:56.955490",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that the loanToken is a fee-on-transfer token (excluded by Midnight's token safety requirements but not explicitly checked by the bundler), trigger the call sequence pullToken(loanToken, msg.sender, maxBuyerAssets) where the bundler receives maxBuyerAssets - fee, then forceApproveMax -> take loop where Midnight pulls buyerAssets from the bundler but the bundler has fewer tokens than expected, violating the invariant that the bundler always has enough tokens to cover all takes, causing scoped impact: take reverts due to insufficient bundler balance, blocking the operation? Proof idea: unit test with a fee-on-transfer token and assert the bundler call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6330c0f-740b-4fb3-a352-0d918751afe0?mode=deep",
+    "timestamp": "2026-05-31 20:33:13.507972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: repayAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that the loanToken is a fee-on-transfer token, trigger the call sequence pullToken(loanToken, msg.sender, assets) where the bundler receives assets - fee, then forceApproveMax -> IMidnight.repay(market, units, onBehalf) where Midnight pulls units from the bundler but the bundler has fewer tokens than units, violating the invariant that the bundler always has enough tokens to cover the repay, causing scoped impact: repay reverts due to insufficient bundler balance, blocking the operation? Proof idea: unit test with a fee-on-transfer token and assert the bundler call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7073a790-fb97-4d94-805d-3bd2f3163ba4?mode=deep",
+    "timestamp": "2026-05-31 20:33:27.224311",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains offers with different ratifiers and some ratifiers revert (caught by try/catch), trigger the call sequence where ratifier-reverted takes are silently skipped and filledUnits reaches targetUnits using only ratifier-approved offers, violating the invariant that the user is aware of which offers were skipped due to ratifier failure, causing scoped impact: user fills targetUnits but at a worse average price than expected because cheaper ratifier-approved offers were skipped? Proof idea: state test with a mix of valid and ratifier-failing offers and assert filledUnits == targetUnits and average price is within expected bounds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f72e46c-ecf4-4977-925d-9d5c056334c6?mode=deep",
+    "timestamp": "2026-05-31 20:33:41.400120",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains an offer with offer.buy == true (violating InconsistentSide), trigger the call sequence where require(!takes[i].offer.buy, InconsistentSide()) reverts the entire transaction (not caught by try/catch), violating the invariant that InconsistentSide is caught gracefully, causing scoped impact: user's transaction reverts with InconsistentSide after tokens are pulled, blocking the operation? Proof idea: unit test with takes[i].offer.buy == true and assert InconsistentSide is triggered before any takes succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_425b500a-6f6c-44dd-835f-8effc7cb09b4?mode=deep",
+    "timestamp": "2026-05-31 20:33:57.015772",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker, under the precondition that takes[] contains an offer with offer.buy == false (violating InconsistentSide), trigger the call sequence where require(takes[i].offer.buy, InconsistentSide()) reverts the entire transaction (not caught by try/catch), violating the invariant that InconsistentSide is caught gracefully, causing scoped impact: user's transaction reverts with InconsistentSide after collateral is supplied, blocking the operation? Proof idea: unit test with takes[i].offer.buy == false and assert InconsistentSide is triggered after supplyCollateral succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b67af6d-1472-4162-979b-3aa7d0255791?mode=deep",
+    "timestamp": "2026-05-31 20:34:12.068184",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that takes[] contains an offer with a different market id (violating InconsistentMarket), trigger the call sequence where require(IMidnight(MIDNIGHT).toId(takes[i].offer.market) == id, InconsistentMarket()) reverts the entire transaction (not caught by try/catch), violating the invariant that InconsistentMarket is caught gracefully, causing scoped impact: user's transaction reverts with InconsistentMarket after tokens are pulled, blocking the operation? Proof idea: unit test with takes[i].offer.market having a different id and assert InconsistentMarket is triggered.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa0cb1c5-7d27-41c4-8716-538cf33eb534?mode=deep",
+    "timestamp": "2026-05-31 20:34:26.393011",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender, under the precondition that referralFeePct == WAD - 1 (maximum allowed), trigger the call sequence where referralFeeAssets = filledBuyerAssets.mulDivDown(WAD - 1, 1) == filledBuyerAssets * (WAD - 1) which is astronomically large, violating the invariant that referralFeeAssets is bounded by a reasonable fraction of filledBuyerAssets, causing scoped impact: the subtraction maxBuyerAssets - filledBuyerAssets - referralFeeAssets always underflows for any practical maxBuyerAssets, permanently blocking the function for near-WAD referralFeePct? Proof idea: unit test with referralFeePct == WAD - 1 and any nonzero filledBuyerAssets and assert the call always reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79458909-70f6-4827-9abb-e8483cc3fd10?mode=deep",
+    "timestamp": "2026-05-31 20:34:42.118009",
+    "report_generated": false
+  }
+]
