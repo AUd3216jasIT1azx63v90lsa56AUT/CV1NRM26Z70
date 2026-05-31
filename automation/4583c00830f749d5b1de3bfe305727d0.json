@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged market creator, acting as msg.sender, call buyWithUnitsTargetAndWithdrawCollateral with a valid takes[0].offer.market whose loanToken has defaultSettlementFeeCbp[loanToken] all-zero (feeSetter has not yet set defaults) before the feeSetter sets defaults, causing touchMarket to snapshot all-zero settlementFeeCbp0..6 into the new MarketState, so that every subsequent take in that market pays zero settlement fee and claimableSettlementFee[loanToken] never accumulates, violating the invariant that settlement fees must accrue to the protocol on every take? Proof idea: deploy Midnight with feeSetter unset, call buyWithUnitsTargetAndWithdrawCollateral to create the market, assert settlementFeeCbps(id) == [0,0,0,0,0,0,0] and claimableSettlementFee[loanToken] == 0 after N takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b4805bd-2cc4-4b3e-a1e7-3b6c38e78300?mode=deep",
+    "timestamp": "2026-05-31 18:26:08.949320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged attacker front-run a pending setDefaultSettlementFee transaction by calling buyWithUnitsTargetAndWithdrawCollateral with a target market that does not yet exist, causing touchMarket to snapshot the pre-update defaultSettlementFeeCbp values into MarketState.settlementFeeCbp0..6, permanently locking the market into lower-than-intended fees even after the feeSetter's transaction confirms, violating the invariant that newly created markets should inherit the current intended default fee schedule? Proof idea: set defaultSettlementFeeCbp to non-zero, submit setDefaultSettlementFee to increase them, front-run with bundler call, assert market was created with old fees.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81bf72b0-5645-41c9-9e60-1d31bd1726c5?mode=deep",
+    "timestamp": "2026-05-31 18:26:20.848764",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithUnitsTarget / touchMarket] Can an unprivileged taker call supplyCollateralAndSellWithUnitsTarget on a market that does not yet exist, causing touchMarket to create the market with defaultContinuousFee[loanToken] == 0 (if not yet set), so that all lenders who enter the market via subsequent takes have buyerPendingFeeIncrease == 0 and pay zero continuous fee for the entire market lifetime, violating the invariant that continuous fees must accrue proportionally to credit held over time? Proof idea: deploy with defaultContinuousFee unset, create market via bundler, take buy offers, assert pendingFee == 0 for all lenders after updatePositionView.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0f2494a-eeb2-440c-abdc-1697440fc4b6?mode=deep",
+    "timestamp": "2026-05-31 18:26:33.522272",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: repayAndWithdrawCollateral / repay / touchMarket] Can an unprivileged borrower call repayAndWithdrawCollateral with assets == 0 and an empty collateralWithdrawals array on a market that does not yet exist, causing repay to call touchMarket internally and create the market with current (possibly zero) default fees as a pure side effect, without any economic action, violating the invariant that market creation should reflect the intended fee schedule at the time of first legitimate use? Proof idea: call repayAndWithdrawCollateral(market, 0, onBehalf, emptyPermit, [], receiver, 0, address(0)) on uncreated market, assert market is created with current defaults.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f5d74915-37b6-4ce1-9b1c-a64fa0692c01?mode=deep",
+    "timestamp": "2026-05-31 18:26:46.920111",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithAssetsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged taker call buyWithAssetsTargetAndWithdrawCollateral on a market that does not yet exist, causing touchMarket to create the market with defaultSettlementFeeCbp snapshot, and then immediately have ConsumableUnitsLib.consumableUnits call settlementFee(id, ttm) using those just-snapshotted fees, while the actual take also uses those same fees, creating a consistent but potentially zero-fee state that persists for the market lifetime, violating the fee accounting invariant? Proof idea: fuzz defaultSettlementFeeCbp values at market creation time via bundler and assert claimableSettlementFee accumulation matches expected fee schedule.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b94c83c-c6a0-4bec-ad68-15f35137e2e5?mode=deep",
+    "timestamp": "2026-05-31 18:26:59.735727",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender set referralFeePct to a value close to WAD - 1 (e.g., WAD - 1), causing referralFeeAssets = filledBuyerAssets.mulDivDown(WAD - 1, 1) to be approximately filledBuyerAssets * (WAD - 1), which when subtracted in maxBuyerAssets - filledBuyerAssets - referralFeeAssets causes an arithmetic underflow revert in Solidity 0.8, permanently bricking the bundle call for any maxBuyerAssets value that does not account for the near-WAD referral fee, violating the invariant that valid referralFeePct < WAD should always produce a non-reverting refund? Proof idea: fuzz referralFeePct in [WAD/2, WAD-1] with filledBuyerAssets near maxBuyerAssets and assert underflow condition.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_42b03e93-814f-427c-a916-5694f9ed776d?mode=deep",
+    "timestamp": "2026-05-31 18:27:13.528242",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender construct a scenario where filledBuyerAssets is large and referralFeePct is set such that referralFeeAssets = filledBuyerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) > maxBuyerAssets - filledBuyerAssets, causing the refund transfer SafeTransferLib.safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets) to underflow and revert, even though referralFeePct < WAD was validated, violating the invariant that a valid referralFeePct should never cause the bundle to revert after successful fills? Proof idea: unit test with referralFeePct = WAD/2, maxBuyerAssets = 100, filledBuyerAssets = 100, assert underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a5a13152-751e-4437-b6f6-7ac9949d4eff?mode=deep",
+    "timestamp": "2026-05-31 18:27:26.799987",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithUnitsTarget / touchMarket] Can an unprivileged taker create a market via the bundler's touchMarket call with defaultContinuousFee[loanToken] == X, then have the feeSetter call setDefaultContinuousFee to change the default to Y, and then have a second taker create a different market (same loanToken, different maturity) via the bundler with continuousFee == Y, creating two markets with the same loanToken but different continuousFee values, violating the invariant that markets with the same loanToken should have consistent fee treatment for lenders? Proof idea: create two markets via bundler before and after setDefaultContinuousFee, assert continuousFee(id1) != continuousFee(id2).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf13e875-621f-4e56-be68-c06cf9ba2e77?mode=deep",
+    "timestamp": "2026-05-31 18:27:41.333268",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / ConsumableUnitsLib.consumableUnits] Can an unprivileged attacker exploit the fact that ConsumableUnitsLib.consumableUnits calls settlementFee(id, ttm) at bundle execution time while the actual take also calls settlementFee(id, ttm), but if the feeSetter calls setMarketSettlementFee between the touchMarket call and the take loop (in a different transaction or via multicall), the consumableUnits calculation uses stale fees while the take uses updated fees, causing the computed unitsToTake to be incorrect and potentially causing ConsumedAssets() revert or underfill, violating the invariant that bundle fills should be consistent with the fee state at execution time? Proof idea: sandwich bundler call with setMarketSettlementFee and assert take reverts or fills incorrectly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_514857db-082c-4c62-9a52-210d70beedd0?mode=deep",
+    "timestamp": "2026-05-31 18:27:55.581914",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithAssetsTargetAndWithdrawCollateral / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker call buyWithAssetsTargetAndWithdrawCollateral on a market where the feeSetter has just increased settlementFee via setMarketSettlementFee, causing TakeAmountsLib.buyerAssetsToUnits to compute unitsToTake using the new fee, but the actual take in Midnight uses the same new fee, so the fill is consistent, yet the taker receives fewer units than expected because the higher fee reduces sellerPrice, violating the invariant that targetBuyerAssets should yield at least minUnits? Proof idea: fuzz settlementFee changes and assert minUnits check catches the shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b235c1d-36dd-430c-b4d4-f3b8fc67333d?mode=deep",
+    "timestamp": "2026-05-31 18:28:09.929222",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithAssetsTarget / touchMarket] Can an unprivileged taker call supplyCollateralAndSellWithAssetsTarget on a market that does not yet exist, causing touchMarket to create the market with all-zero defaultSettlementFeeCbp, so that sellerPrice == offerPrice (no fee deduction), and TakeAmountsLib.sellerAssetsToUnits computes units based on zero fee, while the actual take also uses zero fee, resulting in the taker receiving more units per asset than intended, violating the invariant that settlement fees must be charged on every take? Proof idea: create market via bundler with zero defaults, compare units received vs expected with non-zero fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fb4e61b7-e98c-44ab-8f7e-1b283414e0ec?mode=deep",
+    "timestamp": "2026-05-31 18:28:27.938239",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged attacker call touchMarket directly on Midnight (it is public) to create a market with current zero default fees, and then call buyWithUnitsTargetAndWithdrawCollateral on the same market, causing the bundler's touchMarket call to be a no-op (market already exists), but the market has zero fees locked in, so all bundle takes pay zero settlement fee, violating the invariant that the bundler should not be usable to bypass the intended fee schedule? Proof idea: call Midnight.touchMarket directly before bundler, assert market fees are zero and claimableSettlementFee never increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6895af90-df47-41b6-918f-ed5bc094aa9c?mode=deep",
+    "timestamp": "2026-05-31 18:28:42.162378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower call repayAndWithdrawCollateral with referralFeePct == WAD - 1, causing units = assets - assets.mulDivDown(WAD - 1, WAD) = assets - (assets * (WAD-1) / WAD) ≈ 1 (for large assets), so that only 1 unit of debt is repaid while nearly all of assets goes to referralFeeRecipient, and then withdrawCollateral is called, potentially allowing collateral withdrawal with almost no debt repayment, violating the invariant that repayAndWithdrawCollateral should repay a meaningful amount of debt proportional to assets provided? Proof idea: call with referralFeePct = WAD - 1, large assets, assert units repaid is near 0 and collateral is withdrawn.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82d6e126-3a20-4db6-b0b1-aa562045b6d7?mode=deep",
+    "timestamp": "2026-05-31 18:28:56.110959",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender pass takes[] where takes[0].offer.market has enterGate == address(0) but the intended market has enterGate != address(0), causing touchMarket to create a new market (different id) without the gate, and then all takes and collateral withdrawals operate on this gateless market, allowing any user to increase credit/debt without gate restriction, violating the invariant that gate-restricted markets must enforce gate checks on all entry paths? Proof idea: supply market struct with enterGate zeroed, assert new market id is created without gate and takes succeed without gate check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e012eeaf-3c78-46f8-9d98-0c9dbde5fb5e?mode=deep",
+    "timestamp": "2026-05-31 18:29:10.352267",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithUnitsTarget / touchMarket] Can an unprivileged taker call supplyCollateralAndSellWithUnitsTarget where takes[0].offer.market has liquidatorGate == address(0) but the intended market has liquidatorGate != address(0), causing touchMarket to create a gateless-liquidator market, allowing any liquidator to liquidate positions in this market without restriction, violating the invariant that liquidatorGate must be enforced on all liquidation paths for gated markets? Proof idea: create market via bundler with liquidatorGate zeroed, attempt liquidation from unauthorized address, assert it succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc30cc94-9976-4b09-a110-ba6562a13cdc?mode=deep",
+    "timestamp": "2026-05-31 18:29:24.895096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged attacker call buyWithUnitsTargetAndWithdrawCollateral with takes[0].offer.market.rcfThreshold set to type(uint256).max, causing touchMarket to create a market where the RCF condition is always satisfied (rcfThreshold is always exceeded), effectively disabling the recovery close factor for all liquidations in this market, violating the invariant that rcfThreshold must be set to a meaningful value to prevent full liquidations of near-healthy positions? Proof idea: create market via bundler with rcfThreshold = type(uint256).max, attempt full liquidation of near-healthy position, assert it succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af187ecc-bea3-4df6-bea1-02ef1188c741?mode=deep",
+    "timestamp": "2026-05-31 18:29:41.079369",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender pass an empty takes[] array, causing takes[0] to revert with an array out-of-bounds panic before any state changes, but the revert message is a panic rather than a protocol error, violating the invariant that the bundler should provide meaningful error messages for invalid inputs and not expose raw panics? Proof idea: call buyWithUnitsTargetAndWithdrawCollateral with takes = [], assert revert is panic(0x32) not a named error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0483fa6-c1df-4b1b-a058-dbb16aa5294f?mode=deep",
+    "timestamp": "2026-05-31 18:29:54.857687",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithUnitsTarget / touchMarket] Can an unprivileged taker call supplyCollateralAndSellWithUnitsTarget where the market does not yet exist and defaultSettlementFeeCbp[loanToken] is non-zero, but between the touchMarket call (which creates the market with non-zero fees) and the take loop, the feeSetter calls setMarketSettlementFee to set all breakpoints to 0, causing all takes in the bundle to pay zero settlement fee while the market was created with non-zero fees, violating the invariant that settlement fees set at market creation should be the minimum fee floor for that market? Proof idea: sandwich bundler call with setMarketSettlementFee(id, i, 0) for all i, assert claimableSettlementFee does not increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9754d6f9-da4b-48b2-8e4a-5a482058bbcc?mode=deep",
+    "timestamp": "2026-05-31 18:30:09.378055",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / ConsumableUnitsLib] Can an unprivileged attacker exploit the fact that ConsumableUnitsLib.consumableUnits uses offer.maxAssets == 0 branch to call sellerAssetsToUnits/buyerAssetsToUnits, which calls settlementFee(id, ttm), but if the market was just created by touchMarket with zero fees, settlementFee returns 0, causing buyerAssetsToUnits to compute units = targetBuyerAssets.mulDivUp(WAD, buyerPrice) where buyerPrice == offerPrice (no fee), potentially computing more units than the offer can actually fill at the correct fee, violating the invariant that consumableUnits must not exceed the offer's actual remaining capacity? Proof idea: create market with zero fees, compute consumableUnits, assert it matches actual take capacity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_96fddd0a-c04a-4393-8954-433fb7e424cd?mode=deep",
+    "timestamp": "2026-05-31 18:30:24.074309",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithAssetsTarget / touchMarket] Can an unprivileged taker create a market via the bundler with zero default fees, then have the feeSetter set non-zero per-market fees via setMarketSettlementFee, and then call supplyCollateralAndSellWithAssetsTarget again, causing TakeAmountsLib.sellerAssetsToUnits to use the new non-zero fees while the market was originally created with zero fees, resulting in a state where early takers paid zero fees and later takers pay non-zero fees for the same market, violating the invariant that fee treatment should be consistent across the market lifetime? Proof idea: create market with zero fees, update fees, compare sellerAssets for identical takes before and after fee update.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_24f4ea7d-6582-49db-b174-11c51075766b?mode=deep",
+    "timestamp": "2026-05-31 18:30:37.797075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / forceApproveMax] Can an unprivileged attacker exploit the forceApproveMax threshold of type(uint96).max / 2 by using a token that has a maximum allowance of exactly type(uint96).max (like COMP or UNI), where the bundler's current allowance is exactly type(uint96).max / 2, causing forceApproveMax to skip re-approval, but then a large take consumes the allowance below the threshold, leaving the bundler with insufficient allowance for the next bundle call, violating the invariant that the bundler should always have sufficient allowance to execute takes? Proof idea: set bundler allowance to type(uint96).max / 2, execute large take, assert next bundle call fails due to insufficient allowance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8479e5b3-4766-4de8-8dd3-cf500484c8aa?mode=deep",
+    "timestamp": "2026-05-31 18:30:51.535978",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged msg.sender pass takes[] where takes[i].offer.market has a different loanToken than takes[0].offer.market but the same id (impossible by construction since id includes loanToken), or alternatively pass takes[i] with a market struct that has the same id as takes[0] but different collateral params, causing the InconsistentMarket() check to pass (since toId hashes all params including collateral), but the collateral withdrawal at the end uses takes[0].offer.market which may have different collateral params than what was used in takes[i], violating the invariant that collateral operations must use the correct market params? Proof idea: construct takes with subtly different market structs that hash to the same id, assert collateral withdrawal uses correct params.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8e7f7010-c66d-493b-99cb-fc8bfcee7fae?mode=deep",
+    "timestamp": "2026-05-31 18:31:04.906426",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker pass collateralSupplies[] with a collateralIndex that is out of bounds for market.collateralParams[], causing market.collateralParams[collateralSupplies[i].collateralIndex].token to revert with an array out-of-bounds panic, but only after some collateral has already been supplied in earlier iterations of the loop, leaving the bundler in a state where it holds collateral tokens that were transferred from msg.sender but not yet supplied to Midnight, violating the invariant that the bundler should not hold user funds after a revert? Proof idea: pass collateralSupplies with valid index followed by out-of-bounds index, assert bundler holds no residual tokens after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c5672e2a-ea7e-4107-b68e-61b1faa56177?mode=deep",
+    "timestamp": "2026-05-31 18:31:19.351283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged attacker call buyWithUnitsTargetAndWithdrawCollateral on a market that does not yet exist, where the market's maturity is exactly block.timestamp + 100 * 365 days (the maximum allowed), causing touchMarket to create the market with settlementFeeCbp6 (the 360-day breakpoint fee) applied for all takes since TTM > 360 days, and then immediately have the feeSetter call setMarketSettlementFee to reduce the 360-day fee to 0, causing all future takes to pay zero fee, violating the invariant that the maximum-maturity market should always charge the maximum settlement fee? Proof idea: create max-maturity market via bundler, reduce fee to 0, assert claimableSettlementFee == 0 for subsequent takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e536b67-a7ef-4e9c-bb26-fbfcbe33eccb?mode=deep",
+    "timestamp": "2026-05-31 18:31:33.949486",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: repayAndWithdrawCollateral / touchMarket] Can an unprivileged borrower call repayAndWithdrawCollateral on a market that does not yet exist with a non-zero assets value, causing repay to call touchMarket and create the market with current default fees, then repay units = assets - referralFeeAssets of debt (which is 0 since the borrower has no debt in the newly created market), causing position[id][onBehalf].debt to underflow and revert with arithmetic underflow, violating the invariant that repay should not be callable on a market where the borrower has no debt? Proof idea: call repayAndWithdrawCollateral on uncreated market with non-zero assets, assert revert due to debt underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_009ab398-3cb1-4f9c-81a9-7ab5ede459a9?mode=deep",
+    "timestamp": "2026-05-31 18:31:49.050106",
+    "report_generated": false
+  }
+]
