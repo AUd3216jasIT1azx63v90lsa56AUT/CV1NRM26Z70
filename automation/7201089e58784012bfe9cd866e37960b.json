@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where proof.length == 20 trigger EcrecoverRatifier.isRatified via Midnight.take, causing HashLib.offerTreeTypeHash to traverse all 21 if-else branches instead of using a constant-time lookup, resulting in unnecessary gas cost proportional to height? Proof idea: unit-test gas usage of isRatified with proof.length in {0, 1, 5, 10, 15, 20} and assert gas increases linearly with branch traversal count rather than being O(1).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c7665d5-4d31-42e4-83d6-e1e0c5394d31?mode=deep",
+    "timestamp": "2026-05-31 23:49:28.488021",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where a valid offer is in a height-20 Merkle tree trigger isRatified, causing the domainSeparator to be recomputed via keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, address(this))) on every call rather than being cached as an immutable, resulting in unnecessary gas cost per take? Proof idea: benchmark gas for isRatified with proof.length == 0 vs proof.length == 20 and assert domainSeparator recomputation contributes a fixed overhead per call that could be eliminated by caching.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ddf064f-4a92-41c8-a57b-eafe4ef30f01?mode=deep",
+    "timestamp": "2026-05-31 23:49:40.384948",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged maker under preconditions where isRootCanceled[maker][root] is already true call cancelRoot(maker, root) again, causing a redundant SSTORE of the same true value and emitting a duplicate CancelRoot event, resulting in unnecessary gas cost and misleading event log? Proof idea: call cancelRoot twice for the same (maker, root) pair, assert both calls succeed, assert two CancelRoot events are emitted, and measure the gas cost of the second call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8cc089aa-7e22-4203-b87a-da00318f0ff8?mode=deep",
+    "timestamp": "2026-05-31 23:49:52.852471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where isRootCanceled[offer.maker][root] == true trigger isRatified, causing HashLib.isLeaf to run the full O(height) Merkle proof verification before the RootCanceled check at line 38, resulting in unnecessary gas cost for canceled roots? Proof idea: call isRatified with a canceled root and a valid proof of length 20, assert it reverts with RootCanceled, and measure gas wasted on proof verification before the cancellation check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71e563ba-969b-4cce-b010-0fefdc616d13?mode=deep",
+    "timestamp": "2026-05-31 23:50:05.578758",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.market.collateralParams.length == MAX_COLLATERALS (128) trigger isRatified, causing HashLib.hashOffer to call hashMarket which allocates new bytes32[](128) and iterates 128 times over collateralParams, resulting in O(n) gas cost scaling with collateral count? Proof idea: fuzz collateralParams.length in {1, 16, 64, 128} and assert gas for isRatified scales linearly with collateral count.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf462446-93cc-452c-bf2f-66c86a4f6990?mode=deep",
+    "timestamp": "2026-05-31 23:50:18.259389",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.callbackData is a large byte array trigger isRatified, causing keccak256(offer.callbackData) inside HashLib.hashOffer to hash the full callbackData payload, resulting in gas cost proportional to callbackData.length? Proof idea: fuzz callbackData.length in {0, 32, 1024, 32768} and assert gas for isRatified scales with callbackData size.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_277e6df4-ec71-4e39-ab13-4e740bc9aab2?mode=deep",
+    "timestamp": "2026-05-31 23:50:31.533898",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where ratifierData contains trailing bytes after the valid (Signature, bytes32, uint256, bytes32[]) encoding trigger isRatified, causing abi.decode to silently ignore the trailing bytes and succeed, resulting in non-critical behavior divergence where malformed ratifierData is accepted? Proof idea: append arbitrary bytes to valid ratifierData, call isRatified, assert it returns CALLBACK_SUCCESS, and assert the trailing bytes have no effect on the outcome.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6fc3cb7-46ab-425a-94a6-035379076a11?mode=deep",
+    "timestamp": "2026-05-31 23:50:44.505081",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where sig.v is not in {27, 28} (e.g., sig.v == 0 or sig.v == 1) trigger isRatified, causing ecrecover to return address(0) and revert with InvalidSignature rather than Unauthorized, resulting in a different error selector than when the signer is a valid but unauthorized address? Proof idea: call isRatified with sig.v == 0 and assert revert is InvalidSignature; call with a valid sig from an unauthorized address and assert revert is Unauthorized; verify the two error paths are distinct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e331a77-910f-4b3d-8b54-cbc2e8bfc638?mode=deep",
+    "timestamp": "2026-05-31 23:50:58.554567",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where a valid signature (v, r, s) exists also construct a malleable signature (v ^ 1, r, n - s mod secp256k1_n) that ecrecover accepts for the same signer and digest, triggering isRatified with a different (v, r, s) tuple for the same root, resulting in non-critical behavior divergence where two distinct Signature structs both pass validation for the same offer tree? Proof idea: compute both canonical and malleable signatures for a known private key and root, call isRatified with each, assert both return CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e1cf13c-6cea-44ac-a51c-3e3d1741b98f?mode=deep",
+    "timestamp": "2026-05-31 23:51:11.906845",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged authorized operator under preconditions where maker has granted coarse-grained authorization via Midnight.setIsAuthorized call cancelRoot(maker, root) for any root including roots the maker never signed, resulting in non-critical behavior divergence where an operator can cancel roots the maker did not intend to cancel? Proof idea: authorize operator, call cancelRoot for a root that was never used, assert isRootCanceled[maker][root] == true, and assert subsequent isRatified calls for that root revert with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aaf148d7-89b2-4930-baa7-8a0d9052fa91?mode=deep",
+    "timestamp": "2026-05-31 23:51:28.552016",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged authorized operator under preconditions where maker has granted authorization call cancelRoot(maker, root) and emit CancelRoot(msg.sender, maker, root) where msg.sender != maker, resulting in non-critical behavior divergence where off-chain indexers observing the caller field see the operator address rather than the maker address, potentially confusing event consumers? Proof idea: authorize operator, call cancelRoot as operator, assert CancelRoot event has caller == operator and maker == maker, and verify the event is indistinguishable from a maker-initiated cancel except by the caller field.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_475346b9-0e06-4164-af41-31c58f88177e?mode=deep",
+    "timestamp": "2026-05-31 23:51:43.171801",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.maker has authorized a signer via Midnight.setIsAuthorized, and the maker subsequently revokes authorization, trigger isRatified with a previously valid signature, causing it to revert with Unauthorized because the authorization check at line 44 is evaluated at call time rather than at signing time, resulting in non-critical behavior divergence where a signed offer becomes invalid without any action by the taker? Proof idea: authorize signer, sign root, revoke authorization, call isRatified, assert Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b716fc4d-053b-47a4-8802-bd74ff82e533?mode=deep",
+    "timestamp": "2026-05-31 23:51:57.152816",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where proof.length == 21 trigger isRatified, causing HashLib.offerTreeTypeHash(21) to revert with TreeTooHigh, while HashLib.isLeaf supports leafIndex up to 256 bits (proof.length up to 256), resulting in non-critical behavior divergence where the proof length cap enforced by offerTreeTypeHash (20) is lower than the cap enforced by isLeaf (256)? Proof idea: call isRatified with proof.length == 21 and assert revert is TreeTooHigh; call HashLib.isLeaf directly with proof.length == 21 and assert it does not revert on that check alone.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c8b48c30-35c8-4057-961b-ff2fa1c0d62e?mode=deep",
+    "timestamp": "2026-05-31 23:52:11.454324",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where leafIndex has bits set above proof.length trigger isRatified, causing HashLib.isLeaf to revert with LeafIndexOutOfRange rather than InvalidProof, resulting in non-critical behavior divergence where the error selector differs from the expected InvalidProof error for an invalid proof? Proof idea: call isRatified with leafIndex == 2 and proof.length == 1 (leafIndex >> 1 == 1 != 0), assert revert is LeafIndexOutOfRange not InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c037444b-a158-466f-a49b-588dea74fa00?mode=deep",
+    "timestamp": "2026-05-31 23:52:26.034499",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where proof.length == 0 and leafIndex == 0 trigger isRatified with a single-offer tree where the root equals HashLib.hashOffer(offer), causing the structHash to use offerTreeTypeHash(0) == 0x2b9ee710..., resulting in correct behavior but with unnecessary gas from computing keccak256(abi.encode(offerTreeTypeHash(0), root)) when the root is already the leaf hash? Proof idea: call isRatified with proof.length == 0 and assert it succeeds; measure gas and compare to a hypothetical direct-hash path.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_efc07a06-17cc-46f7-ab4e-9db7923beda0?mode=deep",
+    "timestamp": "2026-05-31 23:52:39.599911",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where bytes.concat('\\\\x19\\\\x01', domainSeparator, structHash) is called on every isRatified invocation trigger unnecessary memory allocation for the 66-byte prefix buffer, resulting in unnecessary gas cost compared to a precomputed immutable digest prefix? Proof idea: benchmark isRatified gas across multiple calls with identical inputs and assert the bytes.concat allocation contributes a measurable fixed overhead per call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36251c19-c032-428d-b283-8e3117ae72c1?mode=deep",
+    "timestamp": "2026-05-31 23:52:53.480856",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the same valid ratifierData is submitted twice in two separate Midnight.take calls trigger isRatified both times successfully, resulting in non-critical behavior divergence where the ratifier has no per-call replay protection and relies entirely on Midnight's consumed state to prevent offer replay? Proof idea: call Midnight.take twice with the same offer and ratifierData (adjusting consumed state between calls), assert isRatified succeeds both times, and verify that replay protection is solely enforced by consumed[maker][group] in Midnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_88293358-0185-486c-9189-a5e93743e3fd?mode=deep",
+    "timestamp": "2026-05-31 23:53:07.850885",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged maker under preconditions where root == bytes32(0) call cancelRoot(maker, bytes32(0)), causing isRootCanceled[maker][bytes32(0)] to be set to true, resulting in non-critical behavior divergence where the zero root is canceled and any offer whose hashOffer happens to equal bytes32(0) would be blocked (though this is cryptographically negligible)? Proof idea: call cancelRoot with root == bytes32(0), assert isRootCanceled[maker][bytes32(0)] == true, and assert isRatified with root == bytes32(0) reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a25e104-2407-4169-a381-17129abed4d8?mode=deep",
+    "timestamp": "2026-05-31 23:53:22.335245",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where offer.maker == address(0) trigger isRatified, causing ecrecover to potentially return address(0) which matches offer.maker, but the require(_signer != address(0), InvalidSignature()) check at line 43 prevents this match, resulting in non-critical behavior divergence where address(0) makers can never have their offers ratified via EcrecoverRatifier regardless of signature validity? Proof idea: construct an offer with maker == address(0), call isRatified with any signature that causes ecrecover to return address(0), assert revert is InvalidSignature.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82ca3fd0-17a6-4d5f-99e5-48983eb75a7c?mode=deep",
+    "timestamp": "2026-05-31 23:53:36.236379",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) is called as an external view call inside isRatified trigger unnecessary cross-contract call overhead on every take that uses EcrecoverRatifier, resulting in unnecessary gas cost compared to an implementation that caches or inlines the authorization check? Proof idea: measure gas for isRatified when _signer == offer.maker (no isAuthorized call needed) vs when _signer != offer.maker (isAuthorized call required) and assert the external call adds measurable overhead.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c83261c3-97bc-4d29-bfa6-e9cf7c72c597?mode=deep",
+    "timestamp": "2026-05-31 23:53:50.465443",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the Signature struct is defined in IEcrecoverRatifier.sol and also independently in IEcrecoverAuthorizer.sol with identical fields trigger ABI encoding divergence if an integrator accidentally uses the wrong Signature type, resulting in non-critical behavior divergence from struct duplication across interface files? Proof idea: encode a Signature using the IEcrecoverRatifier.Signature type and the IEcrecoverAuthorizer.Signature type with identical field values, assert the ABI encodings are identical, and verify no divergence exists at the protocol level.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_02dc26bc-ae37-4c9f-89d1-d714faf65bd6?mode=deep",
+    "timestamp": "2026-05-31 23:54:04.627790",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where EIP712_DOMAIN_TYPEHASH is defined as a file-level constant in both IEcrecoverRatifier.sol and IEcrecoverAuthorizer.sol with the same value 0x47e79534... trigger non-critical behavior divergence if the constant is ever updated in one file but not the other, resulting in a latent inconsistency from constant duplication? Proof idea: differential test asserting keccak256('EIP712Domain(uint256 chainId,address verifyingContract)') equals both EIP712_DOMAIN_TYPEHASH constants and that they are identical.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f951ba2-d37d-4994-b469-e44d420b0cdf?mode=deep",
+    "timestamp": "2026-05-31 23:54:18.378582",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where HashLib.offerTreeTypeHash is called with height == 10 trigger the fallthrough path in the if (height <= 10) branch (no explicit if (height == 10) check, falls through to return 0x8a42dfb4...), resulting in non-critical behavior divergence where height 10 is handled by implicit fallthrough rather than an explicit branch, making the code harder to audit and potentially masking a future insertion error? Proof idea: call offerTreeTypeHash(10) and assert it returns 0x8a42dfb49807647bfc49c906aef322aa0239d40e4cb675761e141bc7bfa530da; verify this matches keccak256 of the expected OfferTree type string for height 10.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c5ca63d-a8f7-42f0-85a3-7c4ddeebf291?mode=deep",
+    "timestamp": "2026-05-31 23:54:31.059052",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged authorized operator under preconditions where maker has authorized the operator via Midnight.setIsAuthorized call cancelRoot for a root that was signed by a different authorized signer (not the operator), resulting in non-critical behavior divergence where the operator can cancel roots signed by any authorized signer of the maker, not just roots the operator itself signed? Proof idea: authorize two operators A and B, have A sign a root, have B call cancelRoot for that root, assert isRootCanceled[maker][root] == true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_889a0ff3-f878-416c-899a-c047610cc9a6?mode=deep",
+    "timestamp": "2026-05-31 23:54:44.615599",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the same offer appears as multiple leaves in the same Merkle tree (duplicate leaves) trigger isRatified with different leafIndex values for the same offer hash, resulting in non-critical behavior divergence where the same offer can be proven at multiple positions in the tree, potentially confusing off-chain tooling that assumes unique leaf positions? Proof idea: build a tree with two identical offer hashes at leafIndex 0 and 1, call isRatified with each leafIndex, assert both succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a0f657a-33ae-4779-b83d-62d2aec9dfa9?mode=deep",
+    "timestamp": "2026-05-31 23:54:57.915892",
+    "report_generated": false
+  }
+]
