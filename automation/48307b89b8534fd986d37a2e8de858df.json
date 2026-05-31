@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/fee-on-transfer loan token] Can an unprivileged taker, under preconditions where the loan token charges a fee on transfer and a take is executed, trigger take() → buyerAssets - sellerAssets computed from units and price → safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) receives less than buyerAssets - sellerAssets → claimableSettlementFee[loanToken] += buyerAssets - sellerAssets records the full amount, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: insolvency where claimableSettlementFee exceeds actual token balance? Proof idea: fuzz fee-on-transfer rate and assert claimableSettlementFee[loanToken] <= actual contract loanToken balance after N takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa44e713-79eb-4ec2-947b-b0d2b15626e8?mode=deep",
+    "timestamp": "2026-05-31 20:07:51.887943",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/fee-on-transfer loan token/sellerAssets transfer] Can an unprivileged taker, under preconditions where the loan token charges a fee on transfer and offer.buy == true (maker is buyer), trigger take() → safeTransferFrom(loanToken, payer, receiver, sellerAssets) where receiver receives less than sellerAssets due to fee, violating the invariant that the seller must receive exactly sellerAssets, causing scoped impact: direct loss to the seller (maker) who receives fewer tokens than the protocol recorded? Proof idea: fuzz fee-on-transfer rate and assert actual tokens received by receiver == sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a5183728-863d-4761-b50e-48d95f14bf05?mode=deep",
+    "timestamp": "2026-05-31 20:08:03.487694",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate()/ILiquidateCallback.onLiquidate()/take()] Can an unprivileged liquidator controlling the liquidate callback, under preconditions where the borrower is unhealthy and the market has active lenders, trigger liquidate() → bad debt realized → lossFactor updated → collateral transferred → onLiquidate callback → reenter take() which calls _updatePosition() applying the new lossFactor to lenders, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: accounting corruption where _updatePosition inside the nested take applies lossFactor before the outer liquidation's state is fully settled? Proof idea: stateful fuzz liquidate+take nesting and assert sum of all lender credits equals marketState.totalUnits after both calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd7df691-69e6-46af-bcb3-a78d21f95151?mode=deep",
+    "timestamp": "2026-05-31 20:08:15.216052",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/flashLoan()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the protocol holds loan tokens and the callback is a malicious contract, trigger take() → onBuy callback → flashLoan([loanToken], [amount], callback, data) → IFlashLoanCallback.onFlashLoan → reenter take() or repay() using the flash-loaned tokens, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: accounting corruption where flash loan tokens are used to satisfy the outer take's payer obligation without actually being repaid? Proof idea: PoC with nested flashLoan inside onBuy and assert contract loanToken balance before and after the outer take equals expected delta.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e505125c-191b-450a-8803-ca94cfd14fd1?mode=deep",
+    "timestamp": "2026-05-31 20:08:27.405056",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/liquidation lock/tExchange()] Can an unprivileged taker who controls both the buyerCallback and a nested take's sellerCallback, under preconditions where the outer take sets the liquidation lock for seller A and the inner take (in onBuy) sets the lock for seller B, trigger outer take() → tExchange sets lock for seller A → onBuy → inner take() → tExchange sets lock for seller B → inner onSell → inner take completes → tExchange clears lock for seller B → outer take continues, violating the invariant that the liquidation lock must correctly reflect the current call stack's seller, causing scoped impact: fund freeze if the lock for seller A is prematurely cleared or corrupted by the nested take? Proof idea: unit test nested takes with different sellers and assert liquidationLocked(id, sellerA) == true during inner take and false after outer take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f88ff075-65af-40e4-80cd-4bdbdfd79ef2?mode=deep",
+    "timestamp": "2026-05-31 20:08:39.797560",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/supplyCollateral()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the taker is also the seller in a different market and has debt, trigger take() → onBuy callback → supplyCollateral() for the seller's position in a different market, violating the invariant that multicall/callback/reentrancy must not break invariants that hold for single calls, causing scoped impact: accounting corruption where collateral is supplied during a callback to manipulate health checks in subsequent calls within the same multicall? Proof idea: fuzz cross-market collateral supply inside onBuy and assert position.collateralBitmap and collateral[i] consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d71c766-aeab-4dcb-8d2b-06d1be69fc01?mode=deep",
+    "timestamp": "2026-05-31 20:08:52.249998",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/zero-unit no-op/IBuyCallback.onBuy()] Can an unprivileged taker, under preconditions where an offer has consumed == maxAssets (fully consumed) and units == 0, trigger take(offer, ratifierData, 0, taker, receiver, callback, data) as a no-op take to invoke the callback without any state change, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: gate bypass where the callback performs state mutations (setIsAuthorized, setConsumed, setIsRootRatified) under the cover of a no-op take that bypasses normal precondition checks? Proof idea: unit test zero-unit take with malicious callback and assert all state variables are unchanged except those explicitly mutated by the callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7eea7860-bb85-49fc-9776-ea5dc8952297?mode=deep",
+    "timestamp": "2026-05-31 20:09:05.354437",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/maturity boundary/ISellCallback.onSell()] Can an unprivileged taker who controls the sellerCallback (maker is seller), under preconditions where block.timestamp == offer.market.maturity exactly and sellerDebtIncrease > 0, trigger take() → CannotIncreaseDebtPostMaturity check passes at maturity boundary → onSell callback → warp or observe block.timestamp == maturity → reenter take() with sellerDebtIncrease > 0 in the same block, violating the invariant that debt must not increase after maturity, causing scoped impact: bad debt creation where new debt is created at the exact maturity timestamp? Proof idea: fuzz block.timestamp == maturity and assert sellerDebtIncrease == 0 for all takes at or after maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4a7a348e-b0c3-4162-910d-d1f2babcd364?mode=deep",
+    "timestamp": "2026-05-31 20:09:19.108049",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/continuousFee/IBuyCallback.onBuy()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the market has a non-zero continuousFee and the buyer's credit is being increased, trigger take() → buyerPendingFeeIncrease computed using timeToMaturity at take time → onBuy callback → reenter take() with a different timeToMaturity (same block, same maturity), violating the invariant that continuous fee must be crystallized correctly at credit increase time, causing scoped impact: accounting corruption where pendingFee is computed inconsistently across nested takes in the same block? Proof idea: fuzz nested takes with same block.timestamp and assert sum of pendingFee increases equals expected continuousFee * timeToMaturity * creditIncrease / WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1a4cb7fc-f506-4b59-91cf-2c84a3d33e12?mode=deep",
+    "timestamp": "2026-05-31 20:09:32.586897",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate()/postMaturityMode/ILiquidateCallback.onLiquidate()] Can an unprivileged liquidator controlling the liquidate callback, under preconditions where block.timestamp > market.maturity and postMaturityMode == true, trigger liquidate() → lif computed as WAD + (maxLif - WAD) * (block.timestamp - maturity) / TIME_TO_MAX_LIF → collateral transferred → onLiquidate callback → reenter liquidate() in the same block with a different collateralIndex, violating the invariant that repay amount, seize amount, LIF, close factor, dust, and bad-debt realization must be mutually consistent, causing scoped impact: accounting corruption where the second liquidation uses the same lif but the borrower's collateral bitmap is already partially cleared? Proof idea: fuzz multi-collateral post-maturity liquidations in callback and assert position.collateralBitmap consistency after both calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_956153be-dc7b-4747-a3a6-8872c6c81ebe?mode=deep",
+    "timestamp": "2026-05-31 20:09:46.569150",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/updatePosition()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the buyer has existing credit and the market has a non-zero lossFactor, trigger take() → _updatePosition called for buyer before position update → onBuy callback → reenter updatePosition(market, buyer) externally, violating the invariant that _updatePosition must not be applied twice to the same position in the same transaction, causing scoped impact: accounting corruption where the buyer's credit is slashed twice by the same lossFactor delta? Proof idea: stateful fuzz updatePosition reentrancy inside onBuy and assert position[id][buyer].credit after both calls equals expected single-slash value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aceab7ed-38f2-4254-abc5-ad1e6e6b6ae6?mode=deep",
+    "timestamp": "2026-05-31 20:10:00.705106",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: SetterRatifier.isRatified()/HashLib.isLeaf()/proof length zero] Can an unprivileged taker, under preconditions where a maker has ratified a root equal to the keccak256 EIP-712 hash of a specific offer, trigger isRatified(offer, abi.encode(root, 0, new bytes32[](0))) with an empty proof array and leafIndex == 0, violating the invariant that ratifier approval must bind the correct offer via a valid Merkle proof, causing scoped impact: gate bypass where any offer whose hash equals the ratified root can be filled without a real Merkle tree? Proof idea: unit test isLeaf() with empty proof and assert it returns true only when root == hashOffer(offer), then check if this is an intended or unintended single-leaf tree behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c9129ff-37ec-4e9b-8f17-a3528f53e211?mode=deep",
+    "timestamp": "2026-05-31 20:10:13.926692",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/setIsRootRatified() cross-maker] Can an unprivileged taker who is authorized for maker A and controls the buyerCallback, under preconditions where maker A is authorized for maker B via isAuthorized[makerB][makerA] == true, trigger take(offer for makerA) → onBuy callback → setIsRootRatified(makerB, root, true) using makerA's authorization, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized offer ratification for maker B using maker A's callback-time authorization? Proof idea: unit test cross-maker setIsRootRatified via callback and assert isRootRatified[makerB][root] state and its effect on subsequent takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bdef7acb-66af-4663-a694-1b2d0e5d4e30?mode=deep",
+    "timestamp": "2026-05-31 20:10:28.069377",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/reduceOnly flag/ISellCallback.onSell()] Can an unprivileged taker who controls the sellerCallback (maker is seller, offer.reduceOnly == true), under preconditions where the seller has credit that is being reduced by the take, trigger take() → sellerCreditDecrease > 0 and sellerDebtIncrease == 0 (reduceOnly passes) → onSell callback → reenter take() with a different offer where sellerDebtIncrease > 0, violating the invariant that the reduceOnly flag must prevent the maker's debt from increasing across the full callback sequence, causing scoped impact: bad debt creation where the maker's debt increases despite the reduceOnly constraint? Proof idea: fuzz nested takes with reduceOnly outer and non-reduceOnly inner and assert seller.debt after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b8ec34c-184c-4045-9333-4e1c018cf446?mode=deep",
+    "timestamp": "2026-05-31 20:10:42.884692",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/enterGate/IBuyCallback.onBuy()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the market has an enterGate that allows credit increase for the buyer at take time but the gate state changes during the callback, trigger take() → IEnterGate.canIncreaseCredit(buyer) returns true → buyerCreditIncrease applied → onBuy callback → gate state changes (e.g., gate contract updates its allowlist) → reenter take() where canIncreaseCredit(buyer) now returns false, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: gate bypass where the first take's credit increase is committed before the gate reverts? Proof idea: fuzz gate state transitions during onBuy and assert that credit increases only occur when gate permits at the moment of the check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9e37be5-028a-40e9-bff5-96cbe3383a42?mode=deep",
+    "timestamp": "2026-05-31 20:10:58.936714",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate()/ILiquidateCallback.onLiquidate()/repay()] Can an unprivileged liquidator controlling the liquidate callback, under preconditions where the borrower has debt and the liquidator also controls a repay callback, trigger liquidate(repaidUnits=0, seizedAssets=0) to realize bad debt → onLiquidate callback → reenter repay(units, borrower, repayCallback, data) → onRepay callback → reenter liquidate() again, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: accounting corruption where repay inside liquidation callback creates a withdrawable increase that is then double-counted in a second liquidation? Proof idea: stateful fuzz liquidate+repay+liquidate nesting and assert marketState.withdrawable == sum of all repaid units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b93e2695-3d1e-4b57-9ad2-4c55732a9c04?mode=deep",
+    "timestamp": "2026-05-31 20:11:13.638746",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/claimContinuousFee()] Can an unprivileged taker who controls the buyerCallback and is also the feeClaimer, under preconditions where continuousFeeCredit > 0 and the take increases totalUnits, trigger take() → totalUnits updated → onBuy callback → claimContinuousFee(market, amount, receiver) where amount > continuousFeeCredit as updated by the take, violating the invariant that total credit, debt, collateral, fees, and token balances must stay solvent, causing scoped impact: insolvency where continuousFeeCredit underflows or more tokens are claimed than the market holds? Proof idea: fuzz continuousFeeCredit and claim amount across take+claimContinuousFee nesting and assert marketState.continuousFeeCredit >= 0 and contract balance >= withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_015e2268-73c5-4df9-9cc7-54cb75a090cd?mode=deep",
+    "timestamp": "2026-05-31 20:11:29.365218",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/ISellCallback.onSell()/liquidate()] Can an unprivileged taker who controls the sellerCallback (maker is seller) and is also a liquidator, under preconditions where the seller is near the health threshold and the liquidation lock is active for the seller, trigger take() → seller debt increased → liquidation lock set → onSell callback → attempt liquidate(seller) → liquidationLocked(id, seller) == true → liquidate reverts, then assert that after the outer take() completes and the lock is cleared, the seller is now liquidatable, causing scoped impact: liquidation failure where a newly unhealthy seller cannot be liquidated until the next transaction? Proof idea: unit test take that makes seller unhealthy and assert liquidate succeeds in the next block but fails during the callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c1c84791-d53c-4280-9dd6-6d6dcab72eac?mode=deep",
+    "timestamp": "2026-05-31 20:11:42.885147",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/multicall()] Can an unprivileged taker who controls the buyerCallback, under preconditions where the callback calls multicall() on Midnight via delegatecall, trigger take() → onBuy callback → multicall([withdraw(market, units, buyer, receiver)]) where the delegatecall context is Midnight itself, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: accounting corruption where the buyer's credit is withdrawn inside the callback before the outer take's health check or state finalization? Proof idea: PoC with onBuy that calls Midnight.multicall and assert position[id][buyer].credit and marketState.withdrawable after the full take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ba0b95d-6473-4d8c-91da-fc7524ba336d?mode=deep",
+    "timestamp": "2026-05-31 20:11:56.705560",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/touchMarket()] Can an unprivileged taker who controls the buyerCallback, under preconditions where a new market with the same loanToken but different collateral params is not yet created, trigger take() → onBuy callback → touchMarket(newMarket) to create a new market with different default fees, violating the invariant that market creation must not be used to manipulate fee state during an in-flight take, causing scoped impact: accounting corruption where the new market's fee state is initialized using default fees that were just changed by a fee setter in the same block? Proof idea: fuzz market creation inside onBuy and assert defaultSettlementFeeCbp and defaultContinuousFee are correctly captured at market creation time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd16a32d-2d82-4102-8712-caafc4fae7f6?mode=deep",
+    "timestamp": "2026-05-31 20:12:10.677169",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/ISellCallback.onSell()/setConsumed()] Can an unprivileged taker who controls the sellerCallback (maker is seller) and is also authorized for the maker, under preconditions where the offer uses maxUnits and is partially filled, trigger take() → consumed[maker][group] += units → onSell callback → setConsumed(group, type(uint256).max, maker) to cancel all offers in the group → second take() in same multicall fails with AlreadyConsumed, violating the invariant that cancelled offers cannot be filled, causing scoped impact: low-cost DoS where the attacker uses the callback to cancel the maker's remaining offers mid-transaction? Proof idea: unit test setConsumed(type(uint256).max) inside onSell and assert subsequent takes revert with AlreadyConsumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_984c8ff2-7aa4-46dc-80aa-80c548e596ce?mode=deep",
+    "timestamp": "2026-05-31 20:12:25.301475",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/isRatified() view reentrancy] Can an unprivileged taker who controls the buyerCallback, under preconditions where SetterRatifier.isRatified() is declared view but the callback calls setIsRootRatified() to mutate state, trigger take() → isRatified() called (view, passes) → consumed updated → positions updated → onBuy callback → setIsRootRatified(maker, root, false) → second take() in same multicall calls isRatified() which now returns NotRatified, violating the invariant that ratifier approval must be consistent across the full transaction, causing scoped impact: gate bypass where the first take succeeds under a root that is revoked before the second take, creating asymmetric fill state? Proof idea: stateful fuzz root revocation between two takes in multicall and assert both takes either succeed or fail atomically.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c46550c1-01fc-429c-8bee-4cd86745d80a?mode=deep",
+    "timestamp": "2026-05-31 20:12:40.160780",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/setIsAuthorized() for ratifier] Can an unprivileged taker who controls the buyerCallback and is authorized for the maker, under preconditions where the maker has authorized SetterRatifier as the ratifier via isAuthorized[maker][ratifier] == true, trigger take() → isAuthorized[maker][ratifier] checked and passes → onBuy callback → setIsAuthorized(ratifier, false, maker) to deauthorize the ratifier → second take() in same multicall fails with RatifierUnauthorized, violating the invariant that ratifier authorization must be stable across a transaction, causing scoped impact: low-cost DoS where the callback deauthorizes the ratifier to block subsequent fills? Proof idea: unit test setIsAuthorized(ratifier, false) inside onBuy and assert second take reverts with RatifierUnauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_260aced9-7eea-45b4-90fe-a2ff2cd00b27?mode=deep",
+    "timestamp": "2026-05-31 20:12:56.032895",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/setIsAuthorized() self-authorization] Can an unprivileged taker who controls the buyerCallback, under preconditions where the taker is not yet authorized for the maker, trigger take() → onBuy callback → setIsAuthorized(taker, true, maker) if the callback contract is already authorized for the maker, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: gate bypass where the callback grants the taker full control over the maker's Midnight state for subsequent calls in the same multicall? Proof idea: unit test self-authorization inside onBuy and assert isAuthorized[maker][taker] before and after the callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_67d81d61-4526-4e79-85bb-b5167e510935?mode=deep",
+    "timestamp": "2026-05-31 20:13:11.246889",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/repay()] Can an unprivileged taker who controls the buyerCallback and is also authorized for the seller (maker), under preconditions where the seller has debt just increased by the take, trigger take() → seller debt increased → onBuy callback → repay(market, units, seller, address(0), '') to reduce the seller's debt before the health check at line 476, violating the invariant that the post-take health check must reflect the true state after the take without intermediate repayments, causing scoped impact: healthy-account liquidation bypass where the seller appears healthy after the callback-driven repay but was actually unhealthy immediately after the take? Proof idea: fuzz repay amount inside onBuy and assert isHealthy(market, id, seller) at line 476 reflects the take's debt increase without the callback repayment.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a8cdff5-7cb6-413d-a6e5-c8be01168e8a?mode=deep",
+    "timestamp": "2026-05-31 20:13:27.336182",
+    "report_generated": false
+  }
+]
