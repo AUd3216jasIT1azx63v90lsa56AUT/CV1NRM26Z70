@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: priceToTick] Can an unprivileged market creator under the precondition that tickToPrice(MAX_TICK) < 1e18 (approximately 0.999999e18 due to PRICE_ROUNDING_STEP quantization) trigger priceToTick(price, spacing) with any price in the open interval (tickToPrice(MAX_TICK), 1e18], causing the binary search loop (low=5821, high=5820, mid=5820 forever) to never terminate, violating the invariant that priceToTick must always return for any price <= 1e18, causing scoped impact: fund freeze in any periphery or integrator that calls priceToTick with a near-par price? Proof idea: unit test priceToTick(999_999_500_000_000_001, 4) and assert it returns within a bounded number of iterations; fuzz price in [tickToPrice(MAX_TICK)+1, 1e18] and assert no infinite loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_458ac6a4-13ae-4994-9d4d-68454183311e?mode=deep",
+    "timestamp": "2026-05-31 18:57:31.655513",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: priceToTick] Can an unprivileged caller under the precondition that spacing does not divide MAX_TICK (e.g., spacing=3 where 5820/3=1940 is exact, but spacing=7 where 5820/7 is not integer) trigger priceToTick(price, 7) to return a tick value greater than MAX_TICK (e.g., 5824), causing a subsequent tickToPrice(5824) call to revert with TickOutOfRange, violating the invariant that priceToTick output must always be a valid input to tickToPrice, causing scoped impact: accounting corruption or DoS in any contract that chains priceToTick into tickToPrice? Proof idea: unit test priceToTick(1, 7) and assert result <= MAX_TICK; fuzz spacing values that do not divide MAX_TICK.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3957d3ba-6e5d-4bd7-a123-ed1ef6786c2b?mode=deep",
+    "timestamp": "2026-05-31 18:57:43.661520",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: tickToPrice / touchMarket] Can an unprivileged market creator under the precondition that defaultSettlementFeeCbp[loanToken] is currently zero (feeSetter has not yet set defaults) trigger touchMarket(market) to create a market that permanently snapshots all seven settlementFeeCbp breakpoints as zero, violating the invariant that market settlement fees should reflect the protocol-intended default at creation time, causing scoped impact: state inconsistency where the newly created market has zero settlement fees while all future markets for the same loanToken will have non-zero fees after feeSetter sets defaults? Proof idea: deploy, call touchMarket before setDefaultSettlementFee, then call setDefaultSettlementFee, create a second market, and assert settlementFeeCbps differ between the two markets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62ed7a65-e728-45e0-b863-3cc305543694?mode=deep",
+    "timestamp": "2026-05-31 18:57:56.179107",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / setDefaultSettlementFee] Can an unprivileged market creator under the precondition that feeSetter is about to call setDefaultSettlementFee front-run the feeSetter's transaction by calling touchMarket first, causing the market to be created with the old (lower) default settlement fees, violating the invariant that all markets for a given loanToken should be created with the current default fees, causing scoped impact: state inconsistency where the attacker's market permanently has lower fees than intended, reducing protocol fee revenue and creating an unfair advantage? Proof idea: simulate front-run ordering in a Foundry test; assert that market created before vs after setDefaultSettlementFee has different settlementFeeCbps.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_761a16d1-13ec-4d09-a680-543f7de84576?mode=deep",
+    "timestamp": "2026-05-31 18:58:09.303798",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / setDefaultContinuousFee] Can an unprivileged market creator under the precondition that defaultContinuousFee[loanToken] is non-zero trigger touchMarket(market) to snapshot the current defaultContinuousFee into marketState[id].continuousFee, then have feeSetter call setDefaultContinuousFee to a higher value, causing the created market to permanently retain the lower continuous fee while all subsequent markets get the higher fee, violating the invariant that continuous fee state should be consistent across markets for the same loanToken, causing scoped impact: state inconsistency where lenders in the older market pay less continuous fee than lenders in newer markets? Proof idea: create market, change default, create second market, assert continuousFee(id1) != continuousFee(id2).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e84a0956-367e-48df-82e1-5c77a721d48b?mode=deep",
+    "timestamp": "2026-05-31 18:58:23.564183",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: take / tickToPrice / settlementFee] Can an unprivileged taker under the precondition that a buy offer exists at a tick where tickToPrice(tick) < settlementFee(id, timeToMaturity) trigger take() to reach the arithmetic expression offerPrice - _settlementFee (uint256 subtraction) and cause an underflow revert, violating the invariant that take() should either succeed or revert with a meaningful protocol error rather than a panic, causing scoped impact: fund freeze where valid offers at low-price ticks become permanently untakeable after a settlement fee increase? Proof idea: set market settlement fee to max, create offer at tick=0 (lowest price), call take and assert revert type.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00b95ef9-6334-4048-b5ab-5adb7dc958f7?mode=deep",
+    "timestamp": "2026-05-31 18:58:37.027465",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketSettlementFee / take] Can an unprivileged feeSetter (role-controlled) under the precondition that a market exists with active offers call setMarketSettlementFee(id, index, 0) for all seven indices, causing all subsequent take() calls to compute settlementFee=0 and transfer zero to claimableSettlementFee[loanToken], violating the invariant that settlement fees must accrue to the protocol, causing scoped impact: accounting corruption where claimableSettlementFee[loanToken] receives no fees despite active trading, and the fee claimer can never claim expected revenue? Proof idea: set all market settlement fees to 0, execute takes, assert claimableSettlementFee[loanToken] delta is 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ee58915-8b5d-41d0-97e6-7f8817970d9e?mode=deep",
+    "timestamp": "2026-05-31 18:58:50.872682",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketTickSpacing / take] Can an unprivileged tickSpacingSetter (role-controlled) under the precondition that a market has tickSpacing=4 and active offers at ticks that are multiples of 4 call setMarketTickSpacing(id, 2), causing new ticks (multiples of 2 but not 4) to become accessible, and then a taker fills an offer at tick=2 where tickToPrice(2) is a price that was previously inaccessible, violating the invariant that tick spacing changes should not retroactively alter the effective price grid for existing market participants, causing scoped impact: state inconsistency where makers who priced offers assuming spacing=4 now have their offers filled at unexpected intermediate prices? Proof idea: create market, place offer at tick=2 (invalid at spacing=4), decrease spacing to 2, take offer at tick=2, assert fill succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d184d12-b869-45ab-92af-8a6ee7949304?mode=deep",
+    "timestamp": "2026-05-31 18:59:05.035752",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketTickSpacing] Can an unprivileged tickSpacingSetter (role-controlled) under the precondition that marketState[id].tickSpacing=4 attempt to call setMarketTickSpacing(id, 3) where 4 % 3 != 0, causing the require(newTickSpacing > 0 && marketState[id].tickSpacing % newTickSpacing == 0) check to revert with InvalidTickSpacing, and verify that no spacing value that is not a divisor of the current spacing can ever be set, violating the invariant that tick spacing can only be decreased to divisors, causing scoped impact: role-controlled parameter enforcement correctness? Proof idea: fuzz all newTickSpacing values from 1 to DEFAULT_TICK_SPACING and assert only divisors succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b237d754-a470-4ac9-8ba3-092356838606?mode=deep",
+    "timestamp": "2026-05-31 18:59:18.335654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / settlementFee] Can an unprivileged caller under the precondition that a market has not yet been created call settlementFee(id, timeToMaturity) directly (without going through touchMarket), causing the require(_marketState.tickSpacing > 0, MarketNotCreated()) check to revert, and verify that the uncreated market state (all settlementFeeCbp=0, continuousFee=0, tickSpacing=0) is never observable through settlementFee(), violating the invariant that uncreated market state must not be accessible through fee-reading functions, causing scoped impact: state inconsistency where the zero-fee uncreated state could be confused with a legitimately zero-fee created market? Proof idea: call settlementFee on an id with tickSpacing=0 and assert MarketNotCreated revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7bfbc442-2f0c-4127-a65f-5019bcbf5df0?mode=deep",
+    "timestamp": "2026-05-31 18:59:32.979722",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / take] Can an unprivileged taker under the precondition that a market does not yet exist call take() with a valid offer, causing touchMarket() to be called internally and create the market with the current default fees, then immediately execute the take with those fees, violating the invariant that market creation and first trade should be atomic with respect to fee state, causing scoped impact: state inconsistency where a market creator who intended to set custom fees before the first trade finds the market already created with default fees by a front-running taker? Proof idea: simulate taker calling take() on uncreated market, assert market is created with current defaults and take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_94acd75e-4d5f-4402-bd11-0a4cddaebcbc?mode=deep",
+    "timestamp": "2026-05-31 18:59:46.435654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket] Can an unprivileged market creator under the precondition that block.timestamp > market.maturity (expired maturity) call touchMarket(market) to create a market that is already past maturity, causing the market to be created in a state where CannotIncreaseDebtPostMaturity is immediately active, violating the invariant that newly created markets should be in a pre-maturity state where normal lending and borrowing can occur, causing scoped impact: state inconsistency where a market is created but immediately unusable for borrowing, while lenders can still supply credit? Proof idea: create market with maturity = block.timestamp - 1, attempt take with sellerDebtIncrease > 0, assert CannotIncreaseDebtPostMaturity revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5be62cf6-9fbb-475e-9238-2ee679be437d?mode=deep",
+    "timestamp": "2026-05-31 18:59:59.485854",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket] Can an unprivileged market creator under the precondition that block.timestamp == market.maturity call touchMarket(market) to create a market at the exact maturity boundary, causing the market to be created where block.timestamp <= offer.market.maturity is false (since maturity == timestamp means the condition block.timestamp <= offer.market.maturity is true but CannotIncreaseDebtPostMaturity checks block.timestamp <= offer.market.maturity), violating the invariant that maturity boundary behavior must be consistent between market creation and debt increase checks, causing scoped impact: state inconsistency at the maturity=timestamp boundary? Proof idea: create market with maturity=block.timestamp, attempt debt-increasing take, assert whether CannotIncreaseDebtPostMaturity fires.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a01c5a07-d495-4089-ae53-ce09edf28f0c?mode=deep",
+    "timestamp": "2026-05-31 19:00:11.779656",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: wExp / tickToPrice] Can an unprivileged caller under the precondition that x is a large negative value (e.g., LN_ONE_PLUS_DELTA * (MAX_TICK/2 - 0) = approximately -14.5e18) trigger wExp(-x) to return a value so large that 1e36 / wExp(-x) rounds to zero in the negative branch of wExp, causing tickToPrice(0) to return 0 after PRICE_ROUNDING_STEP quantization, violating the invariant that tickToPrice must return a strictly positive price for all valid ticks, causing scoped impact: accounting corruption where a tick-0 offer has price=0, making buyerAssets=0 for any units, allowing free credit acquisition? Proof idea: call tickToPrice(0) and assert result > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2ba3ff8-55e6-45cd-83fd-67f9fc54602b?mode=deep",
+    "timestamp": "2026-05-31 19:00:24.593346",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: tickToPrice / wExp] Can an unprivileged caller under the precondition that tick = MAX_TICK/2 = 2910 trigger tickToPrice(2910) to compute wExp(0) = 1e18, yielding price = 1e36 / (1e18 + 1e18) / 1e12 * 1e12 = 5e17 (0.5 WAD), and verify that this midpoint price is exactly representable without rounding loss, violating the invariant that the midpoint tick must produce exactly 0.5e18 price, causing scoped impact: state inconsistency if the midpoint price is off by PRICE_ROUNDING_STEP, affecting settlement fee calculations at that tick? Proof idea: assert tickToPrice(2910) == 5e17 exactly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4225dbd-12ba-4e74-af5a-38c5214feab2?mode=deep",
+    "timestamp": "2026-05-31 19:00:37.975278",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: tickToPrice / divHalfDownUnchecked] Can an unprivileged caller under the precondition that the intermediate value in divHalfDownUnchecked overflows uint256 (x + (d-1)/2 > type(uint256).max) trigger an unchecked overflow that silently wraps, causing tickToPrice to return an incorrect price, violating the invariant that tickToPrice must be monotonically non-decreasing in tick, causing scoped impact: accounting corruption where a higher tick produces a lower price than expected, enabling arbitrage or incorrect health checks? Proof idea: fuzz all tick values 0..MAX_TICK and assert tickToPrice(t+1) >= tickToPrice(t) for all t.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b665fd4f-c953-4060-b639-99a6c40035c0?mode=deep",
+    "timestamp": "2026-05-31 19:00:52.668852",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: tickToPrice] Can an unprivileged caller under the precondition that tick = MAX_TICK = 5820 trigger tickToPrice(5820) to return a value strictly less than 1e18 (approximately 0.999999e18 due to PRICE_ROUNDING_STEP rounding), causing priceToTick(1e18, spacing) to find no tick with price >= 1e18 and enter an infinite loop, violating the invariant that priceToTick must terminate for all valid inputs, causing scoped impact: DoS in any contract using priceToTick with price=1e18? Proof idea: assert tickToPrice(MAX_TICK) == 1e18 or document the gap; test priceToTick(1e18, 4) terminates.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ff41a8a-c4d9-43f6-ae3e-a7df94020aa5?mode=deep",
+    "timestamp": "2026-05-31 19:01:06.954618",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: priceToTick / setMarketTickSpacing] Can an unprivileged tickSpacingSetter (role-controlled) under the precondition that a periphery contract caches the result of priceToTick(price, oldSpacing) call setMarketTickSpacing(id, newSpacing) where newSpacing < oldSpacing, causing the cached tick to no longer be a multiple of newSpacing, violating the invariant that a tick valid under old spacing must remain valid under new spacing (since new spacing divides old spacing, all old multiples are also new multiples), causing scoped impact: state inconsistency where the cached tick is still valid but the periphery incorrectly recomputes a different tick? Proof idea: assert that for any tick t that is a multiple of oldSpacing, t is also a multiple of newSpacing when newSpacing divides oldSpacing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03bf3d46-8101-47d6-a40e-a3069918c196?mode=deep",
+    "timestamp": "2026-05-31 19:01:21.903643",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: settlementFee / setMarketSettlementFee] Can an unprivileged feeSetter (role-controlled) under the precondition that a market exists with active lend offers call setMarketSettlementFee(id, 0, newFee) to change the TTM=0 breakpoint fee after maturity, causing post-maturity settlement fee to change for all subsequent takes, violating the invariant that post-maturity settlement fee should be fixed at market creation or at least not changeable after maturity, causing scoped impact: state inconsistency where lenders and borrowers who planned around a fixed post-maturity fee face unexpected fee changes? Proof idea: create market, warp past maturity, change breakpoint-0 fee, take offer, assert fee applied matches new value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ead044ae-7e62-466d-95b7-d1bc4c5739bb?mode=deep",
+    "timestamp": "2026-05-31 19:01:37.248731",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: settlementFee] Can an unprivileged caller under the precondition that timeToMaturity is exactly at a breakpoint boundary (e.g., exactly 1 day = 86400 seconds) trigger settlementFee(id, 86400) to use the interval [1 day, 7 days] with feeLower = settlementFeeCbp1 * CBP and feeUpper = settlementFeeCbp2 * CBP, and verify that the interpolation formula (feeLower * (end - ttm) + feeUpper * (ttm - start)) / (end - start) at ttm=start returns exactly feeLower, violating the invariant that settlementFee at a breakpoint equals the stored breakpoint value, causing scoped impact: accounting corruption if interpolation at boundary differs from stored value? Proof idea: assert settlementFee(id, 86400) == marketState[id].settlementFeeCbp1 * CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e484a85-830c-4be0-8fa7-e57f0d13be1a?mode=deep",
+    "timestamp": "2026-05-31 19:01:53.696888",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketSettlementFee / settlementFee] Can an unprivileged feeSetter (role-controlled) under the precondition that a market exists call setMarketSettlementFee(id, 6, MAX_SETTLEMENT_FEE_360_DAYS) to set the 360-day breakpoint to maximum (0.005e18 = 50 bps), then call setMarketSettlementFee(id, 5, 0) to set the 180-day breakpoint to zero, causing settlementFee(id, ttm) for ttm in [180 days, 360 days) to interpolate between 0 and 0.005e18, producing a non-monotonic fee schedule, violating the invariant that settlement fees should be monotonically increasing with TTM, causing scoped impact: state inconsistency where takers at different TTMs face unexpected fee inversions? Proof idea: set breakpoints to create non-monotonic schedule, fuzz TTM values, assert fee behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f57f487-cb7a-413d-be66-8b41e7607d1e?mode=deep",
+    "timestamp": "2026-05-31 19:02:07.670584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: claimSettlementFee] Can an unprivileged feeClaimer (role-controlled) under the precondition that claimableSettlementFee[token] = X call claimSettlementFee(token, X + 1, receiver), causing claimableSettlementFee[token] -= (X + 1) to underflow (Solidity 0.8 checked arithmetic reverts), violating the invariant that fee claims must not exceed accrued fees, causing scoped impact: fund freeze where the feeClaimer cannot claim fees if they accidentally pass an amount exceeding the balance? Proof idea: assert claimSettlementFee reverts when amount > claimableSettlementFee[token].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_484ec16a-f0eb-400c-b599-e787e8204ab0?mode=deep",
+    "timestamp": "2026-05-31 19:02:21.572862",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: claimContinuousFee] Can an unprivileged feeClaimer (role-controlled) under the precondition that marketState[id].continuousFeeCredit = X call claimContinuousFee(market, X + 1, receiver), causing _marketState.continuousFeeCredit -= toUint128(X + 1) to revert via toUint128 overflow check or underflow, and also causing _marketState.totalUnits and _marketState.withdrawable to be decremented by X+1, violating the invariant that continuousFeeCredit <= totalUnits <= withdrawable, causing scoped impact: accounting corruption if the underflow is not caught and totalUnits/withdrawable become inconsistent? Proof idea: assert claimContinuousFee reverts when amount > continuousFeeCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ea8e1fd-58f7-4f8a-98e7-c1325946566e?mode=deep",
+    "timestamp": "2026-05-31 19:02:35.266210",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / multicall] Can an unprivileged market creator under the precondition that feeSetter is the same address as the market creator use multicall([setDefaultSettlementFee(...), touchMarket(...)]) to atomically set a custom default fee and create the market in the same transaction, causing the market to be created with the custom fee without any other market for that loanToken being affected, violating the invariant that default fees should apply uniformly to all markets created after the fee change, causing scoped impact: state inconsistency where the market creator can precisely control which default fee their market captures? Proof idea: multicall setDefaultSettlementFee + touchMarket, assert market has the custom fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03ed4f2f-b3fb-426b-b203-b36b0e4459a2?mode=deep",
+    "timestamp": "2026-05-31 19:02:48.215419",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / setDefaultSettlementFee] Can an unprivileged feeSetter (role-controlled) under the precondition that multiple markets share the same loanToken call setDefaultSettlementFee(loanToken, index, newFee) to change the default, causing all future markets for that loanToken to use the new fee while all existing markets retain their old fees, violating the invariant that markets with the same loanToken should have consistent settlement fee schedules, causing scoped impact: state inconsistency where two markets for the same loanToken have different fee regimes, creating arbitrage opportunities between them? Proof idea: create two markets before and after setDefaultSettlementFee, assert their settlementFeeCbps differ.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8db04c34-5781-4247-8ede-3343c174cd27?mode=deep",
+    "timestamp": "2026-05-31 19:03:01.619891",
+    "report_generated": false
+  }
+]
