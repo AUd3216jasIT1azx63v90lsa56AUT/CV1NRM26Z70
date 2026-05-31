@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral] Can an unprivileged borrower calling supplyCollateral(market, collateralIndex, 0, onBehalf) when position[id][onBehalf].collateral[collateralIndex] == 0 cause the collateralBitmap bit at collateralIndex to be set despite zero collateral, violating the invariant collateral[i] != 0 <=> getBit(collateralBitmap, i), causing scoped impact: phantom collateral bit causes isHealthy to call oracle for a zero-value collateral, and if that oracle reverts, freezes all health-check-dependent operations? Proof idea: unit test supplyCollateral with assets=0 on a fresh index, assert collateralBitmap unchanged and collateral[collateralIndex]==0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb86e401-8de6-4e51-8106-d92c79b40486?mode=deep",
+    "timestamp": "2026-05-31 22:34:49.690268",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: withdrawCollateral] Can an unprivileged borrower calling withdrawCollateral(market, collateralIndex, 0, onBehalf, receiver) when position[id][onBehalf].collateral[collateralIndex] == 0 leave a stale bit set in collateralBitmap (because the guard `if (newCollateral == 0 && assets > 0)` requires assets > 0 to clear the bit), violating the bitmap invariant, causing scoped impact: isHealthy and liquidate loops iterate over a zero-collateral index, calling its oracle unnecessarily and reverting if that oracle reverts? Proof idea: fuzz withdrawCollateral(assets=0) on a zero-collateral index, assert bit remains clear and no phantom bit is introduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea183010-c693-4b41-b3fc-b9d44892422c?mode=deep",
+    "timestamp": "2026-05-31 22:35:01.574235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator calling liquidate(market, collateralIndex, 0, 0, borrower, false, receiver, address(0), '') on a collateralIndex that is NOT set in collateralBitmap leave the bitmap unmodified while the bad-debt realization path reduces position.debt, creating a state where debt decreases but the bitmap still reflects the pre-liquidation collateral set, causing scoped impact: subsequent isHealthy calls iterate over the same bitmap and may over-count maxDebt relative to the reduced debt, masking a newly unhealthy position? Proof idea: state test with multi-collateral market, call 0/0 liquidation on non-activated index, assert bitmap unchanged and verify isHealthy result matches isHealthyNoBitmap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a3b533c-1caa-46e9-9490-aef10af4e0c7?mode=deep",
+    "timestamp": "2026-05-31 22:35:14.308989",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate] Can an unprivileged liquidator calling liquidate with seizedAssets > 0 on a collateralIndex that is NOT in collateralBitmap (so liquidatedCollatPrice == 0 from the bitmap loop) cause repaidUnits to be computed as 0 via mulDivUp(seizedAssets, 0, ORACLE_PRICE_SCALE), then attempt newCollateral = position.collateral[collateralIndex] - seizedAssets which underflows and reverts, effectively freezing liquidation of a borrower whose only liquidatable collateral is at an unactivated index? Proof idea: unit test liquidate with seizedAssets>0 on collateralIndex not in bitmap, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53e6db41-0c3e-451d-87b4-0bd4b88c557f?mode=deep",
+    "timestamp": "2026-05-31 22:35:26.767766",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: withdrawCollateral / isHealthy] Can an unprivileged borrower exploit the ordering in withdrawCollateral where collateralBitmap.clearBit(collateralIndex) and collateral[collateralIndex] = newCollateral are written BEFORE isHealthy is called, such that a reentrant call during the subsequent safeTransfer (via an ERC777-like hook) observes a bitmap with the bit already cleared and collateral already reduced, allowing a second withdrawCollateral on the same index to pass the health check with stale state, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy? Proof idea: PoC with ERC777 collateral token whose transfer hook reenters withdrawCollateral on the same index.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae125255-c0ef-4f29-8453-912415555b74?mode=deep",
+    "timestamp": "2026-05-31 22:35:39.569574",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / withdrawCollateral via multicall] Can an unprivileged borrower use multicall([supplyCollateral(i, X), withdrawCollateral(i, X)]) to supply and immediately withdraw collateral at index i in a single transaction, leaving collateral[i] == 0 and bit i clear, but if the token is fee-on-transfer the actual received amount is X - fee while the accounting records X, causing collateral[i] > actual token balance, and if the bit is then set by a subsequent supply, the health check overestimates collateral value, causing scoped impact: borrower can borrow more than their actual collateral supports? Proof idea: fuzz test with fee-on-transfer collateral token, assert sum(collateral[i]) <= actual token balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_61a99d55-ffbd-451b-800f-0ed27f3a8c89?mode=deep",
+    "timestamp": "2026-05-31 22:35:53.104283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / liquidate bitmap loop] Can a borrower in a market with MAX_COLLATERALS=128 collateral params supply collateral at index 127 (the maximum valid index), causing setBit(bitmap, 127) to set bit 127 of the uint128 collateralBitmap, and then have isHealthy correctly call msb(bitmap) = 127 and access market.collateralParams[127], verifying no off-by-one or truncation error in the uint128 cast of (1 << 127), causing scoped impact: if the bit is silently dropped due to uint128 overflow, the collateral at index 127 is never counted in health checks, allowing undercollateralized borrowing? Proof idea: unit test setBit(0, 127) == (1 << 127) as uint128, and fuzz supplyCollateral at index 127 then verify isHealthy includes it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c63f86e2-33fd-4aa8-bc9a-4dc3cd5f97d7?mode=deep",
+    "timestamp": "2026-05-31 22:36:07.316479",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: UtilsLib.msb / isHealthy loop] Can the isHealthy while-loop using msb(_collateralBitmap) followed by clearBit(i) fail to terminate or skip a collateral index if msb returns an incorrect value for a bitmap with multiple bits set near the uint128 boundary (bits 126 and 127 both set), causing scoped impact: one collateral is skipped in maxDebt computation, making a borrower appear healthier than they are and blocking valid liquidation? Proof idea: fuzz countBits and msb for all uint128 values, assert msb returns the highest set bit and clearBit reduces countBits by exactly 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae5cffe6-7273-4109-a36d-135c89a1367a?mode=deep",
+    "timestamp": "2026-05-31 22:36:21.183923",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate bitmap loop vs isHealthy bitmap loop] Can the liquidate function's bitmap loop (which captures `_collateralBitmap = _position.collateralBitmap` as a local snapshot at line 606) diverge from the isHealthy bitmap loop if a liquidation callback (onLiquidate) reenters supplyCollateral or withdrawCollateral for the borrower, modifying _position.collateralBitmap mid-liquidation, causing scoped impact: the maxDebt and badDebt computed in the outer liquidation loop are based on stale bitmap state, potentially under-counting collateral and over-realizing bad debt? Proof idea: PoC with onLiquidate callback that calls supplyCollateral for the borrower, assert badDebt computed equals expected value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b00fa9c-0b0a-4136-a29f-6bd00a3e7561?mode=deep",
+    "timestamp": "2026-05-31 22:36:35.757030",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / collateralBitmap.clearBit] Can a liquidator calling liquidate with seizedAssets exactly equal to position.collateral[collateralIndex] cause newCollateral = 0 and trigger clearBit(collateralIndex) on _position.collateralBitmap, but if the same collateralIndex is also the highest bit in the bitmap (msb), verify that the subsequent isHealthy call (if any) correctly excludes that index, causing scoped impact: if clearBit is not applied to the live _position.collateralBitmap but only to the local snapshot, the bit remains set and the next isHealthy call double-counts the now-zero collateral? Proof idea: unit test full liquidation of highest-index collateral, assert collateralBitmap bit is cleared in storage.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_779a6744-ed9d-4240-95c1-a0326393ec9a?mode=deep",
+    "timestamp": "2026-05-31 22:36:50.631464",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / countBits check] Can an unprivileged borrower in a market with MAX_COLLATERALS=128 collateral params supply collateral at exactly MAX_COLLATERALS_PER_BORROWER=16 distinct indices, then attempt to supply at a 17th index, and verify that TooManyActivatedCollaterals is correctly thrown, but also verify that if the borrower first withdraws one collateral fully (clearing its bit) and then supplies at the 17th index, countBits returns exactly 16 and the supply succeeds, causing scoped impact: if countBits is incorrect for certain bitmap patterns, the 17-collateral limit could be bypassed, allowing unbounded loop iterations in isHealthy and liquidate? Proof idea: fuzz countBits for all uint128 values against a reference popcount implementation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c8669bcd-4f1c-48d0-96e2-c43fa3815913?mode=deep",
+    "timestamp": "2026-05-31 22:37:05.570728",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / liquidate] Can a borrower with MAX_COLLATERALS_PER_BORROWER=16 active collaterals, where one collateral's oracle is set to revert, cause both isHealthy and liquidate to revert (since the bitmap loop calls oracle.price() for every set bit), effectively freezing the borrower's position permanently (cannot withdraw other collateral, cannot be liquidated), causing scoped impact: fund freeze for all lenders in the market who cannot recover their credit? Proof idea: unit test with 16-collateral position where collateral[5].oracle reverts, assert liquidate reverts and withdrawCollateral for any other index also reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8832e42-d887-4b82-a244-41a1b4d584c8?mode=deep",
+    "timestamp": "2026-05-31 22:37:19.488214",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / withdrawCollateral] Can an unprivileged borrower exploit the fact that supplyCollateral sets the bit BEFORE the safeTransferFrom call, such that if the token's transferFrom reverts (e.g., insufficient allowance), the transaction reverts and the bit is never set (Solidity reverts all state changes), but if a reentrant call during transferFrom observes the intermediate state with the bit already set but collateral already incremented, it could act on a phantom collateral, causing scoped impact: reentrant isHealthy call sees inflated collateral, allowing a reentrant borrow? Proof idea: PoC with ERC777 collateral token whose transferFrom hook calls take to borrow against the not-yet-confirmed collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_207db345-9b1d-4130-b160-b2cc6826bd5d?mode=deep",
+    "timestamp": "2026-05-31 22:37:33.768947",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / take (SellerIsLiquidatable check)] Can a seller in a take transaction have their collateralBitmap in a state where a bit is set for a collateral index that has zero balance (due to a prior partial liquidation that did not clear the bit because seizedAssets was 0), causing the isHealthy check at the end of take to call oracle.price() for that zero-balance collateral, and if the oracle reverts, the take reverts, causing scoped impact: the seller's position is frozen and cannot be unwound via take? Proof idea: state test where liquidate(seizedAssets=0, repaidUnits>0) is called, then verify bitmap state and attempt take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ecb534cd-ca4d-4da5-81b5-1be576d8ff1e?mode=deep",
+    "timestamp": "2026-05-31 22:37:49.083879",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / isHealthy equivalence] Can the bitmap-optimized isHealthy return a different result than isHealthyNoBitmap (from MidnightWrapper) for any reachable state, specifically when the bitmap invariant (collateral[i] != 0 <=> getBit(bitmap, i)) holds but the market's collateralParams.length is less than 128, causing scoped impact: isHealthy skips collaterals that isHealthyNoBitmap would include (or vice versa), leading to incorrect liquidatability determination? Proof idea: differential fuzz test isHealthy vs isHealthyNoBitmap for all reachable states with up to 16 active collaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c8f225e-f9cd-4b08-9248-c1184168c042?mode=deep",
+    "timestamp": "2026-05-31 22:38:04.234582",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap loop maxDebt computation] Can a liquidator trigger a liquidation where the bitmap loop in liquidate computes maxDebt by iterating over all set bits, but the collateralIndex passed to liquidate is NOT in the bitmap (liquidatedCollatPrice stays 0), and then the seizedAssets branch computes repaidUnits = seizedAssets.mulDivUp(0, ORACLE_PRICE_SCALE).mulDivUp(WAD, lif) = 0, allowing the liquidator to seize collateral for 0 repaid units, causing scoped impact: unauthorized collateral seizure without debt repayment? Proof idea: unit test liquidate with seizedAssets>0 and collateralIndex not in bitmap, assert repaidUnits > 0 or revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba09b08a-6a53-4b73-a63e-408d7b189fd5?mode=deep",
+    "timestamp": "2026-05-31 22:38:19.032630",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: withdrawCollateral / bitmap clearBit ordering] Can an unprivileged borrower call withdrawCollateral(market, collateralIndex, assets, onBehalf, receiver) where assets equals the full collateral balance, observe that clearBit is applied to _position.collateralBitmap BEFORE isHealthy is called, and verify that isHealthy correctly excludes the withdrawn collateral from maxDebt computation (since the bit is already cleared), causing scoped impact: if isHealthy were to include the withdrawn collateral (using the pre-clear bitmap), a borrower could withdraw collateral that would make them unhealthy? Proof idea: unit test full withdrawal of one collateral in a multi-collateral position, assert isHealthy uses post-clear bitmap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03fc4d11-e4fd-4a94-a825-3636d8ee245f?mode=deep",
+    "timestamp": "2026-05-31 22:38:35.626052",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / setBit] Can an unprivileged borrower call supplyCollateral(market, collateralIndex, assets, onBehalf) where collateralIndex >= market.collateralParams.length, causing an array out-of-bounds revert at market.collateralParams[collateralIndex].token before any state change, and verify that no bitmap corruption occurs, causing scoped impact: if the revert happens AFTER the bitmap is set (it does not in current code), a phantom bit at an out-of-range index would cause isHealthy to revert with array OOB on every subsequent call? Proof idea: unit test supplyCollateral with collateralIndex = collateralParams.length, assert revert before any state change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_45a65e36-c7aa-4460-89b4-c73379cd9a6c?mode=deep",
+    "timestamp": "2026-05-31 22:38:53.009333",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap loop with collateralIndex >= collateralParams.length] Can a liquidator call liquidate(market, collateralIndex, 0, 0, borrower, false, receiver, address(0), '') where collateralIndex >= market.collateralParams.length but the bitmap has bits set only at valid indices, causing the bitmap loop to access market.collateralParams[i] for valid i values (no OOB), but then the seize/repay block accesses market.collateralParams[collateralIndex] which is OOB, causing scoped impact: revert that prevents bad debt realization for a borrower with an out-of-range collateralIndex? Proof idea: unit test 0/0 liquidation with collateralIndex = collateralParams.length, assert revert location.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60611037-d1dd-474a-8446-f902136ea875?mode=deep",
+    "timestamp": "2026-05-31 22:39:11.913040",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap loop badDebt computation] Can a liquidator call liquidate on a borrower with 16 active collaterals (MAX_COLLATERALS_PER_BORROWER) where the bitmap loop iterates all 16 bits to compute badDebt, and verify that the badDebt computation using zeroFloorSub correctly handles the case where one collateral's mulDivUp(price, ORACLE_PRICE_SCALE).mulDivUp(WAD, maxLif) exceeds the remaining badDebt, causing scoped impact: if badDebt is under-computed due to a skipped collateral (bitmap corruption), lenders absorb more bad debt than they should? Proof idea: fuzz badDebt computation with 16 collaterals at varying prices, assert badDebt matches manual calculation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6f79b8a0-9e3f-4d88-98c3-f82f402f342f?mode=deep",
+    "timestamp": "2026-05-31 22:39:27.794633",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: isHealthy / liquidate] Can a borrower with a multi-collateral position where some collaterals have LLTV=0.385e18 (LLTV_0) and others have LLTV=1e18 (LLTV_8) have their bitmap corrupted such that only the low-LLTV collaterals are counted in isHealthy (high-LLTV bits cleared), making the position appear unhealthy when it is actually healthy, causing scoped impact: healthy account becomes liquidatable due to bitmap corruption, violating the invariant that healthy accounts must not be liquidatable? Proof idea: state test with mixed-LLTV multi-collateral position, corrupt bitmap by clearing high-LLTV bits, assert isHealthy returns false but isHealthyNoBitmap returns true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ec86b37-3a07-4569-9293-0576fd707fb4?mode=deep",
+    "timestamp": "2026-05-31 22:39:43.665610",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: supplyCollateral / withdrawCollateral via authorized operator] Can an authorized operator (isAuthorized[onBehalf][operator] == true) call supplyCollateral and withdrawCollateral on behalf of a borrower in a sequence that leaves the bitmap in a state where a bit is set but collateral[i] == 0, by exploiting the fact that authorization is coarse-grained (not scoped by action or market), causing scoped impact: phantom bit causes isHealthy to call a potentially reverting oracle, freezing the borrower's position? Proof idea: unit test authorized operator calling withdrawCollateral(assets=collateral[i]) then supplyCollateral(assets=0) on same index, assert bitmap invariant holds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7bda3bd4-71cf-47b5-bffc-6eb6bd2ab2e4?mode=deep",
+    "timestamp": "2026-05-31 22:39:58.116638",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / bitmap clearBit for seized collateral] Can a liquidator call liquidate with seizedAssets > 0 where newCollateral = position.collateral[collateralIndex] - seizedAssets > 0 (partial liquidation), verify that the bit at collateralIndex is NOT cleared (because `if (newCollateral == 0 && seizedAssets > 0)` is false), and then call liquidate again with seizedAssets = newCollateral to fully seize, verify the bit IS cleared, causing scoped impact: if the bit is incorrectly cleared on partial liquidation, subsequent isHealthy calls skip the remaining collateral, making the position appear unhealthier than it is? Proof idea: two-step liquidation test, assert bitmap state after each step.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0f8fe66-72f9-44a9-8455-c22b4a2c2a6d?mode=deep",
+    "timestamp": "2026-05-31 22:40:13.575579",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / onLiquidate callback reentrancy] Can a liquidator use an onLiquidate callback to reenter supplyCollateral for the borrower at a new collateral index during liquidation, setting a new bit in _position.collateralBitmap, but since the liquidate function captured `_collateralBitmap = _position.collateralBitmap` as a local snapshot before the callback, the new bit is not included in the maxDebt/badDebt computation, causing scoped impact: the newly supplied collateral is not counted in bad debt realization, over-realizing bad debt and incorrectly slashing lenders? Proof idea: PoC with onLiquidate callback that calls supplyCollateral, assert badDebt computed equals expected value without the new collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9328b8da-07c1-46af-936e-4a4240976ec2?mode=deep",
+    "timestamp": "2026-05-31 22:40:30.253817",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: liquidate / onLiquidate callback reentrancy] Can a liquidator use an onLiquidate callback to reenter withdrawCollateral for the borrower at a different collateral index (not the one being liquidated), clearing that bit from _position.collateralBitmap, but since the liquidate function already captured the bitmap snapshot, the cleared collateral is still counted in the outer liquidation's maxDebt computation, causing scoped impact: maxDebt is over-counted (includes withdrawn collateral), making an unhealthy position appear healthy and blocking the outer liquidation via NotLiquidatable? Proof idea: PoC with onLiquidate callback that calls withdrawCollateral on a different index, assert outer liquidation succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c8aef6f9-5e9a-42c8-b05b-23296e6d81b8?mode=deep",
+    "timestamp": "2026-05-31 22:40:46.565999",
+    "report_generated": false
+  }
+]
