@@ -1,0 +1,44 @@
+[
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransfer / claimContinuousFee + rebasing token balance decrease] Can an unprivileged attacker exploiting a rebasing loan token that decreases balances under preconditions where continuousFeeCredit > 0 but loanToken.balanceOf(Midnight) has decreased below continuousFeeCredit due to a negative rebase trigger a DoS on claimContinuousFee() because safeTransfer(loanToken, receiver, amount) reverts when amount > actual balance, violating the invariant that continuousFeeCredit must be backed by actual token balance, causing scoped impact: continuous fee claims are permanently blocked and the fee credit accounting is permanently desynced from reality? Proof idea: deploy a RebasingToken, accumulate continuousFeeCredit, trigger 50% negative rebase, call claimContinuousFee() for full amount and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_afa2bc47-b71c-4373-86f6-50005d2dca58?mode=deep",
+    "timestamp": "2026-05-31 22:57:31.915008",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransferFrom / take + loan token with transfer that reverts during callback execution] Can an unprivileged taker specifying a takerCallback that reenters take() with a different offer under preconditions where the loan token's transferFrom() reverts when called reentrantly (e.g., a reentrancy guard in the token itself) trigger a DoS on the outer take() because the inner take()'s safeTransferFrom reverts and propagates up, violating the invariant that valid sequential take() calls must succeed independently, causing scoped impact: takers using callback-based strategies with reentrant-guarded tokens are permanently blocked? Proof idea: deploy a ReentrancyGuardedToken, implement takerCallback that calls take() again, assert outer take() reverts due to token's reentrancy guard.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee5fab53-d91d-450d-9f2a-a0cc6b629546?mode=deep",
+    "timestamp": "2026-05-31 22:57:43.985810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransfer / withdraw + token with transfer that reverts when called during specific block timestamps] Can an unprivileged market creator deploying a loan token with time-based transfer restrictions (e.g., transfers blocked during certain hours or after a specific timestamp) under preconditions where the restriction activates after market creation trigger a time-based DoS on withdraw() because safeTransfer(loanToken, receiver, units) reverts during the restricted period, violating the invariant that lenders must always be able to exit, causing scoped impact: lenders are temporarily or permanently unable to withdraw during the restricted period? Proof idea: deploy a TimeLockToken with transfer blocked after block.timestamp > T, warp to T+1, call withdraw() and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea978156-ac48-4490-a995-cef37b7ec45a?mode=deep",
+    "timestamp": "2026-05-31 22:57:56.559057",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransferFrom / repay + loan token with transfer that reverts when called by non-approved spender] Can an unprivileged borrower calling repay() with a callback under preconditions where the loan token requires the spender (Midnight) to be explicitly approved for each transferFrom call and the callback contract has not pre-approved Midnight trigger a DoS on repay() because safeTransferFrom(loanToken, callback, address(this), units) reverts when the callback contract has not approved Midnight, violating the invariant that repay() with a valid callback must succeed when the callback returns CALLBACK_SUCCESS, causing scoped impact: repay() with callbacks is permanently blocked for tokens requiring explicit per-call approvals? Proof idea: deploy a PerCallApprovalToken, implement RepayCallback without approving midnight, call repay() with callback and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb70eea5-d1de-4c92-85f1-4a9c14f47136?mode=deep",
+    "timestamp": "2026-05-31 22:58:09.152598",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransfer / liquidate + collateral token with transfer that reverts when seizedAssets > remaining balance due to fee-on-transfer desync] Can an unprivileged borrower who supplied collateral via supplyCollateral() with a fee-on-transfer collateral token under preconditions where position.collateral[i] = 1000 but actual balance = 990 (due to 1% fee) trigger a DoS on liquidate() when the liquidator attempts to seize 1000 units because safeTransfer(collateralToken, receiver, 1000) reverts with insufficient balance, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: borrowers using fee-on-transfer collateral are permanently protected from liquidation, creating bad debt? Proof idea: deploy FeeCollateral(1%), supplyCollateral(1000), create unhealthy position, call liquidate(seizedAssets=1000) and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ab7b624c-2880-4ba6-ad63-66bd8735de2a?mode=deep",
+    "timestamp": "2026-05-31 22:58:22.429729",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransferFrom / take + loan token with transfer that reverts when returndata is unexpectedly long] Can an unprivileged market creator deploying a loan token whose transferFrom() returns more than 32 bytes of data (e.g., returns a struct or multiple values) under preconditions where abi.decode(returndata, (bool)) succeeds but the extra data causes unexpected behavior trigger a DoS on take() if the ABI decoding fails or returns an unexpected value, violating the invariant that all ERC20-compatible tokens must work with SafeTransferLib, causing scoped impact: take() is permanently blocked for markets using tokens with non-standard return data? Proof idea: deploy a LongReturnDataToken that returns 64 bytes on transferFrom, call take() and assert whether abi.decode correctly handles the extra data or reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a18d67d1-9c46-451e-a0c8-70a4f41bddae?mode=deep",
+    "timestamp": "2026-05-31 22:58:37.701438",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/interfaces/IERC20.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: SafeTransferLib.safeTransfer / withdraw + token with transfer that reverts when called with amount = type(uint128).max] Can an unprivileged lender who has accumulated the maximum possible credit (type(uint128).max units) in a market with a loan token that reverts on transfers of type(uint128).max trigger a DoS on withdraw() because safeTransfer(loanToken, receiver, type(uint128).max) reverts, violating the invariant that lenders must be able to withdraw their full credit, causing scoped impact: lenders with maximum credit positions are permanently unable to withdraw? Proof idea: deploy a MaxUintRevertToken, accumulate credit = type(uint128).max, call withdraw(type(uint128).max) and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5eec187b-d1bc-4564-b3a9-a77b2ed4bae6?mode=deep",
+    "timestamp": "2026-05-31 22:58:51.835920",
+    "report_generated": false
+  }
+]
