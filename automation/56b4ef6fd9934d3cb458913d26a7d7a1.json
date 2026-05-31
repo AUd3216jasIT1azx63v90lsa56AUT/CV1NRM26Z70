@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market has collateralParams.length == 1 vs collateralParams.length == 128 trigger isRatified with significantly different gas costs due to HashLib.hashMarket iterating over all collateral params, resulting in gas cost non-linearity that could cause unexpected out-of-gas reverts for markets near the MAX_COLLATERALS limit? Proof idea: fuzz collateralParams.length from 1 to 128 and assert gas for isRatified scales linearly; check that gas at length 128 does not exceed block gas limit for a single take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4c0b613a-d605-4edb-8dc8-9c89f1a2ab29?mode=deep",
+    "timestamp": "2026-05-31 20:38:29.727584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the authorization state of offer.maker changes between the time the offer is signed and the time isRatified is called (e.g., maker authorizes a new address after signing) trigger isRatified with a signature from the newly authorized address, resulting in non-critical behavior divergence where the ratifier accepts signatures from addresses that were not authorized at signing time? Proof idea: sign root with address A, then authorize A, call isRatified, assert success; then revoke A, call isRatified, assert Unauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2fe331b4-5eda-4ce5-8d6a-31b17d8172cc?mode=deep",
+    "timestamp": "2026-05-31 20:38:43.448481",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where ratifierData is ABI-encoded with a proof array of length 0 but leafIndex == 1 trigger isRatified, causing HashLib.isLeaf to revert with LeafIndexOutOfRange (leafIndex >> 0 == 1 != 0) rather than InvalidProof, resulting in non-critical behavior divergence where the error selector is LeafIndexOutOfRange instead of the interface-declared InvalidProof? Proof idea: call isRatified with proof.length == 0 and leafIndex == 1, assert revert selector is HashLib.LeafIndexOutOfRange not IEcrecoverRatifier.InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7671c729-75f2-4422-bc9a-37ea6b84c70a?mode=deep",
+    "timestamp": "2026-05-31 20:38:55.954961",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the same root is used across two different EcrecoverRatifier deployments (different address(this)) trigger isRatified on both, causing different domainSeparators to be computed (since domainSeparator includes address(this)), resulting in non-critical behavior divergence where a signature valid for one ratifier deployment is invalid for another? Proof idea: deploy two EcrecoverRatifier instances, sign a root for instance A, call isRatified on instance B with the same signature, assert Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_449bb4e1-1857-44ac-9d31-49fea2535c2c?mode=deep",
+    "timestamp": "2026-05-31 20:39:08.819998",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's ratifier field points to a different EcrecoverRatifier instance than the one being called trigger isRatified, causing the domainSeparator to use address(this) (the called ratifier) rather than offer.ratifier, resulting in non-critical behavior divergence where the domain separator does not bind to the ratifier address specified in the offer? Proof idea: create offer with ratifier == ratifierA, call isRatified on ratifierB with a signature over ratifierB's domain, assert it succeeds even though offer.ratifier != address(this).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9690bef0-1d71-4557-9955-589a7f8e296f?mode=deep",
+    "timestamp": "2026-05-31 20:39:22.103991",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged maker under preconditions where isRootCanceled[maker][root] is already false call cancelRoot(maker, root) with root == HashLib.hashOffer(offer) for an offer that has already been fully consumed (consumed[maker][group] >= maxAssets), resulting in non-critical behavior divergence where canceling an already-exhausted root wastes gas without any practical effect? Proof idea: fully consume an offer, then call cancelRoot for its root, assert the call succeeds and wastes gas on a no-op cancellation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_078a8789-6118-48b9-9191-bf33a74ca8f2?mode=deep",
+    "timestamp": "2026-05-31 20:39:36.642896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer is in a height-1 tree (proof.length == 1) and leafIndex == 0 trigger isRatified, causing offerTreeTypeHash(1) to be used for the structHash, while a height-0 tree (proof.length == 0) uses offerTreeTypeHash(0), resulting in non-critical behavior divergence where the same offer signed under height-0 and height-1 trees produces different digests and thus different valid signatures? Proof idea: sign the same root under height 0 and height 1 typehashes, call isRatified with each, assert only the matching height succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8a505e3e-fd3e-4448-a7da-6be89beeb759?mode=deep",
+    "timestamp": "2026-05-31 20:39:49.250106",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market.maturity is at the boundary (block.timestamp == maturity) trigger isRatified, causing HashLib.hashOffer to include the maturity value in the hash, and assert that the ratifier correctly binds the signature to the exact maturity value, resulting in no divergence but confirming the maturity field is covered by the EIP-712 hash? Proof idea: create two offers identical except for maturity differing by 1, sign both, call isRatified with each signature on the wrong offer, assert InvalidProof or Unauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_17f56bd6-f1a2-4475-aeae-1a640f06381e?mode=deep",
+    "timestamp": "2026-05-31 20:40:03.203204",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's group field is bytes32(0) vs a non-zero group trigger isRatified, causing HashLib.hashOffer to include the group in the hash, and assert that two offers identical except for group produce different hashes and thus different valid signatures, confirming no group-field binding divergence? Proof idea: fuzz offer.group, sign each offer, call isRatified with mismatched group/signature pairs, assert all mismatches revert with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_14ee9da4-d4fd-4d16-adb9-87fab2cb3637?mode=deep",
+    "timestamp": "2026-05-31 20:40:16.469821",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's reduceOnly field is toggled trigger isRatified, causing HashLib.hashOffer to include reduceOnly in the hash, and assert that a signature over reduceOnly == true is invalid for an offer with reduceOnly == false, confirming no reduceOnly-field binding divergence? Proof idea: sign offer with reduceOnly == true, call isRatified with offer.reduceOnly == false and same signature, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de16a024-0da5-4564-bcaa-2b7176afe82d?mode=deep",
+    "timestamp": "2026-05-31 20:40:29.665116",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's maxUnits and maxAssets fields are both zero trigger isRatified, causing HashLib.hashOffer to include both zero values in the hash, and assert that the ratifier does not treat zero-capacity offers differently from non-zero offers, resulting in non-critical behavior divergence where zero-capacity offers can be ratified? Proof idea: create offer with maxUnits == 0 and maxAssets == 0, sign it, call isRatified, assert CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7dd0220-5aa4-488c-93d4-455c1bfd15e6?mode=deep",
+    "timestamp": "2026-05-31 20:40:43.135446",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's start field is in the future (offer.start > block.timestamp) trigger isRatified, causing the ratifier to return CALLBACK_SUCCESS even though Midnight.take would have already reverted with OfferNotStarted before calling isRatified, resulting in non-critical behavior divergence where isRatified does not validate the start field independently? Proof idea: call isRatified directly (as MIDNIGHT) with offer.start > block.timestamp, assert CALLBACK_SUCCESS; verify Midnight.take would revert before reaching isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_29a2fea9-dc33-485a-b118-5f4b23c64810?mode=deep",
+    "timestamp": "2026-05-31 20:40:57.278315",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's expiry field is in the past (offer.expiry < block.timestamp) trigger isRatified directly (bypassing Midnight.take's OfferExpired check), causing the ratifier to return CALLBACK_SUCCESS for an expired offer, resulting in non-critical behavior divergence where isRatified does not validate the expiry field independently? Proof idea: call isRatified as MIDNIGHT with offer.expiry == 0, assert CALLBACK_SUCCESS; verify this is only safe because Midnight.take enforces expiry before calling isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74cfb0e5-03aa-4c5c-b606-562115c12631?mode=deep",
+    "timestamp": "2026-05-31 20:41:10.567905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's tick field is not aligned to the market's tickSpacing trigger isRatified, causing the ratifier to return CALLBACK_SUCCESS for an offer with an inaccessible tick, resulting in non-critical behavior divergence where isRatified does not validate tick alignment independently (relying on Midnight.take's TickNotAccessible check)? Proof idea: call isRatified as MIDNIGHT with offer.tick == 1 in a market with tickSpacing == 4, assert CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8b903e9-b143-4fae-bc15-2030b63a069b?mode=deep",
+    "timestamp": "2026-05-31 20:41:25.209684",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market does not exist in Midnight (touchMarket not called) trigger isRatified, causing the ratifier to return CALLBACK_SUCCESS for an offer in a non-existent market, resulting in non-critical behavior divergence where isRatified does not validate market existence independently? Proof idea: call isRatified as MIDNIGHT with an offer whose market has never been touched, assert CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dfca2899-b0ad-4b90-a078-b95a4f26fd36?mode=deep",
+    "timestamp": "2026-05-31 20:41:38.899169",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the same Merkle root covers offers for two different markets trigger isRatified for an offer in market A using a root that also covers offers in market B, resulting in non-critical behavior divergence where the root is not scoped to a single market, and a single signature can ratify offers across multiple markets? Proof idea: build a tree with offers from two different markets, sign the root, call isRatified for each offer, assert both succeed with the same signature.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_611c3a40-cc0e-4260-9d60-7555dcca79a9?mode=deep",
+    "timestamp": "2026-05-31 20:41:51.672371",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: cancelRoot] Can an unprivileged maker under preconditions where the maker has no active offers trigger cancelRoot for an arbitrary bytes32 root, causing isRootCanceled[maker][root] to be set to true and consuming a storage slot, resulting in unnecessary gas cost and storage bloat from canceling roots that were never signed? Proof idea: call cancelRoot with a random root for a maker with no offers, assert isRootCanceled is set, measure gas, and assert no functional impact on any existing offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec431d74-f3b5-440d-be14-b3dca4141981?mode=deep",
+    "timestamp": "2026-05-31 20:42:05.047033",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's callbackData is empty (length 0) trigger isRatified, causing keccak256(offer.callbackData) == keccak256('') == 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 to be included in the hash, resulting in non-critical behavior divergence where empty callbackData produces a non-zero hash contribution rather than bytes32(0)? Proof idea: create two offers identical except one has callbackData == '' and one has callbackData == abi.encode(0), sign both, assert their hashes differ and signatures are not interchangeable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e75f7fad-e483-45a4-97ec-d5e2dcc2468a?mode=deep",
+    "timestamp": "2026-05-31 20:42:18.414482",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's receiverIfMakerIsSeller is address(0) vs a non-zero address trigger isRatified, causing HashLib.hashOffer to include receiverIfMakerIsSeller in the hash, and assert that the ratifier correctly binds the signature to the receiver field, resulting in no divergence but confirming the receiver field is covered? Proof idea: fuzz offer.receiverIfMakerIsSeller, sign each offer, call isRatified with mismatched receiver/signature pairs, assert all mismatches revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f6863de-3fc8-4275-9dde-ce0cc44f1058?mode=deep",
+    "timestamp": "2026-05-31 20:42:31.893585",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's callback field is address(0) vs a non-zero callback address trigger isRatified, causing HashLib.hashOffer to include the callback address in the hash, and assert that a signature over callback == address(0) is invalid for an offer with a non-zero callback, confirming no callback-field binding divergence? Proof idea: sign offer with callback == address(0), call isRatified with offer.callback == address(someContract), assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0fefb5e0-d440-48a9-a197-02e6b4032529?mode=deep",
+    "timestamp": "2026-05-31 20:42:46.386008",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's buy field is toggled (true vs false) trigger isRatified, causing HashLib.hashOffer to include the buy field in the hash, and assert that a signature over a buy offer is invalid for a sell offer with otherwise identical fields, confirming no buy-field binding divergence? Proof idea: sign offer with buy == true, call isRatified with offer.buy == false and same signature, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_37b6b875-1c98-488d-bfd2-bd38efa6b25a?mode=deep",
+    "timestamp": "2026-05-31 20:42:59.829314",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market.enterGate or market.liquidatorGate is changed trigger isRatified, causing HashLib.hashMarket to include both gate addresses in the hash, and assert that a signature over a market with no gates is invalid for a market with gates, confirming no gate-field binding divergence? Proof idea: sign offer with enterGate == address(0), call isRatified with offer.market.enterGate == address(someGate), assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e4376c81-94aa-4d08-82e7-d9f74b1a3359?mode=deep",
+    "timestamp": "2026-05-31 20:43:12.961736",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market.rcfThreshold is changed trigger isRatified, causing HashLib.hashMarket to include rcfThreshold in the hash, and assert that a signature over rcfThreshold == 0 is invalid for a market with rcfThreshold > 0, confirming no rcfThreshold-field binding divergence? Proof idea: sign offer with rcfThreshold == 0, call isRatified with offer.market.rcfThreshold == 1, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e23454bd-f615-4dc1-b6b2-cd8f41c57e34?mode=deep",
+    "timestamp": "2026-05-31 20:43:26.546355",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market.collateralParams ordering is changed (same params, different sort order) trigger isRatified, causing HashLib.hashMarket to produce a different collateralParamsHash due to different ordering, and assert that a signature over sorted params is invalid for unsorted params, confirming no collateral ordering divergence? Proof idea: sign offer with sorted collateralParams, call isRatified with reversed collateralParams, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e8d6a5c-f227-4d23-8f8a-af0b6bfb2c74?mode=deep",
+    "timestamp": "2026-05-31 20:43:39.673114",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified] Can an unprivileged taker under preconditions where the offer's market.collateralParams[i].lltv or maxLif is changed trigger isRatified, causing HashLib.hashCollateralParams to include lltv and maxLif in the hash, and assert that a signature over one LLTV tier is invalid for a different LLTV tier, confirming no LLTV-field binding divergence? Proof idea: sign offer with lltv == 0.77e18, call isRatified with lltv == 0.86e18, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_76357cd3-d5c1-461c-b1b5-52c758f3b82a?mode=deep",
+    "timestamp": "2026-05-31 20:43:53.262032",
+    "report_generated": false
+  }
+]
