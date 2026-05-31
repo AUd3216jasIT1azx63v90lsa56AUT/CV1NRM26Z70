@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + liquidate (normal) + liquidate (post-maturity)] Can an attacker compose multicall([liquidate(market, idx, seizedAssets1, 0, borrower, false, ...), liquidate(market, idx, seizedAssets2, 0, borrower, true, ...)]) where the first liquidate in normal mode reduces debt and collateral, and the second liquidate in post-maturity mode uses the updated position state but applies a different LIF (growing from 1 at maturity), potentially seizing more collateral than the debt warrants or leaving the position in an inconsistent state? Proof idea: assert position[id][borrower].debt >= 0 and position[id][borrower].collateral[idx] >= 0 and no underflow after both liquidations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5fa906ad-b414-475a-ab9f-151bb77e9ffd?mode=deep",
+    "timestamp": "2026-05-31 18:00:39.033620",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + repay] Can a borrower compose multicall([take(sellOffer, units, borrower, ...), repay(market, units, borrower, address(0), '')]) where the take increases sellerPos.debt and the repay immediately reduces it, but the safeTransferFrom in take (line 456) sends sellerAssets to the receiver before the repay's safeTransferFrom pulls the repayment, allowing the borrower to receive sellerAssets and repay from those same assets in the same transaction with zero net capital outflow? Proof idea: assert IERC20(loanToken).balanceOf(borrower) decreases by at least sellerAssets - repaidUnits after the multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad9675ea-d4b0-4221-963e-b3f512247440?mode=deep",
+    "timestamp": "2026-05-31 18:00:51.245094",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy callback as payer) + take (sell)] Can an attacker compose multicall([take(buyOffer_callback_payer, units1, buyer, ...), take(sellOffer, units2, seller, ...)]) where the first take's payer is the buyerCallback contract, and the callback's onBuy reenters the second take before the first take's safeTransferFrom executes, so the second take's safeTransferFrom pulls tokens from msg.sender (attacker) who has not yet paid for the first take, creating a situation where the protocol records two fills but only one payment is made? Proof idea: assert IERC20(loanToken).balanceOf(midnight) increases by buyerAssets1 - sellerAssets1 + buyerAssets2 - sellerAssets2 after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8d5351ab-c614-402e-9fd3-5e6846134601?mode=deep",
+    "timestamp": "2026-05-31 18:01:03.593479",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + supplyCollateral + supplyCollateral (same index)] Can a borrower compose multicall([supplyCollateral(market, idx, assets1, borrower), supplyCollateral(market, idx, assets2, borrower)]) where the first call sets oldCollateral = 0 and activates the bitmap bit (setBit), and the second call sees oldCollateral = assets1 > 0 and skips the bitmap update, but if assets1 was 0 (dust) and assets2 is large, the bitmap bit is set in the first call and the second call does not recheck MAX_COLLATERALS_PER_BORROWER, potentially allowing more than 16 active collaterals? Proof idea: fuzz assets1 near 0, assert countBits(collateralBitmap) <= MAX_COLLATERALS_PER_BORROWER after any multicall sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c3f6e9b-02c4-44a5-b1c1-6a96e85f7190?mode=deep",
+    "timestamp": "2026-05-31 18:01:16.220735",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + withdrawCollateral + withdrawCollateral (same index)] Can a borrower compose multicall([withdrawCollateral(market, idx, assets1, borrower, receiver), withdrawCollateral(market, idx, assets2, borrower, receiver)]) where the first call reduces collateral and clears the bitmap bit if newCollateral == 0, and the second call attempts to subtract assets2 from 0, causing an underflow revert, but if assets1 < total collateral, the second call passes the health check with the already-reduced collateral, potentially allowing withdrawal of more collateral than the health check would permit in a single call? Proof idea: assert isHealthy(market, id, borrower) after each withdrawCollateral in a multicall sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66c9fdf9-b182-4235-808c-e38f7680c3bb?mode=deep",
+    "timestamp": "2026-05-31 18:01:29.287542",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take + setConsumed (cancel)] Can a maker compose multicall([take(offer, units, taker, ...), setConsumed(group, type(uint256).max, maker)]) where the take fills the offer and increments consumed, and the setConsumed then sets consumed to type(uint256).max, but a subsequent take in the same multicall for a different offer in the same group would see consumed = type(uint256).max and revert with ConsumedUnits, effectively using the cancel to block other takers from filling related offers in the same transaction? Proof idea: assert that setConsumed(group, type(uint256).max) after a take in multicall does not allow a subsequent take on the same group to succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3b8e39a-9a33-45da-8a0d-1edf0a28c6ae?mode=deep",
+    "timestamp": "2026-05-31 18:01:43.264173",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (rebasing loanToken) + withdraw] Can an attacker use a rebasing loan token that increases balances mid-transaction, compose multicall([take(buyOffer, units, lender, ...), withdraw(market, units, lender, receiver)]) where the rebase between take and withdraw increases IERC20(loanToken).balanceOf(midnight) but the accounting (withdrawable, totalUnits) does not reflect the rebase, allowing the lender to withdraw units that correspond to more actual tokens than the protocol accounts for, draining the rebase surplus? Proof idea: deploy rebasing ERC20 mock, trigger rebase between take and withdraw in multicall, assert IERC20(loanToken).balanceOf(midnight) >= withdrawable + claimableSettlementFee[loanToken] after sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb28f9f7-819a-404f-8102-d29669c59bec?mode=deep",
+    "timestamp": "2026-05-31 18:01:57.524096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + flashLoan + supplyCollateral + take (sell) + withdrawCollateral] Can an attacker compose multicall([flashLoan([collateralToken], [assets], attackerCallback, data), supplyCollateral(market, idx, assets, attacker), take(sellOffer, units, attacker, ...), withdrawCollateral(market, idx, assets, attacker, attackerCallback)]) where the flash loan provides collateral, supplyCollateral deposits it, take borrows against it, withdrawCollateral retrieves it (health check passes if debt <= maxDebt), and the withdrawn collateral is used to repay the flash loan, resulting in the attacker holding sellerAssets with zero net capital? Proof idea: trace IERC20(collateralToken).balanceOf(attacker) and IERC20(loanToken).balanceOf(attacker) before and after, assert net gain is zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3467bfe6-686a-45a4-9ecf-6f12dc5a45b4?mode=deep",
+    "timestamp": "2026-05-31 18:02:12.706170",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + liquidate (self)] Can a borrower compose multicall([take(sellOffer, units, borrower, ...), liquidate(market, idx, 0, 0, borrower, false, ...)]) where the take makes the borrower unhealthy (debt > maxDebt) and the subsequent liquidate with seizedAssets=0 and repaidUnits=0 realizes bad debt (badDebt > 0), reducing the borrower's debt and socializing losses to lenders, effectively allowing the borrower to escape debt by self-liquidating in the same transaction they created the debt? Proof idea: assert that a borrower cannot reduce their own debt via liquidate(0,0) in the same multicall as a take that created the debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7cbbf25-0ff7-4671-8842-7f605ea738d7?mode=deep",
+    "timestamp": "2026-05-31 18:02:27.962235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + take (buy) same buyer] Can a lender compose multicall([take(sellOffer1, units1, lender, ...), take(sellOffer2, units2, lender, ...)]) where the first take calls _updatePosition for the buyer (lender) and the second take checks hasCredit(id, buyer) || units > buyerPos.debt (line 379) again, but since credit was already updated in the first take, the second take may skip _updatePosition, causing the lender's credit to not be slashed for any bad debt that occurred between the two takes in the same block? Proof idea: assert position[id][lender].lastLossFactor == marketState[id].lossFactor after both takes in multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78db8a79-49fe-41c4-aff6-b4dfd2dfed18?mode=deep",
+    "timestamp": "2026-05-31 18:02:42.952189",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: MidnightBundles.repayAndWithdrawCollateral + referral fee accounting] Can an attacker compose a call to repayAndWithdrawCollateral(market, assets, borrower, ..., referralFeePct, ...) where units = assets - referralFeeAssets = assets - assets * referralFeePct / WAD, and the repay reduces position[id][borrower].debt by units (not assets), but the borrower's actual debt is assets, so after repayAndWithdrawCollateral the borrower still has referralFeeAssets of debt remaining, and the subsequent withdrawCollateral health check uses the reduced debt, potentially allowing collateral withdrawal against unpaid debt? Proof idea: assert position[id][borrower].debt == 0 after repayAndWithdrawCollateral with referralFeePct > 0 and assets == borrower's full debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_097824fe-06b0-411c-b65f-5322acf64505?mode=deep",
+    "timestamp": "2026-05-31 18:02:58.606562",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (buy) same seller/buyer] Can an attacker compose multicall([take(sellOffer, units, attacker, ...), take(buyOffer, units, attacker, ...)]) where the first take increases attacker's debt (sellerDebtIncrease > 0) and the second take reduces it (buyerCreditIncrease = 0, debt reduced), and the net effect is zero debt change but the attacker received sellerAssets from the first take and paid buyerAssets for the second take, with the difference being the spread, effectively extracting the bid-ask spread without holding any position? Proof idea: assert IERC20(loanToken).balanceOf(attacker) does not increase by more than the legitimate spread after the multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2805b3af-74f1-4b7b-b305-9dfc03890fcc?mode=deep",
+    "timestamp": "2026-05-31 18:03:15.786995",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (false-return loanToken)] Can an attacker use a loan token whose transferFrom returns false (non-reverting), compose multicall([take(offer, units, taker, ...)]) where SafeTransferLib.safeTransferFrom checks returndata.length == 0 || abi.decode(returndata, (bool)) (line 33 of SafeTransferLib), and a token that returns empty bytes (not false) passes this check even if the transfer did not execute, causing the protocol to record a fill without receiving tokens? Proof idea: deploy ERC20 mock that returns empty bytes on transferFrom, assert IERC20(loanToken).balanceOf(midnight) increases by buyerAssets - sellerAssets after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_568a48c0-f336-4274-bc4c-ac860fe5e1f6?mode=deep",
+    "timestamp": "2026-05-31 18:03:32.369148",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take + take (different markets, same loanToken)] Can an attacker compose multicall([take(offer_market1, units1, taker, ...), take(offer_market2, units2, taker, ...)]) where both markets share the same loanToken, and the claimableSettlementFee[loanToken] is incremented by both takes, but the contract's loanToken balance only needs to cover the combined settlement fees once, so if the attacker can cause one take to fail silently (via callback), the claimableSettlementFee could exceed the actual balance? Proof idea: assert IERC20(loanToken).balanceOf(midnight) >= claimableSettlementFee[loanToken] after any multicall across multiple markets with the same loanToken.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a261d9f8-76a6-4416-8ec8-0b8192a9a433?mode=deep",
+    "timestamp": "2026-05-31 18:03:50.337765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (sell) maturity boundary] Can an attacker compose multicall([take(sellOffer1, units1, seller, ...), take(sellOffer2, units2, seller, ...)]) at block.timestamp == market.maturity where the first take passes CannotIncreaseDebtPostMaturity because sellerDebtIncrease == 0 (seller has enough credit to cover units1), but the second take fails because sellerDebtIncrease > 0 after credit is exhausted, and the revert of the second take in multicall causes the entire multicall to revert, but if the attacker crafts units1 to exactly exhaust credit and units2 to be 1, the combined effect is that the seller's credit is reduced to 0 and debt is not increased, which is valid but the revert wastes gas? Proof idea: fuzz units1 and units2 near seller's credit balance at maturity, assert multicall atomicity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0cbaae0f-0288-4fbf-ae70-3877e02e8971?mode=deep",
+    "timestamp": "2026-05-31 18:04:06.533724",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + claimContinuousFee] Can the feeClaimer compose multicall([take(sellOffer, units, buyer, ...), claimContinuousFee(market, amount, receiver)]) where the take increases totalUnits (buyerCreditIncrease > 0) and the claimContinuousFee reduces totalUnits and withdrawable, but the continuousFeeCredit was not updated by the take (only _updatePosition updates it), causing claimContinuousFee to reduce totalUnits below the sum of all lender credits, breaking the solvency invariant? Proof idea: assert marketState[id].totalUnits >= sum(position[id][user].credit for all users) after any multicall sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c00d0c4-173a-43d6-835c-93c3431ed625?mode=deep",
+    "timestamp": "2026-05-31 18:04:22.919115",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + isHealthy check timing] Can a borrower compose multicall([take(sellOffer, units, borrower, ...), withdrawCollateral(market, idx, 0, borrower, receiver)]) where the take's internal health check (line 476) passes because liquidationLocked is true (set by tExchange), but the subsequent withdrawCollateral calls isHealthy independently and the borrower is actually unhealthy after the take, causing withdrawCollateral to revert with UnhealthyBorrower, but the take's state changes (debt increase, credit decrease) are already committed? Proof idea: assert that if take succeeds in a multicall, the seller's position satisfies isHealthy at the end of the multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad3ff457-8546-4dc7-856c-e7d60dc79ad9?mode=deep",
+    "timestamp": "2026-05-31 18:04:37.097401",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy, maker is seller callback) + take (sell)] Can an attacker compose multicall([take(buyOffer_maker_callback, units1, taker1, ...), take(sellOffer, units2, taker2, ...)]) where the maker's onBuy callback reenters the second take, and the second take's _updatePosition for the seller is called with the intermediate state (after first take's position updates but before first take's token transfers), causing the seller's credit to be slashed based on a lossFactor that does not reflect the first take's fee accrual? Proof idea: assert position[id][seller].lastLossFactor == marketState[id].lossFactor after both takes complete.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74e342f8-46aa-4986-9948-7c4313e0d093?mode=deep",
+    "timestamp": "2026-05-31 18:04:51.098932",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take + take (same offer, maxAssets-based, rounding)] Can an attacker compose multicall([take(offer_maxAssets, units1, taker, ...), take(offer_maxAssets, units2, taker, ...)]) where offer.buy == true and consumed tracks buyerAssets (mulDivDown), and the two partial fills each round down buyerAssets, so the combined consumed is strictly less than units1*price/WAD + units2*price/WAD, allowing the total fill to exceed maxAssets by up to 2 wei of rounding? Proof idea: fuzz units1 and units2 with mulDivDown rounding, assert consumed[maker][group] <= offer.maxAssets after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c2a7eb5-f0c9-4a6d-80a5-ec05ac656a93?mode=deep",
+    "timestamp": "2026-05-31 18:05:04.464332",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + liquidate + liquidate (same borrower, different collateral)] Can an attacker compose multicall([liquidate(market, idx1, seizedAssets1, 0, borrower, false, ...), liquidate(market, idx2, seizedAssets2, 0, borrower, false, ...)]) where the first liquidate realizes bad debt (reducing borrower.debt) and the second liquidate recomputes maxDebt and badDebt from the updated position, potentially finding the borrower is now healthy (after bad debt reduction) and reverting with NotLiquidatable, but the first liquidate's state changes (lossFactor update, collateral seizure) are already committed? Proof idea: assert that if the first liquidate succeeds, the second liquidate either succeeds or reverts cleanly without leaving accounting inconsistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f714423-502c-491a-baa9-acfdac6cd467?mode=deep",
+    "timestamp": "2026-05-31 18:05:18.845252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (sell) same seller, _updatePosition skip] Can an attacker compose multicall([take(sellOffer1, units1, seller, ...), take(sellOffer2, units2, seller, ...)]) where the first take calls _updatePosition for the seller (hasCredit check, line 380), updating lastLossFactor and lastAccrual, and the second take also calls _updatePosition for the seller again, but since lastAccrual is now block.timestamp, the fee accrual in updatePositionView returns fee = 0 (line 814-816), causing the seller's pendingFee to not accrue for the second take's time interval? Proof idea: assert position[id][seller].pendingFee after two takes in multicall equals the expected accrual for the full time interval.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7abe5f0b-ee17-46b5-8a29-f537c9a9e08c?mode=deep",
+    "timestamp": "2026-05-31 18:05:32.776427",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + take (sell) cross-market netting] Can an attacker compose multicall([take(sellOffer_market1, units, attacker_as_buyer, ...), take(buyOffer_market2, units, attacker_as_seller, ...)]) across two markets with the same loanToken but different maturities, where the attacker gains credit in market1 and debt in market2, and the net token flow is zero (sellerAssets from market2 covers buyerAssets for market1), effectively creating a cross-market position with no capital outlay, violating the invariant that each market's accounting is isolated? Proof idea: assert IERC20(loanToken).balanceOf(attacker) does not increase after the multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_adf5843a-d9e1-480b-86ea-6c5365ec1052?mode=deep",
+    "timestamp": "2026-05-31 18:05:47.191500",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell callback) + withdrawCollateral] Can an attacker compose multicall([take(sellOffer_with_sellerCallback, units, seller, ...), withdrawCollateral(market, idx, assets, seller, receiver)]) where the sell callback (onSell) is called after the seller's position is updated (debt increased) but before the health check (line 476), and the callback reenters withdrawCollateral, which calls isHealthy with the updated debt but before the liquidation lock is released, causing the health check to use the post-take debt but the pre-take collateral (if collateral was modified in the callback)? Proof idea: assert isHealthy(market, id, seller) == true after the full take + withdrawCollateral sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87f9a1c1-3bdd-4aa5-96d0-9b9ad3e80deb?mode=deep",
+    "timestamp": "2026-05-31 18:06:02.930627",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (buy) + withdraw (same lender, multi-market)] Can a lender compose multicall([take(sellOffer_market1, units, lender, ...), withdraw(market2, units, lender, receiver)]) where the lender has credit in market2 and gains credit in market1, and the withdraw from market2 reduces market2's withdrawable, but the lender's credit in market2 was not slashed for any bad debt in market2 (because _updatePosition was not called for market2 in this multicall), allowing the lender to withdraw more than their actual post-slash credit? Proof idea: assert position[id2][lender].credit after withdraw equals updatePositionView(market2, id2, lender).credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_08af1ebd-fe0d-4a6b-bae5-f849bf35a8d7?mode=deep",
+    "timestamp": "2026-05-31 18:06:18.919879",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: multicall + take (sell) + take (buy) same group, consumed tracking] Can an attacker compose multicall([take(sellOffer_group_X, units1, taker, ...), take(buyOffer_group_X, units2, taker, ...)]) where both offers share the same maker and group, and the first take increments consumed[maker][group] by sellerAssets (maxAssets-based sell offer), and the second take increments consumed[maker][group] by buyerAssets (maxAssets-based buy offer), but the maxAssets cap is intended to limit total exposure in one direction, not the sum of both directions, allowing the combined consumed to exceed the maker's intended single-direction cap? Proof idea: assert that a maker's group budget is not exceeded by mixing buy and sell offers in the same group within a multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4152422c-17df-48d8-8fc1-c29e3bec168a?mode=deep",
+    "timestamp": "2026-05-31 18:06:35.272541",
+    "report_generated": false
+  }
+]
