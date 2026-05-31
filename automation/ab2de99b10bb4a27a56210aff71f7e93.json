@@ -1,0 +1,86 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == false and offer.callback set to a contract that implements ISellCallback and calls Midnight.supplyCollateral() for the seller during onSell, cause the seller's collateral to increase mid-take (after the health check setup but before the final isHealthy check), violating the invariant that the seller's collateral must not change between the take accounting and the final health check, causing the seller to pass the health check with collateral they supplied during the callback? Proof idea: implement ISellCallback that supplies collateral, assert seller health check uses post-callback collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba8ac5c2-5dbb-41ff-88d8-f122cbed61f3?mode=deep",
+    "timestamp": "2026-05-31 19:29:35.936320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.market.loanToken having 6 decimals (e.g., USDC), fill the offer where buyerAssets = units.mulDivDown(buyerPrice, WAD) and sellerAssets = units.mulDivDown(sellerPrice, WAD) are computed in 18-decimal units but transferred in 6-decimal token amounts, violating the invariant that the token transfer must match the accounting delta, causing the maker to receive fewer tokens than the accounting records due to decimal truncation? Proof idea: use 6-decimal token, fill offer, assert token balance change equals accounting delta.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd25e1b7-e830-4337-833e-ddbec1014171?mode=deep",
+    "timestamp": "2026-05-31 19:29:47.765509",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == true and offer.group shared with another offer O2 in a different market, fill offer O to exhaust the group budget, then attempt to fill offer O2 in the different market, violating the invariant that consumption group budget must be shared across all offers in the group regardless of market, causing the second fill to revert with ConsumedAssets/ConsumedUnits? Proof idea: create two markets, ratify roots with offers sharing a group, fill first offer, assert second offer reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9a64f5a-5c7a-47c6-a49b-d954de662d3a?mode=deep",
+    "timestamp": "2026-05-31 19:30:00.811724",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.buy == false and the seller (maker) has credit > 0, fill the offer where sellerCreditDecrease = min(units, sellerPos.credit) reduces the seller's credit and sellerDebtIncrease = units - sellerCreditDecrease increases debt, causing the seller to receive sellerAssets while their credit is reduced and debt increased, violating the invariant that the net position change must be consistent with the assets transferred, causing accounting desync if sellerPendingFeeDecrease is computed incorrectly? Proof idea: set seller credit = C, fill with units = C + D, assert seller credit = 0, debt = D, and sellerPendingFeeDecrease = pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36ce01dc-359f-4d2f-ad2d-c3b888824272?mode=deep",
+    "timestamp": "2026-05-31 19:30:13.311344",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == true and offer.callback set to a contract that implements IBuyCallback and calls Midnight.flashLoan() during onBuy, use the flash loan to temporarily inflate the buyer's balance and then repay it, violating the invariant that flash loans must not be composable with take callbacks to bypass asset transfer requirements, causing the buyer to receive credit without paying the correct buyerAssets? Proof idea: implement IBuyCallback that calls flashLoan(), assert buyerAssets are correctly transferred after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d495898-88d7-42c5-bf0c-0407de5c3382?mode=deep",
+    "timestamp": "2026-05-31 19:30:26.772118",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.market.lossFactor approaching type(uint128).max, attempt to fill the offer, violating the invariant that take must revert when lossFactor is maxed out (MarketLossFactorMaxedOut), and assert that the SetterRatifier does not bypass this check, causing the take to revert before any asset transfer? Proof idea: create bad debt to push lossFactor to type(uint128).max, ratify root, take, assert MarketLossFactorMaxedOut revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec01728b-80d2-4568-8347-9a2be08441be?mode=deep",
+    "timestamp": "2026-05-31 19:30:40.563124",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == false and offer.receiverIfMakerIsSeller set to a contract that reverts on token receipt, cause the safeTransfer(loanToken, receiver, sellerAssets) call to revert, violating the invariant that the maker must be able to receive sellerAssets, causing a permanent DoS on the offer fill? Proof idea: set receiverIfMakerIsSeller to reverting contract, fill offer, assert take reverts on token transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6f8422c-32af-4f8a-9c51-63a9119df917?mode=deep",
+    "timestamp": "2026-05-31 19:30:53.725457",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.buy == true and the buyer (maker) has lastLossFactor < current lossFactor (pending slashing), fill the offer where _updatePosition is called for the buyer (since hasCredit(id, buyer) || units > buyerPos.debt), causing the buyer's credit to be slashed before the take accounting, violating the invariant that the buyer's credit after take must equal slashed credit + buyerCreditIncrease, and assert the slashing and take accounting are consistent? Proof idea: create bad debt, fill buy offer, assert buyer credit = updatePositionView(buyer).credit + buyerCreditIncrease.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a2bbb992-50b2-441d-aedc-3ecaa04feebf?mode=deep",
+    "timestamp": "2026-05-31 19:31:07.245970",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == false and offer.market.enterGate set to a gate that blocks the seller from increasing debt, fill the offer as taker-buyer where the seller (maker) would incur debt (sellerDebtIncrease > 0), violating the invariant that the enterGate must block the seller from increasing debt, causing the SellerGatedFromIncreasingDebt revert, and assert that SetterRatifier does not bypass the gate check? Proof idea: deploy enterGate blocking seller debt increase, ratify root, fill, assert SellerGatedFromIncreasingDebt revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_790e1d41-e267-4bd4-ac19-8220cd5be9fd?mode=deep",
+    "timestamp": "2026-05-31 19:31:19.907101",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.buy == true and offer.maxUnits > 0, fill the offer with units = offer.maxUnits in a single take, then attempt to fill again with units = 1, violating the invariant that a fully consumed offer must not be fillable again, causing the second fill to revert with ConsumedUnits, and assert that the consumption tracking is correctly enforced? Proof idea: fill with units = maxUnits, assert consumed[maker][group] == maxUnits, fill again with units=1, assert ConsumedUnits revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5792327-658b-4928-8a29-7f824c037ed7?mode=deep",
+    "timestamp": "2026-05-31 19:31:33.607621",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == true and offer.callback set to a contract that implements IBuyCallback and calls Midnight.setIsAuthorized(newOperator, true, maker) during onBuy, cause a new operator to be authorized for the maker mid-take, violating the invariant that authorization changes during take callbacks must not enable additional unauthorized actions, causing the new operator to ratify additional roots and fill more offers in the same transaction? Proof idea: implement IBuyCallback that authorizes new operator, assert new operator can ratify roots after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3024fb5-6e4b-4aad-86ac-1b3f71a406ea?mode=deep",
+    "timestamp": "2026-05-31 19:31:46.919810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.buy == false and offer.market.maturity set to a timestamp in the past (expired market), fill the offer where timeToMaturity = zeroFloorSub(maturity, block.timestamp) = 0 and sellerDebtIncrease > 0, violating the invariant that debt must not increase post-maturity (CannotIncreaseDebtPostMaturity), causing the take to revert, and assert that SetterRatifier does not bypass the post-maturity debt check? Proof idea: warp past maturity, ratify root with sell offer causing debt increase, take, assert CannotIncreaseDebtPostMaturity revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_585dc7e4-2b5c-4ce8-b1ba-ba71422b3b37?mode=deep",
+    "timestamp": "2026-05-31 19:32:00.719747",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: setIsRootRatified / take] Can an authorized operator, under the precondition that the maker has authorized the operator and the operator has ratified root R containing offer O with offer.buy == true and offer.market having a non-zero continuousFee, fill the offer where buyerPendingFeeIncrease = buyerCreditIncrease * continuousFee * timeToMaturity / WAD is computed with mulDivDown rounding, violating the invariant that the pending fee must correctly reflect the continuous fee obligation, causing the buyer to receive credit with an undercounted pending fee and effectively paying less than the correct countervalue over the life of the position? Proof idea: fuzz continuousFee and timeToMaturity, assert buyerPendingFeeIncrease == expected value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_92c4a1e6-5be4-498c-9f31-e1348fd36eb7?mode=deep",
+    "timestamp": "2026-05-31 19:32:13.763491",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: isRatified / take] Can a taker, under the precondition that the maker has ratified root R containing offer O with offer.buy == false and offer.market having multiple collateral params where one oracle returns a price that makes the seller appear healthy but another oracle is about to return a lower price, fill the offer where the health check passes at fill time but the seller becomes unhealthy immediately after, violating the invariant that the seller must remain healthy after the take, causing bad debt creation in the next block? Proof idea: manipulate oracle price after take, assert seller is liquidatable in next block.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62e5da31-5988-4963-a3df-10d39167a02f?mode=deep",
+    "timestamp": "2026-05-31 19:32:26.264767",
+    "report_generated": false
+  }
+]
