@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 PermitTransferFrom for exactly maxBuyerAssets under PRECONDITIONS where all offers partially fill (filledBuyerAssets < maxBuyerAssets) trigger pullToken consuming the full maxBuyerAssets nonce then have the refund SafeTransferLib.safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets) revert due to a token-level blacklist or pause, violating the invariant that user funds must not be frozen outside valid protocol rules, causing scoped impact: user loses maxBuyerAssets - filledBuyerAssets tokens permanently locked in MidnightBundles? Proof idea: deploy a loanToken that blacklists msg.sender after the Permit2 transfer succeeds; assert that the refund path reverts and the bundler retains the difference.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_395f4bd4-64da-406a-af5d-a9bc4a6f4466?mode=deep",
+    "timestamp": "2026-05-31 23:42:47.459945",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / repayAndWithdrawCollateral] Can an unprivileged BORROWER who signs a Permit2 permit for assets under PRECONDITIONS where referralFeePct = WAD - 1 trigger pullToken consuming assets then have units = assets - referralFeeAssets = 1 repaid to Midnight while referralFeeAssets = assets - 1 is sent to referralFeeRecipient, violating the invariant that user funds must not be seized outside valid protocol rules, causing scoped impact: borrower loses nearly all repay tokens to the referral fee recipient with only 1 unit of debt cleared? Proof idea: fuzz assets and referralFeePct near WAD - 1; assert borrower net debt reduction vs tokens spent ratio.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a9d39c72-a304-4dc3-a94a-7ba325a609e5?mode=deep",
+    "timestamp": "2026-05-31 23:42:59.543335",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken (PermitKind.Permit2 branch) vs pullToken (PermitKind.ERC2612 branch)] Can an unprivileged FRONT-RUNNER who observes a pending buyWithUnitsTargetAndWithdrawCollateral tx with PermitKind.ERC2612 under PRECONDITIONS where the permit has not yet been consumed trigger IERC20Permit.permit front-run then have the bundler silently continue via try-catch and succeed via pre-existing allowance, while the same attack against PermitKind.Permit2 causes the bundler tx to revert with InvalidNonce, violating the invariant that equivalent user flows must not have asymmetric DoS exposure, causing scoped impact: Permit2 users face nonce-based DoS that ERC2612 users do not? Proof idea: differential test both permit kinds under front-run; assert ERC2612 succeeds and Permit2 reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6a65dde-a265-45a8-89d4-84d825075212?mode=deep",
+    "timestamp": "2026-05-31 23:43:12.030963",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken is a fee-on-transfer token trigger pullToken transferring maxBuyerAssets from msg.sender but the bundler receiving maxBuyerAssets - fee, then have forceApproveMax approve Midnight for type(uint256).max, then have Midnight's take pull buyerAssets from the bundler, violating the invariant that total credit and token balances must stay solvent, causing scoped impact: bundler may lack sufficient tokens to cover buyerAssets causing take to revert after Permit2 nonce is consumed? Proof idea: deploy a fee-on-transfer loanToken; assert that the Permit2 nonce is consumed but the take reverts, leaving the user unable to retry with the same nonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d52dc6d4-a1a9-44e1-a1b1-49405e2e2093?mode=deep",
+    "timestamp": "2026-05-31 23:43:24.952092",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged BORROWER who signs a Permit2 permit for collateral assets under PRECONDITIONS where the collateral token is a fee-on-transfer token trigger pullToken consuming the Permit2 nonce and transferring collateralSupplies[i].assets from msg.sender but the bundler receiving less, then have supplyCollateral credit the full collateralSupplies[i].assets to taker on Midnight while Midnight's safeTransferFrom pulls only the bundler's actual balance, violating the invariant that collateral accounting must match actual token balances, causing scoped impact: Midnight's collateral balance is overcredited relative to actual token holdings? Proof idea: deploy a fee-on-transfer collateral token; assert midnight.collateral(id, taker, i) > actual token balance of Midnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7d4118f3-de5f-4517-a387-1e188d090bcb?mode=deep",
+    "timestamp": "2026-05-31 23:43:38.375223",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where referralFeeAssets = filledBuyerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) overflows or exceeds maxBuyerAssets - filledBuyerAssets trigger the refund subtraction maxBuyerAssets - filledBuyerAssets - referralFeeAssets to underflow and revert, violating the invariant that user funds must not be frozen, causing scoped impact: the Permit2 nonce is consumed (transfer succeeded) but the whole tx reverts, leaving the user unable to use that nonce again and requiring a new signature? Proof idea: fuzz referralFeePct near WAD - 1 and filledBuyerAssets near maxBuyerAssets; assert underflow revert and nonce state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc6a0e86-aede-4665-9306-30da1c6bde0c?mode=deep",
+    "timestamp": "2026-05-31 23:43:52.121762",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for targetBuyerAssets under PRECONDITIONS where all offers revert (caught by try-catch) trigger pullToken consuming targetBuyerAssets from msg.sender then have require(filledBuyerAssets == targetFilledBuyerAssets, OutOfOffers()) revert, violating the invariant that user funds must not be frozen, causing scoped impact: the Permit2 nonce is consumed but the tx reverts, so the user must sign a new permit to retry? Proof idea: set all offers to revert; assert that the Permit2 nonce bitmap is unchanged after the reverted tx.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_310cf7cb-881a-4270-a758-4b5b40f692b6?mode=deep",
+    "timestamp": "2026-05-31 23:44:06.443159",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / repayAndWithdrawCollateral] Can an unprivileged BORROWER who signs a Permit2 permit for assets under PRECONDITIONS where units = assets - referralFeeAssets > position[id][onBehalf].debt trigger pullToken consuming the Permit2 nonce then have Midnight's repay revert due to debt underflow (position.debt -= toUint128(units) reverts), violating the invariant that user funds must not be frozen, causing scoped impact: the Permit2 nonce is consumed but the tx reverts, forcing the user to sign a new permit to retry repayment? Proof idea: set assets such that units > actual debt; assert nonce bitmap state after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_50380106-759b-426e-82ae-e191dc08ee18?mode=deep",
+    "timestamp": "2026-05-31 23:44:22.232368",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken is a rebasing token that increases balances between pullToken and the refund safeTransfer trigger the bundler to hold more tokens than maxBuyerAssets after the rebase, violating the invariant that total token balances must stay solvent, causing scoped impact: the bundler retains the rebased excess tokens that belong to the user? Proof idea: deploy a rebasing loanToken; assert bundler balance after buyWithUnitsTargetAndWithdrawCollateral equals zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_437f2e2e-ce84-45ff-8e24-30403578c99d?mode=deep",
+    "timestamp": "2026-05-31 23:44:36.405266",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken is a rebasing token that decreases balances between pullToken and Midnight's take trigger Midnight's safeTransferFrom(loanToken, bundler, midnight, buyerAssets - sellerAssets) to revert because the bundler's balance dropped below buyerAssets - sellerAssets, violating the invariant that user funds must not be frozen, causing scoped impact: the Permit2 nonce is consumed but the tx reverts, leaving the user unable to retry with the same nonce? Proof idea: deploy a negative-rebasing loanToken; assert nonce state and bundler balance after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de766eb7-ea5b-435a-a9c8-11970feda41d?mode=deep",
+    "timestamp": "2026-05-31 23:44:50.444287",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: forceApproveMax / pullToken] Can an unprivileged TAKER who calls buyWithUnitsTargetAndWithdrawCollateral with PermitKind.Permit2 under PRECONDITIONS where the bundler's existing allowance to Midnight is exactly type(uint96).max / 2 trigger forceApproveMax to skip re-approval, then have Midnight's take decrement the allowance below the needed buyerAssets amount, violating the invariant that every borrow/take must create correct debt and collateral obligation, causing scoped impact: Midnight's safeTransferFrom reverts due to insufficient allowance, blocking the take? Proof idea: pre-set bundler allowance to Midnight to exactly type(uint96).max / 2; assert take succeeds or fails based on allowance decrement behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d59f6078-75a2-48e2-a4e3-eca44c0f38a5?mode=deep",
+    "timestamp": "2026-05-31 23:45:05.026494",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged BORROWER who signs Permit2 permits for multiple CollateralSupply entries under PRECONDITIONS where the second collateral's Permit2 nonce is already consumed trigger the first pullToken to succeed (nonce consumed, tokens transferred) then the second pullToken to revert (InvalidNonce), violating the invariant that user funds must not be frozen, causing scoped impact: the first collateral's Permit2 nonce is consumed but the tx reverts, so the user must sign a new permit for the first collateral to retry? Proof idea: pre-consume the second collateral's Permit2 nonce; assert first nonce state after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_52fef7df-20fd-40aa-98cd-a3eae9ce9260?mode=deep",
+    "timestamp": "2026-05-31 23:45:18.876276",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where msg.sender != taker (delegated call) trigger pullToken pulling from msg.sender (not taker) via Permit2, then have the take credit taker on Midnight, violating the invariant that user funds must not be stolen, causing scoped impact: an authorized operator can drain msg.sender's tokens via Permit2 while crediting a different taker address? Proof idea: set msg.sender = operator, taker = victim; assert that operator's Permit2 signature is required (not victim's) and that victim cannot be drained.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f99adb48-c213-41b9-aedc-11920a395030?mode=deep",
+    "timestamp": "2026-05-31 23:45:32.589865",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / repayAndWithdrawCollateral] Can an unprivileged BORROWER who signs a Permit2 permit for assets under PRECONDITIONS where msg.sender != onBehalf (delegated repay) trigger pullToken pulling from msg.sender via Permit2, then have Midnight repay onBehalf's debt, then have withdrawCollateral send collateral to collateralReceiver, violating the invariant that user funds must not be stolen, causing scoped impact: an authorized operator can use their own Permit2 signature to repay another user's debt and withdraw that user's collateral to an arbitrary receiver? Proof idea: set msg.sender = operator, onBehalf = borrower, collateralReceiver = attacker; assert collateral flows correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_26023df9-886d-4459-89dd-b0c40407d881?mode=deep",
+    "timestamp": "2026-05-31 23:45:45.556710",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the Permit2 deadline is exactly block.timestamp trigger IPermit2.permitTransferFrom to revert with SignatureExpired (Permit2 checks block.timestamp > permit.deadline), violating the invariant that user funds must not be frozen, causing scoped impact: the user's tx reverts at the Permit2 step even though the deadline appears valid, forcing the user to sign a new permit with a later deadline? Proof idea: set deadline = block.timestamp; assert revert vs deadline = block.timestamp + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_014daab6-1704-48a5-8ca1-e0583dd84a80?mode=deep",
+    "timestamp": "2026-05-31 23:45:59.798273",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the IPermit2 interface at PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3 is not deployed (e.g., on a new chain or testnet) trigger pullToken to call a non-existent contract and silently succeed (no code check in pullToken for Permit2), violating the invariant that user funds must not be stolen, causing scoped impact: the Permit2 call succeeds as a no-op, the bundler has no tokens, and Midnight's take reverts, but the user believes the tx succeeded? Proof idea: deploy MidnightBundles on a chain without Permit2; assert pullToken behavior with PermitKind.Permit2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e8d2c71f-f8b4-4cf8-8da1-cb1a2572030b?mode=deep",
+    "timestamp": "2026-05-31 23:46:13.856818",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken address in the Permit2 signature differs from takes[0].offer.market.loanToken trigger IPermit2.permitTransferFrom to transfer a different token than the bundler expects, violating the invariant that total credit and token balances must stay solvent, causing scoped impact: the bundler receives the wrong token, forceApproveMax approves the wrong token to Midnight, and Midnight's take pulls the correct loanToken from the bundler's pre-existing balance? Proof idea: sign Permit2 for tokenA but pass tokenB as loanToken; assert token flows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f82d22c-80b8-42c3-9d8d-2d991f27f94c?mode=deep",
+    "timestamp": "2026-05-31 23:46:27.723868",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the Permit2 signature encodes a requestedAmount less than maxBuyerAssets (i.e., TokenPermissions.amount < maxBuyerAssets) trigger IPermit2.permitTransferFrom to revert with InvalidAmount, violating the invariant that user funds must not be frozen, causing scoped impact: the user's tx reverts because the bundler always sets requestedAmount = amount = maxBuyerAssets but the signature only covers a smaller amount? Proof idea: sign Permit2 for amount X but call bundler with maxBuyerAssets = X + 1; assert InvalidAmount revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_840f28bc-f258-488c-b877-946e91cf1d22?mode=deep",
+    "timestamp": "2026-05-31 23:46:41.682745",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the Permit2 nonce bitmap word (nonce >> 8) is at a position that causes _useUnorderedNonce to flip the wrong bit trigger a nonce collision with a different nonce, violating the invariant that offers must not be replayed, causing scoped impact: two different Permit2 nonces map to the same bitmap position, allowing one to invalidate the other? Proof idea: fuzz nonce values; assert that nonceBitmap[owner][wordPos] bit state is correct for all nonce inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6acf09c-7ecf-4020-a6f1-be8aad2dc43c?mode=deep",
+    "timestamp": "2026-05-31 23:46:55.194310",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / repayAndWithdrawCollateral] Can an unprivileged BORROWER who signs a Permit2 permit for assets under PRECONDITIONS where referralFeeAssets = assets.mulDivDown(referralFeePct, WAD) rounds down by 1 wei trigger units = assets - referralFeeAssets to be 1 wei more than intended, causing Midnight's repay to pull 1 extra wei from the bundler, violating the invariant that total credit, debt, and token balances must stay solvent, causing scoped impact: the bundler retains 0 tokens but the referralFeeRecipient receives 1 wei less than expected, creating a 1-wei accounting discrepancy? Proof idea: fuzz assets and referralFeePct; assert referralFeeAssets + units == assets for all inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ea8b418-0812-4e69-83d6-a09f0d234c6a?mode=deep",
+    "timestamp": "2026-05-31 23:47:10.593483",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken implements ERC777 hooks trigger the ERC777 tokensReceived hook on the bundler during the Permit2 transfer, allowing a reentrant call into buyWithUnitsTargetAndWithdrawCollateral before filledUnits and filledBuyerAssets are updated, violating the invariant that multicall/callback/reentrancy must not break invariants, causing scoped impact: reentrancy allows double-spending of the bundler's token balance? Proof idea: deploy an ERC777 loanToken with a tokensReceived hook that calls buyWithUnitsTargetAndWithdrawCollateral; assert bundler balance and filledUnits after reentrancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_12478cc4-1374-4ecd-9580-564341d1361c?mode=deep",
+    "timestamp": "2026-05-31 23:47:25.215058",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged BORROWER who signs a Permit2 permit for collateral assets under PRECONDITIONS where the collateral token implements ERC777 hooks trigger the ERC777 tokensReceived hook on the bundler during the Permit2 collateral transfer, allowing a reentrant call into supplyCollateralAndSellWithUnitsTarget before supplyCollateral is called, violating the invariant that multicall/callback/reentrancy must not break invariants, causing scoped impact: reentrancy allows the bundler to supply collateral twice from a single Permit2 transfer? Proof idea: deploy an ERC777 collateral token; assert midnight.collateral(id, taker, i) after reentrancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4acd61c-f775-4b16-8c8d-754488d16cc2?mode=deep",
+    "timestamp": "2026-05-31 23:47:41.335257",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the loanToken has a non-standard decimals value (e.g., 6 decimals) trigger a mismatch between the Permit2 amount (in token units) and the Midnight units (in WAD-scaled credit units), violating the invariant that every lend/take must create correct credit and asset transfer, causing scoped impact: the user signs for the wrong token amount relative to the expected credit units, leading to overpayment or underpayment? Proof idea: deploy a 6-decimal loanToken; assert that the Permit2 amount and Midnight credit units are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_15495844-b0bf-4151-8c3d-ad1ab28b44e0?mode=deep",
+    "timestamp": "2026-05-31 23:47:55.703850",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the Permit2 DOMAIN_SEPARATOR is cached for a different chainId (e.g., after a chain fork) trigger IPermit2.permitTransferFrom to accept a signature intended for a different chain, violating the invariant that signatures must not be bypassable, causing scoped impact: a signature from chain A is replayed on chain B, allowing unauthorized token transfers? Proof idea: simulate a chain fork; assert that Permit2's DOMAIN_SEPARATOR changes and old signatures are rejected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25d0e66c-b702-46cf-894b-865418caadc6?mode=deep",
+    "timestamp": "2026-05-31 23:48:09.368504",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: pullToken / buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged TAKER who signs a Permit2 permit for maxBuyerAssets under PRECONDITIONS where the Permit2 signature uses a compact (64-byte) encoding instead of the standard (65-byte) encoding trigger IPermit2.permitTransferFrom to accept or reject the signature unexpectedly, violating the invariant that signatures must not be bypassable, causing scoped impact: malformed signatures are accepted or valid signatures are rejected, causing user loss? Proof idea: test both 64-byte and 65-byte signature encodings; assert consistent acceptance/rejection.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a4cffdd3-cc0c-41ad-9f82-bc75596269c3?mode=deep",
+    "timestamp": "2026-05-31 23:48:23.348916",
+    "report_generated": false
+  }
+]
