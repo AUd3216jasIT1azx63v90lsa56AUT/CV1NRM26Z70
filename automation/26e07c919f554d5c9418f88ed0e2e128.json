@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged OPERATOR who holds isAuthorized[maker][operator]=true in Midnight call setIsRootRatified(maker, maliciousRoot, true) under PRECONDITIONS where maker granted coarse-grained authorization for an unrelated purpose (e.g., collateral management), trigger CALL_SEQUENCE: operator calls setIsRootRatified with a root containing adversarial offer terms, violating INVARIANT that ratifier approval must bind correct maker intent, causing scoped impact: unauthorized offer ratification enabling fills the maker never approved? Proof idea: unit test where operator ratifies a root with maxUnits=type(uint256).max and tick=MIN_TICK, assert take succeeds against maker's funds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3454521-2bf7-4e7d-81f6-148d8d308994?mode=deep",
+    "timestamp": "2026-05-31 18:27:23.240617",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged OPERATOR call setIsRootRatified(maker, root, false) under PRECONDITIONS where maker has a live ratified root and operator holds isAuthorized[maker][operator]=true, trigger CALL_SEQUENCE: operator revokes root, violating INVARIANT that only the maker should be able to cancel their own offers, causing scoped impact: fund freeze where maker's valid offers become permanently unfillable until maker re-ratifies? Proof idea: unit test asserting take reverts with NotRatified after operator revocation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b272564a-0cdc-4bed-be7e-66065b868a3a?mode=deep",
+    "timestamp": "2026-05-31 18:27:35.081416",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / isRatified] Can an unprivileged ATTACKER exploit the absence of any deadline or expiry on isRootRatified[maker][root] under PRECONDITIONS where maker ratified a root for a short-lived offer set but never revoked it, trigger CALL_SEQUENCE: attacker submits take with the stale root and a valid Merkle proof long after the maker intended the offers to expire, violating INVARIANT that cancelled or expired offers cannot be filled, causing scoped impact: maker's assets drained via stale root if offer.expiry was set far in the future? Proof idea: fuzz offer.expiry across [block.timestamp+1, type(uint256).max] and assert take succeeds only within intended window.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57039b2f-ee33-4f92-bbd9-b3699448d074?mode=deep",
+    "timestamp": "2026-05-31 18:27:47.199202",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged OPERATOR re-enable a root that the maker previously revoked under PRECONDITIONS where maker called setIsRootRatified(maker, root, false) but operator still holds isAuthorized[maker][operator]=true, trigger CALL_SEQUENCE: operator calls setIsRootRatified(maker, root, true), violating INVARIANT that a maker's explicit revocation is final, causing scoped impact: offers the maker believed cancelled become fillable again, draining maker assets? Proof idea: state-transition test: ratify → revoke by maker → re-enable by operator → assert take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_948eeb69-5994-41af-ab40-f0ca51b4083f?mode=deep",
+    "timestamp": "2026-05-31 18:28:00.096517",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged OPERATOR ratify a root after the maker has revoked the operator's Midnight authorization under PRECONDITIONS where the operator already called setIsRootRatified before revocation, trigger CALL_SEQUENCE: maker calls Midnight.setIsAuthorized(operator, false, maker), but isRootRatified[maker][root] remains true, violating INVARIANT that authorization revocation should invalidate all delegated approvals, causing scoped impact: stale root remains active and fillable despite operator deauthorization? Proof idea: unit test asserting isRootRatified[maker][root] is still true after isAuthorized revocation, and take still succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a7d7fcd9-b3b5-45d3-814e-097ba8b50345?mode=deep",
+    "timestamp": "2026-05-31 18:28:13.868854",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can an unprivileged ATTACKER use EcrecoverAuthorizer.setIsAuthorized with a signed Authorization(authorizer=victim, authorized=attacker, isAuthorized=true, nonce=N, deadline=far_future) under PRECONDITIONS where victim previously authorized EcrecoverAuthorizer in Midnight and attacker obtained a valid signature, trigger CALL_SEQUENCE: attacker submits authorization to gain isAuthorized[victim][attacker]=true, then calls setIsRootRatified(victim, maliciousRoot, true), violating INVARIANT that ratifier approval must bind correct maker intent, causing scoped impact: attacker ratifies arbitrary offer roots on behalf of victim? Proof idea: differential test comparing EcrecoverAuthorizer nonce state before and after, assert attacker cannot reuse same signature twice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4145e90d-4a05-4855-b569-cdea3f13d249?mode=deep",
+    "timestamp": "2026-05-31 18:28:26.957433",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged ATTACKER replay a previously submitted EcrecoverAuthorizer Authorization signature under PRECONDITIONS where the same (authorizer, authorized, isAuthorized=false, nonce=N) was already consumed, trigger CALL_SEQUENCE: attacker resubmits identical calldata to EcrecoverAuthorizer.setIsAuthorized, violating INVARIANT that nonce must prevent replay, causing scoped impact: if nonce check is bypassable, attacker re-grants isAuthorized and then calls setIsRootRatified? Proof idea: unit test asserting second submission reverts with InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_93f9cfca-6b23-4d58-b7c6-b10ca2442a39?mode=deep",
+    "timestamp": "2026-05-31 18:28:40.427148",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged ATTACKER submit an EcrecoverAuthorizer Authorization with deadline=block.timestamp under PRECONDITIONS where block.timestamp equals the deadline exactly, trigger CALL_SEQUENCE: attacker calls setIsAuthorized at the exact deadline block, gaining isAuthorized, then immediately calls setIsRootRatified, violating INVARIANT that expired authorizations must not grant new permissions, causing scoped impact: boundary condition allows one extra block of unauthorized root ratification? Proof idea: fuzz block.timestamp against authorization.deadline at {deadline-1, deadline, deadline+1} and assert revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2f829b8-b92c-4a1c-9ad3-2663135b02f6?mode=deep",
+    "timestamp": "2026-05-31 18:28:54.656458",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / EcrecoverAuthorizer] Can an unprivileged ATTACKER exploit EcrecoverAuthorizer's EIP-712 domain separator (keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, address(this)))) which omits name and version fields under PRECONDITIONS where a forked chain shares the same EcrecoverAuthorizer address, trigger CALL_SEQUENCE: attacker replays a signed Authorization from chain A on chain B (post-fork), gaining isAuthorized on chain B, then calls setIsRootRatified, violating INVARIANT that cross-chain signature replay must be impossible, causing scoped impact: unauthorized root ratification on the forked chain? Proof idea: differential test with two chain IDs, assert domain separators differ.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2c1ec06-28c0-4816-959c-5ed5022156bd?mode=deep",
+    "timestamp": "2026-05-31 18:29:08.404289",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / HashLib.hashOffer] Can an unprivileged TAKER submit an offer with modified callbackData that produces the same hashOffer output under PRECONDITIONS where the Merkle root was ratified for an offer with specific callbackData, trigger CALL_SEQUENCE: taker calls take() with offer.callbackData mutated but same keccak256(callbackData) (second preimage), violating INVARIANT that ratifier approval must bind the exact offer terms, causing scoped impact: taker executes a different callback than the maker intended? Proof idea: fuzz callbackData pairs and assert keccak256 collision is infeasible; verify hashOffer encodes keccak256(callbackData) not raw callbackData.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84679bbd-108a-40a1-be08-3c49467794e3?mode=deep",
+    "timestamp": "2026-05-31 18:29:22.107381",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / HashLib.isLeaf] Can an unprivileged TAKER pass a Merkle proof where a non-leaf internal node hash equals a valid leaf hash under PRECONDITIONS where hashNode(a,b)=keccak256(a||b) and hashOffer produces a 32-byte output that could collide with a node hash, trigger CALL_SEQUENCE: taker constructs ratifierData with a proof that routes through an internal node as if it were a leaf, violating INVARIANT that only genuine offer leaves should pass isLeaf, causing scoped impact: taker fills an offer not in the ratified tree? Proof idea: attempt to find 64-byte abi.encode(OFFER_TYPEHASH,...) that equals keccak256(left||right) for known left,right; assert infeasibility via differential test.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_667668b3-37b1-4373-82c6-9f61a80e39e7?mode=deep",
+    "timestamp": "2026-05-31 18:29:35.379912",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / HashLib.isLeaf] Can an unprivileged TAKER supply leafIndex=0 with proof=[] under PRECONDITIONS where isRootRatified[maker][root]=true and root=hashOffer(offer), trigger CALL_SEQUENCE: taker calls take() with ratifierData=abi.encode(root, 0, new bytes32[](0)), violating INVARIANT that single-leaf tree must correctly bind exactly one offer, causing scoped impact: if root was ratified for a different single-offer tree, wrong offer gets filled? Proof idea: unit test with two different offers having the same root (impossible by hash collision) vs. correct single-leaf binding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e728af1-e03f-4937-a1ef-b9d7eeb4374e?mode=deep",
+    "timestamp": "2026-05-31 18:29:47.878271",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / HashLib.isLeaf] Can an unprivileged TAKER supply leafIndex with high bits set beyond proof.length under PRECONDITIONS where proof.length=N and leafIndex has bit N+1 set, trigger CALL_SEQUENCE: taker calls isRatified with leafIndex=2^(N+1) and proof of length N, violating INVARIANT that leafIndex must be within tree bounds, causing scoped impact: LeafIndexOutOfRange revert is bypassed and wrong tree path is traversed? Proof idea: fuzz leafIndex and proof.length pairs, assert leafIndex >> proof.length == 0 check fires correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5938f336-2711-4721-b5ab-a1dc83896241?mode=deep",
+    "timestamp": "2026-05-31 18:30:01.141564",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / Midnight.multicall] Can an unprivileged OPERATOR atomically ratify a root and trigger a take in the same multicall under PRECONDITIONS where operator holds isAuthorized[maker][operator]=true and maker has authorized SetterRatifier in Midnight, trigger CALL_SEQUENCE: operator calls Midnight.multicall([setIsRootRatified_calldata, take_calldata]) in one transaction, violating INVARIANT that maker must have explicitly pre-approved the root before any take, causing scoped impact: operator front-runs maker's revocation by atomically ratifying and filling in one block? Proof idea: unit test with multicall combining setIsRootRatified and take, assert both succeed atomically.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b3db49e-97d9-4d06-a59c-476d055ef8e9?mode=deep",
+    "timestamp": "2026-05-31 18:30:14.577462",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged AUTHORIZED_OPERATOR who was granted isAuthorized by the maker call setIsRootRatified to ratify a root containing offers across multiple markets under PRECONDITIONS where authorization is not scoped by market, trigger CALL_SEQUENCE: operator ratifies root for market M2 that maker never intended to participate in, violating INVARIANT that authorization must not exceed maker's intended scope, causing scoped impact: maker's funds exposed to markets with different LLTV/LIF/oracle parameters than intended? Proof idea: unit test with two markets, assert operator can ratify root for market M2 even if maker only intended M1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70c32ff4-53b4-4348-a1e1-2795d04669b9?mode=deep",
+    "timestamp": "2026-05-31 18:30:28.034471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can an unprivileged AUTHORIZED_OPERATOR escalate their own privileges under PRECONDITIONS where isAuthorized[maker][operator]=true and authorization allows adding new authorizations, trigger CALL_SEQUENCE: operator calls Midnight.setIsAuthorized(operator2, true, maker) to grant a second operator, then operator2 calls setIsRootRatified(maker, maliciousRoot, true), violating INVARIANT that authorization delegation must not allow unbounded privilege escalation, causing scoped impact: maker's offer approval surface expands beyond their intent? Proof idea: state-transition test asserting operator can add operator2 and operator2 can ratify roots.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_838db27f-788c-4760-8f13-61d470f876f7?mode=deep",
+    "timestamp": "2026-05-31 18:30:41.321884",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can an unprivileged AUTHORIZED_OPERATOR revoke the maker's own self-authorization under PRECONDITIONS where isAuthorized[maker][operator]=true and authorization allows modifying any isAuthorized entry, trigger CALL_SEQUENCE: operator calls Midnight.setIsAuthorized(maker, false, maker) to remove maker's self-control, then calls setIsRootRatified(maker, root, false) to revoke all roots, violating INVARIANT that maker must always retain control over their own state, causing scoped impact: maker permanently locked out of managing their own offer ratification? Proof idea: unit test asserting operator can call setIsAuthorized(maker, false, maker) and subsequent maker calls fail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_827ef8d9-e8eb-4606-bc6b-b4a310351ca4?mode=deep",
+    "timestamp": "2026-05-31 18:30:54.343444",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged TAKER call isRatified directly (not through Midnight) under PRECONDITIONS where msg.sender != MIDNIGHT, trigger CALL_SEQUENCE: taker calls setterRatifier.isRatified(offer, ratifierData) directly, violating INVARIANT that ratifier must only be callable by MIDNIGHT, causing scoped impact: if NotMidnight check is missing or bypassable, attacker can probe ratification state without going through take()? Proof idea: unit test asserting direct call reverts with NotMidnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce94a91a-e58b-4944-a2e2-a0e15c8b8f2f?mode=deep",
+    "timestamp": "2026-05-31 18:31:08.539253",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / isRatified] Can an unprivileged TAKER use a ratified root where isRootRatified[offer.maker][root]=true but offer.maker in the submitted Offer struct differs from the maker who ratified the root under PRECONDITIONS where the root hash coincidentally matches a different maker's ratified root, trigger CALL_SEQUENCE: taker submits take() with offer.maker=victimMaker and root ratified by attackerMaker, violating INVARIANT that ratifier approval must bind the correct maker, causing scoped impact: wrong maker's root used to authorize a different maker's offer? Proof idea: unit test asserting isRootRatified[offer.maker][root] uses offer.maker not the ratifying address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cd947a8d-b2ad-4fb7-aeb5-6fdebf2edc76?mode=deep",
+    "timestamp": "2026-05-31 18:31:22.709359",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged ATTACKER call setIsRootRatified(maker, bytes32(0), true) under PRECONDITIONS where maker has isAuthorized[maker][attacker]=false (attacker is not authorized), trigger CALL_SEQUENCE: attacker calls setIsRootRatified with root=bytes32(0), violating INVARIANT that only maker or authorized delegate can ratify roots, causing scoped impact: if zero-root has special meaning in isLeaf traversal, attacker could ratify a degenerate tree? Proof idea: unit test asserting Unauthorized revert when caller is not maker or authorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_060fca77-dba0-461c-9631-62a46594723e?mode=deep",
+    "timestamp": "2026-05-31 18:31:36.072996",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / HashLib.isLeaf] Can an unprivileged TAKER supply proof with duplicate sibling entries under PRECONDITIONS where the same bytes32 sibling appears at multiple proof levels, trigger CALL_SEQUENCE: taker constructs ratifierData with proof=[siblingA, siblingA] and leafIndex=0, violating INVARIANT that each proof level must use a distinct sibling from the committed tree, causing scoped impact: taker traverses a degenerate tree path that was never ratified by the maker? Proof idea: fuzz proof arrays with repeated elements and assert isLeaf returns false for non-committed paths.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2e2c4b4-ce5c-4ada-bec5-99eb509fb389?mode=deep",
+    "timestamp": "2026-05-31 18:31:49.564808",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / isRatified] Can an unprivileged TAKER fill an offer from a ratified root after the market has matured under PRECONDITIONS where isRootRatified[maker][root]=true and offer.expiry > maturity, trigger CALL_SEQUENCE: taker calls take() post-maturity with a sell offer (debt-increasing), violating INVARIANT that debt must not increase after maturity, causing scoped impact: if SetterRatifier does not enforce maturity, the take() CannotIncreaseDebtPostMaturity check is the only guard? Proof idea: fuzz block.timestamp across [maturity-1, maturity, maturity+1] and assert debt-increasing takes revert post-maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1aecc851-81d6-42ba-ba02-cf4e09471378?mode=deep",
+    "timestamp": "2026-05-31 18:32:01.871931",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified] Can an unprivileged FRONT_RUNNER observe a maker's pending setIsRootRatified(maker, root, false) revocation transaction and front-run it with a take() under PRECONDITIONS where root is currently ratified and a valid proof exists, trigger CALL_SEQUENCE: front-runner submits take() before revocation lands, violating INVARIANT that maker's revocation intent should be respected, causing scoped impact: maker's assets drained in the same block as their revocation attempt? Proof idea: unit test simulating mempool ordering with two transactions in same block.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43ad9b19-5660-468f-9b20-16e645579387?mode=deep",
+    "timestamp": "2026-05-31 18:32:15.453247",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / Midnight.setIsAuthorized] Can an unprivileged ATTACKER exploit the two-step delegation chain (EcrecoverAuthorizer → isAuthorized → setIsRootRatified) under PRECONDITIONS where victim signed an Authorization with isAuthorized=true for attacker with a far-future deadline, trigger CALL_SEQUENCE: attacker submits EcrecoverAuthorizer.setIsAuthorized to gain isAuthorized, waits for maker to forget, then calls setIsRootRatified with a malicious root months later, violating INVARIANT that delegated authorization must not persist beyond maker's intent, causing scoped impact: long-lived delegation enables delayed unauthorized root ratification? Proof idea: fuzz deadline values and assert no expiry mechanism exists in SetterRatifier itself.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_30e3bfa5-75a8-4689-a28b-02d13eec7bfa?mode=deep",
+    "timestamp": "2026-05-31 18:32:28.921254",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: setIsRootRatified / EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged ATTACKER submit an EcrecoverAuthorizer Authorization where authorization.nonce is set to type(uint256).max under PRECONDITIONS where nonce[authorizer] < type(uint256).max, trigger CALL_SEQUENCE: attacker submits authorization with nonce=type(uint256).max, causing nonce[authorizer] to overflow on next increment, violating INVARIANT that nonce must monotonically increase without overflow, causing scoped impact: nonce wraps to 0 allowing replay of old signatures? Proof idea: unit test asserting nonce[authorizer]++ at type(uint256).max reverts or wraps, check Solidity 0.8.34 overflow protection.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77903a9a-80ee-4895-a581-66a3a9d2b736?mode=deep",
+    "timestamp": "2026-05-31 18:32:42.703681",
+    "report_generated": false
+  }
+]
