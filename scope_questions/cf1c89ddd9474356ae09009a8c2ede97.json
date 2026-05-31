@@ -1,0 +1,77 @@
+[
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9e476f88-cf4f-4a2e-a693-3f3cfbde3577?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_44fe412b-74a3-4bb1-923e-9bcd9725f776?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_47f4a276-05a4-4037-9c82-e9d95df4a024?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c51dcaff-a261-45c8-90a5-8d423d545776?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_eba9e186-6382-437a-b178-a0a121e61b2d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c172dcc7-97ae-4a4d-8c3b-2e939854cb02?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_afef332a-cfad-43f0-899d-64594687452b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_21845f66-5845-4000-96c5-c45e932efba8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_03119e57-674b-476b-9398-c6a0a71b3caa?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_244f808a-2349-4a0e-8f30-974619bd1940?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_1d35f448-8986-4fbe-bd6b-2b03a50b6d97?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3e2ac34d-adec-48e6-91c2-e745c2e30073?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c7a9fb52-09ce-42ce-ac53-4bea3de42bdd?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_12cefcc6-1aa3-42c2-9291-3f90741d13b7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f8039b2f-3e56-4d40-aa9f-075455f39f3f?mode=deep",
+    "questions_generated": false
+  }
+]
