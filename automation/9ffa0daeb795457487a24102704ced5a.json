@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged operator who holds IMidnight.isAuthorized(taker, msg.sender)==true set collateralReceiver to themselves under the precondition that taker has a healthy multi-collateral position and has authorized msg.sender, by calling buyWithUnitsTargetAndWithdrawCollateral(targetUnits, maxBuyerAssets, taker, permit, takes, collateralWithdrawals, attacker_address, 0, address(0)), violating the invariant that collateral must not move to an address the taker did not explicitly designate in this call, causing scoped impact: unauthorized collateral seizure via coarse authorization? Proof idea: deploy taker with authorization to operator, operator calls bundle with collateralReceiver=operator, assert taker's collateral balance decreases and operator receives it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8caabe42-a96f-4d95-a38b-c9b3039ebbec?mode=deep",
+    "timestamp": "2026-05-31 19:05:01.378143",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an authorized operator who holds isAuthorized(taker, msg.sender)==true set the receiver parameter to themselves under the precondition that taker has sufficient collateral and there are live buy offers, by calling supplyCollateralAndSellWithUnitsTarget(targetUnits, minSellerAssets, taker, attacker_address, collateralSupplies, takes, 0, address(0)), violating the invariant that loan proceeds from selling units must reach the taker or a taker-designated address, causing scoped impact: unauthorized diversion of taker's loan proceeds to attacker? Proof idea: authorized operator calls with receiver=operator, assert taker bears new debt while operator receives all filledSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e918682-39ea-4c2e-9df1-8cb550767233?mode=deep",
+    "timestamp": "2026-05-31 19:05:13.236959",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an authorized operator who holds isAuthorized(taker, msg.sender)==true set receiver to themselves under the precondition that taker has no existing debt and operator supplies collateral from their own balance, by calling supplyCollateralAndSellWithAssetsTarget(targetSellerAssets, maxUnits, taker, attacker_address, collateralSupplies, takes, 0, address(0)), violating the invariant that a taker's new debt obligation must be paired with the taker receiving the corresponding loan assets, causing scoped impact: taker acquires debt while attacker receives targetSellerAssets loan tokens? Proof idea: fuzz receiver address, assert taker.debt increases and receiver==attacker receives loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dea63516-59a9-45ad-a123-520afc20f210?mode=deep",
+    "timestamp": "2026-05-31 19:05:25.926642",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: repayAndWithdrawCollateral] Can an authorized operator who holds isAuthorized(onBehalf, msg.sender)==true set collateralReceiver to themselves under the precondition that onBehalf has collateral and debt, by calling repayAndWithdrawCollateral(market, assets, onBehalf, permit, collateralWithdrawals, attacker_address, 0, address(0)), violating the invariant that collateral withdrawal must only benefit the account owner or their explicitly designated receiver, causing scoped impact: unauthorized collateral seizure after repayment? Proof idea: operator calls with collateralReceiver=operator, assert onBehalf's collateral decreases and operator receives it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e636eed7-1e03-4940-96a4-f1fe6451b102?mode=deep",
+    "timestamp": "2026-05-31 19:05:38.389696",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an already-authorized address A (where isAuthorized(victim, A)==true) sign a new Authorization struct with authorizer=victim, authorized=attacker, isAuthorized=true, nonce=victim_nonce, deadline=future, and submit it to EcrecoverAuthorizer.setIsAuthorized, under the precondition that A is authorized for victim and the check `signer == authorization.authorizer || IMidnight(MIDNIGHT).isAuthorized(authorization.authorizer, signer)` passes for signer=A, violating the invariant that only the account owner or their explicitly authorized delegate should be able to grant new authorizations, causing scoped impact: attacker gains full Midnight authorization over victim's account enabling unauthorized borrowing and collateral withdrawal? Proof idea: authorize A for victim, have A sign authorization granting attacker, submit to EcrecoverAuthorizer, assert isAuthorized(victim, attacker)==true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f956cde-d5ab-42f4-8495-d731df21cd88?mode=deep",
+    "timestamp": "2026-05-31 19:05:51.282091",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker replay a previously valid Authorization signature on a different chain (e.g., after a hard fork) under the precondition that the domain separator uses only chainId and verifyingContract (no name/version), and the chain ID reverts to the original value, violating the invariant that signed authorizations must not be reusable across chain contexts, causing scoped impact: unauthorized authorization grant enabling full account takeover? Proof idea: sign authorization on chain A, simulate chain ID revert, replay signature, assert authorization is accepted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2294914-d6d6-47a9-9f6a-26e1d68c9aa0?mode=deep",
+    "timestamp": "2026-05-31 19:06:05.170576",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization with a zero-address signer by crafting (v, r, s) such that ecrecover returns address(0) under the precondition that the only check is `require(signer != address(0), InvalidSignature())` and `signer == authorization.authorizer`, violating the invariant that only the legitimate key holder can authorize, causing scoped impact: unauthorized authorization grant if authorizer == address(0) is ever used? Proof idea: fuzz (v, r, s) to find inputs where ecrecover returns address(0), set authorizer=address(0), assert revert on InvalidSignature.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9af46acb-c33c-4ad6-b6c9-fc548446195f?mode=deep",
+    "timestamp": "2026-05-31 19:06:19.052740",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker exploit the try/catch skip pattern to manipulate filledBuyerAssets downward while still satisfying filledUnits==targetUnits, under the precondition that some takes in the array are crafted to revert after partial state changes in Midnight but before returning, causing the bundler to undercount filledBuyerAssets, violating the invariant that referral fee computation must be based on actual assets transferred, causing scoped impact: referral fee underflow in maxBuyerAssets - filledBuyerAssets - referralFeeAssets returning excess tokens to msg.sender? Proof idea: craft takes where some revert mid-execution, assert final token balance accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cab4c90d-70d7-4f70-b1e6-9bb6f84ec2ff?mode=deep",
+    "timestamp": "2026-05-31 19:06:33.761382",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker set referralFeePct = WAD - 1 under the precondition that require(referralFeePct < WAD) passes for WAD-1, causing referralFeeAssets = filledBuyerAssets.mulDivDown(WAD-1, 1) which equals filledBuyerAssets*(WAD-1), violating the invariant that maxBuyerAssets - filledBuyerAssets - referralFeeAssets must not underflow, causing scoped impact: arithmetic underflow reverting the transaction or draining bundler token balance? Proof idea: set referralFeePct=WAD-1, assert SafeTransferLib.safeTransfer underflows or reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d77d963-a641-4aaf-b525-bce372ab250e?mode=deep",
+    "timestamp": "2026-05-31 19:06:46.818855",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an attacker set referralFeePct close to WAD-1 under the precondition that targetSellerAssets is large, causing referralFeeAssets = targetSellerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) to overflow uint256 when WAD - referralFeePct = 1, violating the invariant that targetFilledSellerAssets = targetSellerAssets + referralFeeAssets must not overflow, causing scoped impact: overflow in targetFilledSellerAssets causing the loop to fill far fewer units than intended or revert? Proof idea: fuzz referralFeePct near WAD, assert targetFilledSellerAssets overflow behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e347f38-3a58-4182-a1d0-3562648013ce?mode=deep",
+    "timestamp": "2026-05-31 19:07:00.014781",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: repayAndWithdrawCollateral] Can a caller pass referralFeePct > 0 under the precondition that onBehalf has debt D and caller passes assets = D intending full repayment, causing units = assets - referralFeeAssets = D - D*referralFeePct/WAD < D to be repaid, violating the invariant that a user who passes assets equal to their full debt must have that debt fully cleared, causing scoped impact: residual debt remains after repayAndWithdrawCollateral while collateral is withdrawn, potentially leaving position unhealthy or enabling bad debt? Proof idea: set assets=debtOf(onBehalf), referralFeePct=1e16 (1%), assert debtOf(onBehalf) > 0 after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a7a2c795-60e1-4d93-8905-1456b0483970?mode=deep",
+    "timestamp": "2026-05-31 19:07:14.362491",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: repayAndWithdrawCollateral] Can an attacker call repayAndWithdrawCollateral with collateralWithdrawals specifying more collateral than the health check allows after partial repayment under the precondition that referralFeePct reduces actual repaid units, causing the core Midnight withdrawCollateral health check to be the only guard, violating the invariant that the bundler must not facilitate a sequence that leaves the position unhealthy, causing scoped impact: position becomes unhealthy after collateral withdrawal due to insufficient repayment from referral fee deduction? Proof idea: set up near-threshold position, call repayAndWithdrawCollateral with referralFeePct that reduces repayment below threshold, assert isHealthy returns false after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_51560a27-fbf1-4f5a-8d46-ae2dcdecbf1b?mode=deep",
+    "timestamp": "2026-05-31 19:07:27.801169",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an attacker pass a takes array where takes[0].offer.market differs from takes[i].offer.market for i>0 but toId(takes[i].offer.market) == id still holds under the precondition that two different Market structs hash to the same id (collision or encoding ambiguity), causing collateral operations to use takes[0].offer.market while takes execute against a different market, violating the invariant that all takes and collateral operations must reference the same market, causing scoped impact: collateral withdrawn from wrong market or unauthorized cross-market collateral seizure? Proof idea: construct two Market structs with same toId output, assert InconsistentMarket check is insufficient.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d615b49e-8131-4826-9f85-b40669f4e5c8?mode=deep",
+    "timestamp": "2026-05-31 19:07:43.031714",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithUnitsTarget / supplyCollateralAndSellWithAssetsTarget] Can an attacker acting as msg.sender (authorized for taker) supply collateral from msg.sender's own balance to taker's account under the precondition that collateral is pulled from msg.sender via pullToken and supplied to taker via supplyCollateral(market, index, assets, taker), causing taker's collateral balance to increase without taker's explicit consent for this specific collateral amount, violating the invariant that collateral supply must reflect the taker's intent, causing scoped impact: taker's collateral composition is altered enabling subsequent unauthorized borrowing against the new collateral? Proof idea: authorized operator supplies unexpected collateral token to taker, assert taker's collateralBitmap changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_472a9cdb-b984-4d13-8e6c-029d0a514054?mode=deep",
+    "timestamp": "2026-05-31 19:07:58.265378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker pass an empty takes array (takes.length == 0) under the precondition that no length check exists before takes[0] access, causing an out-of-bounds panic revert that blocks the bundler for any caller in the same transaction, violating the invariant that invalid inputs must produce clean reverts not panics, causing scoped impact: low-cost DoS of bundler via panic revert? Proof idea: call buyWithUnitsTargetAndWithdrawCollateral with takes=[], assert revert type is Panic(0x32) not a named error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eb0b48d9-e257-4fef-ade7-c59aaec46359?mode=deep",
+    "timestamp": "2026-05-31 19:08:12.981207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: pullToken (ERC2612 path)] Can an attacker front-run an ERC2612 permit submission to consume the permit nonce before the bundler call, under the precondition that the bundler silently swallows permit revert via try/catch and then calls safeTransferFrom which requires prior approval, causing safeTransferFrom to revert with insufficient allowance, violating the invariant that a user who submits a valid permit+bundle call must have their transaction succeed, causing scoped impact: permanent DoS of permit-based bundler flows for targeted users? Proof idea: front-run permit consumption, assert bundler call reverts on safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c5e7331-1048-4035-a287-bf90744d3545?mode=deep",
+    "timestamp": "2026-05-31 19:08:26.633304",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: take (via MidnightBundles) with maker callback] Can a malicious maker set offer.callback to a contract that reenters buyWithUnitsTargetAndWithdrawCollateral or supplyCollateralAndSellWithUnitsTarget during the take callback, under the precondition that the bundler holds a token balance (maxBuyerAssets pulled upfront) and has approved MIDNIGHT for max, causing the reentrant call to consume the bundler's token balance or trigger a second collateral withdrawal, violating the invariant that callbacks must not corrupt bundler accounting state, causing scoped impact: bundler token balance drained or double collateral withdrawal? Proof idea: deploy malicious callback contract that reenters bundler, assert token balance conservation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c3d9efb-5271-41cc-8db7-097425e3d159?mode=deep",
+    "timestamp": "2026-05-31 19:08:40.295040",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: take (via MidnightBundles) with maker callback] Can a malicious maker callback reenter IMidnight.withdrawCollateral on behalf of taker during a take in buyWithUnitsTargetAndWithdrawCollateral, under the precondition that taker has authorized the bundler (and thus the bundler can call withdrawCollateral for taker) and the callback executes before the bundler's collateralWithdrawals loop, causing collateral to be withdrawn twice (once in callback, once in bundler loop), violating the invariant that collateral withdrawal must be bounded by deposited amount, causing scoped impact: double collateral withdrawal draining taker's collateral? Proof idea: maker callback calls withdrawCollateral(market, index, assets, taker, attacker), then bundler loop also withdraws, assert total withdrawn > deposited.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_54372a51-cc32-4987-abd3-c3895caf22b2?mode=deep",
+    "timestamp": "2026-05-31 19:08:54.406939",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: take (via MidnightBundles) with ratifier] Can an attacker pass arbitrary ratifierData in the Take struct to a ratifier that uses ratifierData to validate a signature, under the precondition that the bundler passes ratifierData directly to IMidnight.take without any validation, and the ratifier's signature check can be bypassed by crafting ratifierData with a valid signature for a different offer or amount, violating the invariant that ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group, causing scoped impact: unauthorized offer fill bypassing ratifier authorization? Proof idea: craft ratifierData with replayed or cross-offer signature, assert take succeeds when it should fail ratifier check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_723f8bae-0cc5-40ef-b078-76a09a0d82f3?mode=deep",
+    "timestamp": "2026-05-31 19:09:08.486768",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an attacker acting as msg.sender (authorized for taker) pass collateralWithdrawals with collateralIndex values that do not correspond to collateral the taker actually deposited, under the precondition that the bundler does not validate collateralIndex against taker's collateralBitmap, causing IMidnight.withdrawCollateral to be called with arbitrary indices, violating the invariant that collateral withdrawal must only reference activated collateral positions, causing scoped impact: revert or unexpected state if core Midnight does not validate index, or unauthorized withdrawal if bitmap check is insufficient? Proof idea: pass collateralIndex=127 for a taker with no collateral at that index, assert revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ff20002d-dddc-42d4-9e58-93933db600f1?mode=deep",
+    "timestamp": "2026-05-31 19:09:22.207806",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an attacker pass a takes array where all offers have offer.buy==false (sell offers) under the precondition that the InconsistentSide check requires offer.buy==true, causing all takes to revert with InconsistentSide (not caught by try/catch since require reverts before take), violating the invariant that the bundler must revert cleanly on invalid input, causing scoped impact: collateral is supplied to taker before the revert check, but since the whole tx reverts, no permanent state change — confirm revert atomicity? Proof idea: pass sell offers to supplyCollateralAndSellWithUnitsTarget, assert entire tx reverts and collateral supply is rolled back.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_22e247f1-300b-4475-ae7d-6699b8509361?mode=deep",
+    "timestamp": "2026-05-31 19:09:35.511294",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an attacker craft a takes array where TakeAmountsLib.buyerAssetsToUnits returns 0 for all offers under the precondition that targetFilledBuyerAssets is very small (dust) and all offer prices round to 0 units, causing the loop to never increment filledBuyerAssets and the OutOfOffers revert to trigger, violating the invariant that the bundler must not silently fail to fill when valid offers exist, causing scoped impact: low-cost DoS of asset-target buy flows via dust amount manipulation? Proof idea: fuzz targetBuyerAssets near 0, assert OutOfOffers revert when valid offers exist.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23e63bd1-4667-4507-9785-32dd767a524d?mode=deep",
+    "timestamp": "2026-05-31 19:09:49.433339",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an attacker exploit rounding in TakeAmountsLib.buyerAssetsToUnits such that filledBuyerAssets overshoots targetFilledBuyerAssets by 1 wei under the precondition that the loop condition is filledBuyerAssets < targetFilledBuyerAssets and the final check is filledBuyerAssets == targetFilledBuyerAssets, causing the exact equality check to fail with OutOfOffers even though the target was met, violating the invariant that asset-target fills must succeed when sufficient offers exist, causing scoped impact: DoS of buyWithAssetsTargetAndWithdrawCollateral for specific asset amounts due to rounding? Proof idea: fuzz targetBuyerAssets and offer tick values, assert OutOfOffers triggers when filledBuyerAssets == targetFilledBuyerAssets + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae344253-296e-48cf-9afc-9b75ab592b9c?mode=deep",
+    "timestamp": "2026-05-31 19:10:04.144527",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an attacker exploit rounding in TakeAmountsLib.sellerAssetsToUnits such that filledSellerAssets overshoots targetFilledSellerAssets by 1 wei under the precondition that the exact equality check require(filledSellerAssets == targetFilledSellerAssets) is used, causing OutOfOffers revert even when sufficient offers exist, violating the invariant that seller-asset-target fills must succeed when sufficient offers exist, causing scoped impact: DoS of supplyCollateralAndSellWithAssetsTarget for specific asset amounts? Proof idea: fuzz targetSellerAssets and offer tick, assert overshoot by 1 triggers OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6ee6723-2dc4-47a5-bd6d-5a04f2630bbb?mode=deep",
+    "timestamp": "2026-05-31 19:10:19.775568",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: forceApproveMax] Can an attacker deploy a malicious ERC20 token whose allowance() function returns type(uint96).max / 2 or higher regardless of actual allowance, under the precondition that forceApproveMax skips re-approval when allowance >= type(uint96).max / 2, causing the bundler to skip the approve(0) + approve(max) sequence and proceed with an actual allowance of 0, violating the invariant that MIDNIGHT must always have sufficient allowance to pull loan tokens from the bundler, causing scoped impact: safeTransferFrom in Midnight fails silently or reverts, blocking all bundle operations for that token? Proof idea: deploy token with spoofed allowance(), assert forceApproveMax skips approval and subsequent take fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d4c948b-ef24-442d-92bf-c6bb5b0f5cfd?mode=deep",
+    "timestamp": "2026-05-31 19:10:34.029386",
+    "report_generated": false
+  }
+]
