@@ -1,0 +1,47 @@
+[
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_82655dc0-9c81-46fc-b375-f87a22a55829?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_1f22d236-9bec-4886-92bd-b5e872211b04?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cbf1f2db-356b-421f-9b2d-535fdede051d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_15fd09a8-fd11-4e6d-a8d9-cc85b488a464?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0f185547-c9c5-4f50-8ba7-bc45cc541e3f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3b73b6c3-77ca-439a-a874-95399ee035ec?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c55c2bf9-61b8-4af1-b73b-b0735154f7d9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9b872ff4-6555-4b5a-8cae-8ac191c83220?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_45fa31d2-46a0-402d-a892-05581cb5eb55?mode=deep",
+    "questions_generated": false
+  }
+]
