@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take] Can an unprivileged taker under a market whose loanToken charges a percentage fee-on-transfer trigger take() with units computed from TickLib.tickToPrice(offer.tick), causing SafeTransferLib.safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) to deliver less than buyerAssets - sellerAssets to the protocol while claimableSettlementFee[loanToken] is incremented by the full buyerAssets - sellerAssets, violating the invariant that contract token balances must cover all claimable settlement fees, causing scoped impact: protocol insolvency where claimableSettlementFee exceeds actual loanToken balance after repeated takes? Proof idea: deploy fee-on-transfer loanToken with 1% fee; fuzz units and tick across [0, MAX_TICK]; after N takes assert claimableSettlementFee[loanToken] <= IERC20(loanToken).balanceOf(address(midnight)).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6abf4cd8-e0f5-4119-b3cf-e9b8cefaf163?mode=deep",
+    "timestamp": "2026-05-31 23:43:13.770565",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take] Can an unprivileged taker under a market whose loanToken is fee-on-transfer trigger take() where SafeTransferLib.safeTransferFrom(loanToken, payer, receiver, sellerAssets) delivers sellerAssets * (1 - fee_rate) to the seller while the protocol records the full sellerAssets as transferred, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: seller receives fewer assets than the tick price implies, creating a systematic shortfall that accumulates across all takes? Proof idea: fuzz tick in [0, MAX_TICK], fee_rate in [1, 500] bps; assert receiver.balance == sellerAssets after each take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f1634fe-cb40-476b-abc0-aee073e182f7?mode=deep",
+    "timestamp": "2026-05-31 23:43:25.614885",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take] Can an unprivileged taker under a fee-on-transfer loanToken market trigger repeated take() calls where each call increments marketState.withdrawable by zero (no repayment path) but claimableSettlementFee[loanToken] grows unboundedly relative to actual balance, such that feeClaimer calling claimSettlementFee(token, amount, receiver) eventually causes SafeTransferLib.safeTransfer to revert due to insufficient balance, violating the invariant that fee claims must remain executable, causing scoped impact: permanent freeze of settlement fee claims? Proof idea: run 100 takes with fee-on-transfer token; assert claimSettlementFee for full claimableSettlementFee amount does not revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0ee442a-4c14-48fe-b237-35938904394b?mode=deep",
+    "timestamp": "2026-05-31 23:43:37.916607",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / repay] Can an unprivileged borrower under a fee-on-transfer loanToken market trigger repay(market, units, onBehalf, address(0), '') where SafeTransferLib.safeTransferFrom(loanToken, payer, address(this), units) delivers units * (1 - fee_rate) while marketState.withdrawable is incremented by the full units, violating the invariant that withdrawable must not exceed actual loanToken balance, causing scoped impact: lenders calling withdraw() drain the balance before all can exit, freezing the last lenders' funds? Proof idea: fuzz units and fee_rate; after repay assert IERC20(loanToken).balanceOf(midnight) >= marketState.withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01322814-a616-4001-9a6c-02c4d23aeffa?mode=deep",
+    "timestamp": "2026-05-31 23:43:50.552865",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / liquidate] Can an unprivileged liquidator under a fee-on-transfer loanToken market trigger liquidate() where SafeTransferLib.safeTransferFrom(loanToken, payer, address(this), repaidUnits) delivers repaidUnits * (1 - fee_rate) while marketState.withdrawable += repaidUnits records the full amount, violating the invariant that total withdrawable credit must not exceed actual token balance, causing scoped impact: protocol insolvency where lenders cannot all withdraw after liquidations? Proof idea: fuzz repaidUnits and fee_rate; after liquidate assert IERC20(loanToken).balanceOf(midnight) >= marketState.withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5e69e3d-3161-4e65-9aa7-16bb56911360?mode=deep",
+    "timestamp": "2026-05-31 23:44:03.966295",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / supplyCollateral] Can an unprivileged borrower under a market whose collateralToken charges a fee-on-transfer trigger supplyCollateral(market, collateralIndex, assets, onBehalf) where SafeTransferLib.safeTransferFrom(collateralToken, msg.sender, address(this), assets) delivers assets * (1 - fee_rate) while _position.collateral[collateralIndex] is incremented by the full assets, violating the invariant that collateral accounting must reflect actual deposited balance, causing scoped impact: borrower appears overcollateralized relative to actual holdings, enabling undercollateralized debt creation? Proof idea: deploy fee-on-transfer collateral; supplyCollateral(assets=1e18); take sell offer; assert isHealthy returns true while actual collateral balance < recorded collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_663b5ecd-9515-4cea-b58e-d8b1765d37c8?mode=deep",
+    "timestamp": "2026-05-31 23:44:16.776813",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / supplyCollateral + liquidate] Can an unprivileged borrower use a fee-on-transfer collateral token to inflate _position.collateral[collateralIndex] beyond actual balance, then trigger a liquidation where SafeTransferLib.safeTransfer(collateralToken, receiver, seizedAssets) attempts to transfer seizedAssets that exceed the actual protocol balance, violating the invariant that seized collateral must not exceed actual held balance, causing scoped impact: liquidation reverts or protocol sends collateral it does not hold, freezing liquidations? Proof idea: supplyCollateral with fee-on-transfer collateral; create debt; liquidate with seizedAssets = recorded collateral; assert transfer does not overdraw.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_713d8f46-e8d0-43f2-8e6d-22838a224cd1?mode=deep",
+    "timestamp": "2026-05-31 23:44:30.815606",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / claimContinuousFee] Can an unprivileged actor under a fee-on-transfer loanToken market cause claimContinuousFee(market, amount, receiver) to decrement marketState.continuousFeeCredit and marketState.withdrawable by amount while SafeTransferLib.safeTransfer(loanToken, receiver, amount) delivers only amount * (1 - fee_rate), violating the invariant that withdrawable must equal actual redeemable balance, causing scoped impact: lenders' withdrawable credit is reduced without equivalent token delivery, permanently freezing a portion of lender funds? Proof idea: accrue continuousFeeCredit; claimContinuousFee; assert marketState.withdrawable decrease equals actual token transfer to receiver.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e3de8de-e19c-463e-b1fb-eaf2b82ea4d1?mode=deep",
+    "timestamp": "2026-05-31 23:44:46.298280",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / flashLoan] Can an unprivileged callback receiver under a fee-on-transfer loanToken trigger flashLoan([loanToken], [assets], callback, data) where SafeTransferLib.safeTransfer(loanToken, callback, assets) delivers assets * (1 - fee_rate) to the callback while the repayment leg SafeTransferLib.safeTransferFrom(loanToken, callback, address(this), assets) requires the full assets, violating the invariant that flash loan repayment must restore exact balance, causing scoped impact: flash loan always reverts for fee-on-transfer tokens, freezing flash loan functionality? Proof idea: deploy fee-on-transfer token; call flashLoan; assert revert or balance conservation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b40ec58a-ccdf-4535-9289-186aee8aa8bf?mode=deep",
+    "timestamp": "2026-05-31 23:45:00.814909",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take (buyerCallback)] Can an unprivileged maker set offer.callback to a contract that returns a value other than CALLBACK_SUCCESS from IBuyCallback.onBuy(), causing take() to revert with WrongBuyCallbackReturnValue() after consumed[offer.maker][offer.group] has been incremented and position state has been updated, violating the invariant that partial state updates must not persist on revert, causing scoped impact: since Solidity reverts all state on revert, this is a DoS vector where the maker can selectively block any taker by deploying a callback that conditionally returns wrong bytes32? Proof idea: deploy callback returning bytes32(0) for specific taker addresses; assert take reverts and consumed is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_974ff256-7880-468a-a6ff-27d123df8acd?mode=deep",
+    "timestamp": "2026-05-31 23:45:16.629748",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take (sellerCallback)] Can an unprivileged taker pass takerCallback pointing to a contract that returns a value other than CALLBACK_SUCCESS from ISellCallback.onSell(), causing take() to revert with WrongSellCallbackReturnValue() after SafeTransferLib.safeTransferFrom has already been called for buyerAssets, violating the invariant that token transfers must not occur without completing the full take flow, causing scoped impact: since the transfer reverts with the whole tx, this is a DoS where a malicious taker can grief the maker by always reverting the sell callback? Proof idea: deploy ISellCallback returning wrong bytes32; call take; assert full tx reverts and no state persists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a2f78b0-5732-427c-abe9-e1b463ad5876?mode=deep",
+    "timestamp": "2026-05-31 23:45:32.293804",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / repay (callback)] Can an unprivileged repayer pass callback to a contract that returns a value other than CALLBACK_SUCCESS from IRepayCallback.onRepay(), causing repay() to revert with WrongRepayCallbackReturnValue() after position[id][onBehalf].debt has been decremented and marketState.withdrawable has been incremented, violating the invariant that debt reduction must be atomic with token receipt, causing scoped impact: since the whole tx reverts, a malicious callback can permanently block repayment via callback path, forcing borrowers to use direct repayment only? Proof idea: deploy IRepayCallback returning bytes32(0); call repay with callback; assert revert and debt unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ccba642d-fcd4-48a1-aa4f-d3f5968ede83?mode=deep",
+    "timestamp": "2026-05-31 23:45:46.871642",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / liquidate (callback)] Can an unprivileged liquidator pass callback to a contract that returns a value other than CALLBACK_SUCCESS from ILiquidateCallback.onLiquidate(), causing liquidate() to revert with WrongLiquidateCallbackReturnValue() after SafeTransferLib.safeTransfer(collateralToken, receiver, seizedAssets) has been called, violating the invariant that collateral seizure must be atomic with loan repayment, causing scoped impact: since the whole tx reverts, a malicious liquidator callback can block liquidation of unhealthy positions, leaving bad debt unrealized? Proof idea: deploy ILiquidateCallback returning bytes32(0); call liquidate on unhealthy borrower; assert revert and position unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea61920a-2f5b-4d6f-a1c2-2c3424fff976?mode=deep",
+    "timestamp": "2026-05-31 23:46:01.437484",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take] Can an unprivileged taker under a loanToken that returns no data on transfer (non-standard omit-return ERC20) trigger take() where SafeTransferLib.safeTransferFrom checks returndata.length == 0 || abi.decode(returndata, (bool)), and the zero-length returndata path succeeds, but a token that returns 64 bytes of non-boolean data causes abi.decode to interpret the first 32 bytes as true while the transfer silently failed, violating the invariant that token transfers must succeed before accounting is finalized, causing scoped impact: accounting records a transfer that did not occur, inflating withdrawable or credit? Proof idea: deploy token returning 64 bytes of arbitrary data; call take; assert actual balance change matches accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f94f94cf-6b03-490e-9a66-f49e2aa08cf8?mode=deep",
+    "timestamp": "2026-05-31 23:46:15.195049",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take] Can an unprivileged taker under a loanToken that returns abi.encode(true) padded with extra bytes trigger SafeTransferLib.safeTransferFrom where abi.decode(returndata, (bool)) succeeds on the first 32 bytes even if the token transferred 0 value, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: protocol records buyerAssets received but actual balance is unchanged, creating immediate insolvency? Proof idea: deploy mock token returning abi.encode(true, extraData) but transferring 0; call take; assert IERC20.balanceOf(midnight) increased by buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d1e0656-8d12-477f-bd8c-e3371c92223c?mode=deep",
+    "timestamp": "2026-05-31 23:46:28.556581",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + PRICE_ROUNDING_STEP] Can an unprivileged taker under a fee-on-transfer loanToken exploit the PRICE_ROUNDING_STEP = 1e12 quantization in tickToPrice() to select ticks where the rounded price maximizes the gap between recorded buyerAssets and actual received assets, violating the invariant that claimableSettlementFee must not exceed actual token balance, causing scoped impact: attacker amplifies fee-on-transfer accounting desync by choosing ticks at PRICE_ROUNDING_STEP boundaries? Proof idea: fuzz tick in multiples of DEFAULT_TICK_SPACING=4; for each tick compute tickToPrice(tick) % PRICE_ROUNDING_STEP; assert desync per take is bounded.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e68aca9-5e07-4a4f-a543-153408978fa9?mode=deep",
+    "timestamp": "2026-05-31 23:46:42.056302",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + divHalfDownUnchecked] Can an unprivileged taker under a fee-on-transfer loanToken exploit the divHalfDownUnchecked rounding in tickToPrice() where ties round down, causing buyerAssets = units.mulDivDown(buyerPrice, WAD) to be systematically lower than the true price, while the fee-on-transfer further reduces actual receipt, violating the invariant that settlement fee accounting must be solvent, causing scoped impact: compounded rounding and fee-on-transfer create a larger-than-expected accounting gap per take? Proof idea: for each tick compute tickToPrice(tick) and verify divHalfDownUnchecked(1e36, 1e18 + wExp(...)) rounds correctly; fuzz units near WAD boundaries.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0254c69f-83ff-479e-a7cf-993b785379a4?mode=deep",
+    "timestamp": "2026-05-31 23:46:55.582020",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: wExp / tickToPrice] Can an unprivileged market creator create a market with tick spacing that does not divide MAX_TICK = 5820, then call priceToTick(price, spacing) which computes (low + spacing - 1) / spacing * spacing and returns a tick > MAX_TICK, causing a subsequent tickToPrice() call to revert with TickOutOfRange(), violating the invariant that valid offers at valid ticks must be takeable, causing scoped impact: all takes in the market revert, freezing all lender and borrower positions? Proof idea: create market with spacing not dividing 5820; call priceToTick with price near 0; assert returned tick <= MAX_TICK.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ac84e1f-9213-4330-b742-10962a91ab39?mode=deep",
+    "timestamp": "2026-05-31 23:47:10.020603",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + fee-on-transfer + settlement fee] Can an unprivileged taker under a fee-on-transfer loanToken market where settlementFee > 0 trigger take() where the settlement fee portion (buyerAssets - sellerAssets) is transferred via safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) but only (buyerAssets - sellerAssets) * (1 - fee_rate) arrives, while claimableSettlementFee[loanToken] += buyerAssets - sellerAssets records the full amount, violating the invariant that claimableSettlementFee must be backed by actual token balance, causing scoped impact: settlement fee overclaim leading to revert on claimSettlementFee? Proof idea: fuzz settlementFee breakpoints and fee_rate; after N takes assert claimableSettlementFee[loanToken] <= balanceOf(midnight).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ef23264-973c-4b2a-8522-26d9f48ed50d?mode=deep",
+    "timestamp": "2026-05-31 23:47:23.543008",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + fee-on-transfer + two safeTransferFrom calls] Can an unprivileged taker under a fee-on-transfer loanToken trigger take() where two separate safeTransferFrom calls are made—safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) and safeTransferFrom(loanToken, payer, receiver, sellerAssets)—each incurring a fee, so the total fee paid is fee_rate * buyerAssets rather than fee_rate * (buyerAssets - sellerAssets), violating the invariant that the payer's total cost equals buyerAssets, causing scoped impact: payer pays more than the tick price implies, creating unexpected slippage for makers using callbacks? Proof idea: deploy fee-on-transfer token; measure payer balance before and after take; assert delta == buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84f48406-db4b-406d-9e82-8e9f58ba61e0?mode=deep",
+    "timestamp": "2026-05-31 23:47:38.825427",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + buyerCallback + fee-on-transfer] Can an unprivileged maker set offer.callback to an IBuyCallback that sources funds during onBuy() by pulling fee-on-transfer loanToken, then the subsequent safeTransferFrom(loanToken, buyerCallback, address(this), buyerAssets - sellerAssets) delivers less than expected, violating the invariant that the protocol must receive exactly buyerAssets - sellerAssets as settlement fee, causing scoped impact: settlement fee underfunded when maker callback uses fee-on-transfer token as funding source? Proof idea: implement IBuyCallback that transfers fee-on-transfer token; assert claimableSettlementFee increase equals actual balance increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_974295c7-377d-4492-8355-38bd26c625e4?mode=deep",
+    "timestamp": "2026-05-31 23:47:53.215513",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / take + sellerCallback + fee-on-transfer] Can an unprivileged taker pass takerCallback as ISellCallback where the callback is called after safeTransferFrom(loanToken, payer, receiver, sellerAssets) has already transferred fee-reduced assets to receiver, and the callback observes sellerAssets in its parameters but receiver only holds sellerAssets * (1 - fee_rate), violating the invariant that callback parameters must accurately reflect actual token amounts received, causing scoped impact: callback logic that relies on sellerAssets parameter for downstream accounting will be incorrect, enabling callback-based accounting exploits? Proof idea: implement ISellCallback that checks receiver.balance == sellerAssets; assert this check fails with fee-on-transfer token.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb920a51-2abb-4234-ac16-ffd0a4b67a3c?mode=deep",
+    "timestamp": "2026-05-31 23:48:07.437071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / withdraw] Can an unprivileged lender under a fee-on-transfer loanToken market trigger withdraw(market, units, onBehalf, receiver) where SafeTransferLib.safeTransfer(loanToken, receiver, units) delivers units * (1 - fee_rate) to receiver while _position.credit -= units and marketState.withdrawable -= units record the full deduction, violating the invariant that credit redemption must deliver the full unit value to the lender, causing scoped impact: lenders systematically receive less than their credit entitlement on every withdrawal? Proof idea: lender deposits via take; withdraw; assert receiver balance increase == units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00937281-8251-4b7f-96c6-f9a2cecd44bf?mode=deep",
+    "timestamp": "2026-05-31 23:48:21.917690",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / withdrawCollateral] Can an unprivileged borrower under a market whose collateralToken returns false on transfer trigger withdrawCollateral(market, collateralIndex, assets, onBehalf, receiver) where SafeTransferLib.safeTransfer(collateralToken, receiver, assets) reverts with TransferReturnedFalse(), violating the invariant that exit paths must remain available even when token behavior is non-standard, causing scoped impact: borrower's collateral is permanently frozen in the protocol if the collateral token starts returning false on transfer? Proof idea: deploy collateral token that returns false; call withdrawCollateral; assert revert; verify no alternative exit path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba318868-b348-491d-8ad5-b7013e6b3a8e?mode=deep",
+    "timestamp": "2026-05-31 23:48:35.617751",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: tickToPrice / liquidate + collateral false-return] Can an unprivileged liquidator trigger liquidate() where SafeTransferLib.safeTransfer(collateralToken, receiver, seizedAssets) reverts with TransferReturnedFalse() because the collateral token returns false, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: unhealthy borrower cannot be liquidated if collateral token returns false on transfer, permanently blocking bad debt realization and leaving lenders exposed? Proof idea: deploy collateral token returning false on transfer; create unhealthy position; call liquidate; assert revert; verify bad debt cannot be realized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c8625c5a-2d80-47d3-bc10-ebf282e71c9f?mode=deep",
+    "timestamp": "2026-05-31 23:48:48.902971",
+    "report_generated": false
+  }
+]
