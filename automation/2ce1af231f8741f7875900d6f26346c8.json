@@ -1,0 +1,74 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / maxAssets vs maxUnits / dust rounding] Can a taker fill a buy offer (offer.buy == true, offer.maxAssets > 0) with units such that buyerAssets = units.mulDivDown(buyerPrice, WAD) = offer.maxAssets exactly, then attempt a second fill with units = 1, under the precondition that consumed[maker][group] == offer.maxAssets after the first fill, causing the second fill to compute buyerAssets = 0 (rounding down) and pass the ConsumedAssets check (newConsumed = offer.maxAssets + 0 <= offer.maxAssets), allowing an extra fill with zero asset transfer, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: griefing of the maker by allowing extra fills beyond maxAssets? Proof idea: unit test with exact maxAssets fill followed by dust fill and assert ConsumedAssets is enforced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73e63914-fb57-4d87-93be-61633ad8bf04?mode=deep",
+    "timestamp": "2026-05-31 19:08:02.237777",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / repay / maturity boundary] Can a borrower repay dust units (1 wei) just before maturity to increment withdrawable by 1, under the precondition that the market has lenders waiting to withdraw, causing the withdrawable to increase by 1 wei and triggering a race among lenders to withdraw, violating the invariant that repayment must be proportionally distributed among lenders, causing scoped impact: griefing of lenders via dust repayments that create withdrawal races? Proof idea: unit test with repay(1) and assert withdrawable increases by exactly 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_573687e5-36f6-4ed0-9e96-813568e4d577?mode=deep",
+    "timestamp": "2026-05-31 19:08:14.426097",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / offer.market.collateralParams / hashMarket] Can a taker submit a take where offer.market.collateralParams has a different ordering than the market's stored collateralParams, under the precondition that the market was created with a specific collateral ordering, causing HashLib.hashMarket to produce a different hash and the offer hash to differ from the ratified leaf, causing isRatified to revert with InvalidProof(), violating the invariant that offer market params must exactly match the created market, causing scoped impact: griefing of takers who submit offers with reordered collateral params? Proof idea: unit test with reordered collateralParams and assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ee274c2-21dd-4d06-bb90-79439059ed66?mode=deep",
+    "timestamp": "2026-05-31 19:08:26.789259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / continuousFee / pendingFee accrual near maturity] Can a lender's pendingFee be accrued to zero due to rounding in updatePositionView when lastAccrual == market.maturity, under the precondition that the lender's position has a small pendingFee and the market is at maturity, causing fee = postSlashPendingFee.mulDivDown(accrualEnd - lastAccrual, market.maturity - lastAccrual) to be 0/0 (division by zero) when lastAccrual == maturity, violating the invariant that pendingFee accrual must not cause division by zero, causing scoped impact: griefing of the protocol via revert in updatePositionView when lastAccrual == maturity? Proof idea: unit test with lastAccrual == maturity and assert updatePositionView handles the edge case correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2438252-1d40-4327-9d41-da0959801924?mode=deep",
+    "timestamp": "2026-05-31 19:08:39.539584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / isRatified / proof with duplicate siblings] Can a taker supply a ratifierData with a proof array containing duplicate sibling hashes, under the precondition that the maker has ratified a root that can be reached by a proof with duplicate siblings, causing HashLib.isLeaf to compute a valid root from the duplicate proof, allowing the taker to fill an offer that was not intended to be in the Merkle tree, violating the invariant that Merkle proof verification must be collision-resistant, causing scoped impact: griefing of the maker by allowing fills of unintended offers? Proof idea: unit test with duplicate proof siblings and assert isLeaf returns false for unintended offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a2b44ea-174b-47bd-8ce3-8a84069c81f4?mode=deep",
+    "timestamp": "2026-05-31 19:08:53.650818",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / post-maturity / sellerDebtIncrease == 0] Can a taker fill a sell offer post-maturity (block.timestamp > offer.market.maturity) where sellerCreditDecrease == units (seller has enough credit to cover all units), causing sellerDebtIncrease = units - sellerCreditDecrease = 0, under the precondition that the seller has credit >= units, allowing the take to succeed post-maturity without increasing debt, violating the invariant that post-maturity trading must only facilitate unwinding and not create new obligations, causing scoped impact: griefing of the seller by reducing their credit post-maturity without their consent? Proof idea: state-transition test with block.timestamp > maturity and seller.credit >= units and assert take succeeds with sellerDebtIncrease == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c38c71e-ff68-43dd-8203-f1c2e1f8119b?mode=deep",
+    "timestamp": "2026-05-31 19:09:07.464850",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / rcfThreshold / dust collateral] Can a liquidator trigger a full liquidation (bypassing the RCF) by ensuring that the residual collateral value after partial liquidation is below rcfThreshold, under the precondition that the borrower has dust collateral (e.g., 1 wei) and the rcfThreshold is set to a value larger than the dust collateral's value, causing the RCF condition to be deactivated and allowing full liquidation, violating the invariant that the RCF must protect borrowers from over-liquidation, causing scoped impact: temporary freezing of the borrower's position via full liquidation when only partial liquidation should be allowed? Proof idea: fuzz (collateral, price, rcfThreshold) and assert RCF deactivation condition is correctly evaluated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40225b1b-86c4-467c-9f4c-622847d24798?mode=deep",
+    "timestamp": "2026-05-31 19:09:20.565053",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / flashLoan / reentrancy] Can a taker use a flashLoan callback to call setIsRootRatified(maker, root, false) during the flashLoan execution, under the precondition that the taker is authorized for the maker, causing the root to be revoked during the flashLoan, then a subsequent take in the same transaction to revert with RatifierFail(), violating the invariant that flashLoan callbacks must not corrupt ratifier state, causing scoped impact: griefing of the taker via unexpected root revocation during flashLoan? Proof idea: reentrancy test where flashLoan callback revokes root and assert subsequent take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1eab778f-ed4e-4862-b487-77640d06f862?mode=deep",
+    "timestamp": "2026-05-31 19:09:33.803071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / multicall / setIsRootRatified ordering] Can an attacker use multicall to call [take(offer1, ...), setIsRootRatified(maker, root, false), take(offer2, ...)] where offer1 and offer2 are in the same Merkle tree, under the precondition that the attacker is authorized for the maker, causing offer1 to succeed, the root to be revoked, and offer2 to revert with RatifierFail(), violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: griefing of the maker by partially filling their offer set and then revoking the root? Proof idea: multicall test with take + setIsRootRatified(false) + take and assert second take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7fed3202-eadd-4cee-a81f-446db125dc75?mode=deep",
+    "timestamp": "2026-05-31 19:09:46.885646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / bitmap / MAX_COLLATERALS_PER_BORROWER boundary] Can a borrower with exactly 16 active collaterals (collateralBitmap has 16 bits set) attempt to call withdrawCollateral for a collateral with 0 assets (no-op), under the precondition that the collateral amount is 0 and the bitmap bit is already clear, causing the clearBit operation to be skipped (since newCollateral == 0 && assets == 0 is false), violating the invariant that bitmap state must accurately reflect active collaterals, causing scoped impact: griefing via inconsistent bitmap state where a bit is set but collateral is 0? Proof idea: unit test with collateral[i] == 0 and collateralBitmap bit i set and assert withdrawCollateral(0) does not clear the bit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25f6d03b-37f3-4bb6-83dc-0ec9dfe7674a?mode=deep",
+    "timestamp": "2026-05-31 19:10:00.800794",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / offer.group / cross-market consumption] Can a taker fill offers in two different markets that share the same offer.group and offer.maker, under the precondition that consumed[maker][group] is shared across markets, causing the group budget to be exhausted by fills in one market, freezing fills in the other market, violating the invariant that group budget must prevent total exposure exceeding the budget across all markets, causing scoped impact: temporary freezing of offers in one market due to consumption in another market sharing the same group? Proof idea: multi-market test with shared group and assert consumed[maker][group] is correctly shared.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e59db12-1260-44c1-8abd-256981965ed8?mode=deep",
+    "timestamp": "2026-05-31 19:10:14.647109",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / isRatified / NotRatified] Can a taker submit a take where the ratifierData contains a valid Merkle proof for the offer hash but isRootRatified[offer.maker][root] == false, under the precondition that the maker has not yet called setIsRootRatified or has revoked the root, causing isRatified to revert with NotRatified(), violating the invariant that a valid proof alone is insufficient without root ratification, causing scoped impact: temporary freezing of offers whose root has not been ratified or has been revoked? Proof idea: unit test with valid proof but unratified root and assert NotRatified revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c548e36-3ba1-44d9-b639-312d88c61708?mode=deep",
+    "timestamp": "2026-05-31 19:10:28.077663",
+    "report_generated": false
+  }
+]
