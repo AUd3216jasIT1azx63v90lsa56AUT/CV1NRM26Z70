@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice(offer.tick) returns a price P such that buyerAssets - sellerAssets (the settlement fee delta) causes claimableSettlementFee[loanToken] to overflow uint256 after many takes, causing subsequent takes to revert with arithmetic overflow? Proof idea: fuzz many sequential takes and assert claimableSettlementFee never overflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d28385c-8b97-43d9-87e1-6e027bef4c1d?mode=deep",
+    "timestamp": "2026-05-31 23:21:18.144470",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid sell offer at tick T where tickToPrice(T) is very close to 1e18 (tick near MAX_TICK) because sellerAssets = units.mulDivUp(tickToPrice(T), WAD) > units (since tickToPrice(T) > WAD is impossible but tickToPrice(T) == WAD is possible), causing the seller to receive more assets than units, which then causes totalUnits accounting to desync? Proof idea: assert tickToPrice(MAX_TICK) < WAD for all valid spacings.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f34d11f6-01c4-4103-988e-67a289bb6b70?mode=deep",
+    "timestamp": "2026-05-31 23:21:30.275592",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because the TickNotAccessible() check (offer.tick % tickSpacing == 0) passes but tickToPrice(offer.tick) reverts with TickOutOfRange() because offer.tick > MAX_TICK, and this combination is reachable when a maker signs an offer with tick = MAX_TICK + tickSpacing (which is a multiple of tickSpacing but exceeds MAX_TICK), causing a confusing revert that is not a protocol-defined offer validity error? Proof idea: create offer with tick = MAX_TICK + DEFAULT_TICK_SPACING, call take(), and assert revert is TickOutOfRange not TickNotAccessible.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0c8af4b-e0be-4abe-98b4-05f3faf84ba5?mode=deep",
+    "timestamp": "2026-05-31 23:21:42.638936",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T after the tickSpacingSetter reduces the market's tick spacing, because the new spacing makes T no longer a multiple of the new spacing (T % newSpacing != 0), causing TickNotAccessible() to revert even though T was valid under the old spacing, violating the invariant that finer ticks keep previous ticks valid? Proof idea: create offer at tick=4 (valid for spacing=4), reduce spacing to 2, and assert take() still succeeds since 4 % 2 == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_17b349ff-eaa5-482e-894a-74a6b9618a75?mode=deep",
+    "timestamp": "2026-05-31 23:21:55.255137",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T=DEFAULT_TICK_SPACING (e.g., tick=4) after the tickSpacingSetter reduces spacing to 1, because tick=4 % 1 == 0 still passes, but if the spacing is reduced to a value that does NOT divide T (impossible with valid spacings but worth testing), TickNotAccessible would fire? Proof idea: enumerate all (tick, spacing) pairs where tick % spacing != 0 but tick was valid under old spacing, and assert setMarketTickSpacing rejects any spacing that would invalidate existing valid ticks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25363975-fb58-4cbc-b8d3-6f4c0e35420f?mode=deep",
+    "timestamp": "2026-05-31 23:22:09.335080",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: wExp / tickToPrice] Can the Taylor series approximation in wExp (1 + r + r²/2 + r³/6) produce a value that differs from the true exponential by more than PRICE_ROUNDING_STEP=1e12, causing tickToPrice to return a price that is off by one PRICE_ROUNDING_STEP, which then causes a valid offer to revert with SellerIsLiquidatable because the computed price makes the seller appear unhealthy? Proof idea: differential test wExp against a reference implementation and assert |wExp(x) - exp(x)| < PRICE_ROUNDING_STEP for all x reachable from tickToPrice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af090cb6-89cf-4d5c-841b-c982d840d85b?mode=deep",
+    "timestamp": "2026-05-31 23:22:23.018563",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice is not strictly monotonically non-increasing (due to PRICE_ROUNDING_STEP rounding), causing two adjacent ticks T and T+spacing to have the same price, and a maker who signed an offer at T+spacing to have their offer treated identically to one at T, creating unexpected revert behavior when the settlement fee is between the two ticks' prices? Proof idea: fuzz adjacent ticks and assert tickToPrice(T) >= tickToPrice(T + spacing) for all valid T.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2534898b-99e9-42e8-a521-fffa884881b0?mode=deep",
+    "timestamp": "2026-05-31 23:22:37.137960",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) == tickToPrice(T + spacing) (price collision due to PRICE_ROUNDING_STEP rounding), causing the offer to be economically equivalent to one at T+spacing but the TickNotAccessible check to treat them differently after a spacing change, creating a DoS for one tick but not the other? Proof idea: find all tick pairs (T, T+spacing) where tickToPrice(T) == tickToPrice(T+spacing) and assert both are accessible under the same spacing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_841896ab-c13f-462a-978d-f50704acfc84?mode=deep",
+    "timestamp": "2026-05-31 23:22:50.197824",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: priceToTick / tickToPrice] Can a taker using priceToTick(tickToPrice(T), spacing) get back a tick T' != T (due to PRICE_ROUNDING_STEP rounding and binary search), causing the taker to submit an offer at T' instead of T, which then reverts with TickNotAccessible if T' % spacing != 0, blocking a valid taker who relied on the round-trip property? Proof idea: fuzz T in [0, MAX_TICK] and assert priceToTick(tickToPrice(T), spacing) <= T for all valid T.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb170e0a-c0a8-4e4e-8d0e-bec2e74fc1f2?mode=deep",
+    "timestamp": "2026-05-31 23:23:03.531952",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that P * units / WAD (mulDivDown) rounds to 0 for small units, causing sellerAssets=0 and buyerAssets=0, which then causes the consumed amount update to add 0 to consumed[maker][group], allowing the offer to be filled infinite times without consuming any capacity, violating the offer overfill invariant? Proof idea: fuzz units in [1, WAD/P - 1] and assert consumed increases by at least 1 per take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ab5d528-d708-45ce-ad30-4974cfae20e2?mode=deep",
+    "timestamp": "2026-05-31 23:23:16.632073",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice(offer.tick) returns a price P such that buyerAssets = units.mulDivDown(P, WAD) == 0 (for small units) but the offer has maxAssets > 0, causing the consumed check (newConsumed <= offer.maxAssets) to never trigger even after many fills, allowing the offer to be replayed indefinitely, violating the offer replay invariant? Proof idea: fill an offer with units=1 at a low-price tick repeatedly and assert consumed eventually reaches maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ee3746d-8bd6-43c4-bbf5-a9b742388487?mode=deep",
+    "timestamp": "2026-05-31 23:23:31.169386",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the settlement fee computation buyerAssets - sellerAssets = units * (buyerPrice - sellerPrice) / WAD rounds to 0 due to integer division, causing the protocol to collect zero settlement fee for a non-zero trade, violating the fee accounting invariant? Proof idea: fuzz (tick, units, settlementFee) and assert buyerAssets - sellerAssets > 0 whenever settlementFee > 0 and units > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ae63872-47c6-4cfb-8c3a-cb547ba367ff?mode=deep",
+    "timestamp": "2026-05-31 23:23:44.939896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice(offer.tick) returns a price P such that the total assets transferred (buyerAssets + sellerAssets) exceeds the loan token balance of the contract, causing SafeTransferLib.safeTransfer to revert, when the contract's balance is exactly equal to withdrawable (no excess), violating the solvency invariant? Proof idea: drain contract to exactly withdrawable, then attempt a take and assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8942e967-f889-4efc-ab2b-40af82299c7e?mode=deep",
+    "timestamp": "2026-05-31 23:23:58.152980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that buyerPrice = P + settlementFee causes the buyerPendingFeeIncrease computation to overflow uint128 when cast via toUint128, causing CastOverflow to revert the take, even though the offer and position are otherwise valid? Proof idea: fuzz (units, continuousFee, timeToMaturity) near their maximums and assert buyerPendingFeeIncrease fits in uint128.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03ffc867-5f67-422c-8111-6338f452b5f1?mode=deep",
+    "timestamp": "2026-05-31 23:24:12.322276",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice(offer.tick) returns a price P such that the seller's health check at take() line 476 (isHealthy) reverts due to an oracle returning a price that causes maxDebt to overflow uint256 in the mulDivDown chain, and this overflow is incorrectly attributed to TickLib rather than the oracle, masking the true revert cause? Proof idea: deploy an oracle returning type(uint256).max, take a sell offer, and assert the revert is not TickOutOfRange.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0750b092-e3a5-4c2a-8270-0dc4926d84e3?mode=deep",
+    "timestamp": "2026-05-31 23:24:26.844903",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the enter gate check (IEnterGate.canIncreaseCredit or canIncreaseDebt) reverts because the gate contract uses tickToPrice internally and gets a different result than Midnight's computation, causing a spurious gate revert that blocks a valid credit or debt increase? Proof idea: deploy a gate that calls tickToPrice and assert it returns the same value as Midnight's internal computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7bf706ab-4069-4aa9-96c8-18de002e7e3a?mode=deep",
+    "timestamp": "2026-05-31 23:24:40.742098",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer because tickToPrice(offer.tick) returns a price P such that the ratifier contract (IRatifier.isRatified) uses P to validate the offer price and rejects it due to a rounding discrepancy between the ratifier's price computation and TickLib's computation, causing RatifierFail() to revert a valid take? Proof idea: deploy a ratifier that independently computes tickToPrice and assert it matches TickLib for all ticks in [0, MAX_TICK].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f1f4acce-953a-4580-96ec-42214935cf6f?mode=deep",
+    "timestamp": "2026-05-31 23:24:55.729063",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the maker callback (IBuyCallback.onBuy or ISellCallback.onSell) receives buyerAssets or sellerAssets computed from P, and the callback reverts because it expected a different asset amount based on its own price computation, causing WrongBuyCallbackReturnValue or WrongSellCallbackReturnValue to block a valid take? Proof idea: deploy a callback that independently computes expected assets and assert it matches Midnight's computation for all valid ticks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d39c63b-5299-4353-88c9-ecd1100241c2?mode=deep",
+    "timestamp": "2026-05-31 23:25:09.869040",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the repay callback (IRepayCallback.onRepay) receives units that were computed using P, and the callback reverts because the units do not match the callback's expected repayment amount, causing WrongRepayCallbackReturnValue to block a valid repay? Proof idea: deploy a repay callback that validates units against an independent price computation and assert consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec45c482-833a-4f2b-9a3b-90d6eef05d63?mode=deep",
+    "timestamp": "2026-05-31 23:25:24.811151",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the liquidation callback (ILiquidateCallback.onLiquidate) receives seizedAssets computed using P (via the oracle price, not tickToPrice), but the callback reverts because it incorrectly assumes seizedAssets is derived from tickToPrice, causing WrongLiquidateCallbackReturnValue to block a valid liquidation? Proof idea: deploy a liquidation callback that validates seizedAssets and assert it does not depend on tickToPrice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_607670ef-f74b-4dd8-8950-63d4b9afb184?mode=deep",
+    "timestamp": "2026-05-31 23:25:40.130264",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the multicall sequence [take, withdraw] fails because the take's price computation causes the withdrawable amount to be insufficient for the subsequent withdraw, even though the position should be solvent, violating the invariant that multicall must not bypass per-action invariants? Proof idea: fuzz (tick, units) in a multicall [take, withdraw] and assert withdraw succeeds if take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77ed2fbb-2881-4375-abf9-216bb9256df8?mode=deep",
+    "timestamp": "2026-05-31 23:25:54.698569",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the SellerIsLiquidatable check at take() line 476 fires because the seller's position becomes unhealthy due to rounding in sellerDebtIncrease = units - sellerCreditDecrease, even though the seller had sufficient collateral before the take, violating the invariant that healthy accounts must not become liquidatable due to rounding? Proof idea: fuzz (units, collateral, oracle_price, lltv) near the health threshold and assert SellerIsLiquidatable does not fire for a previously healthy seller.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6faffa91-f2f3-473d-9576-5600c7250354?mode=deep",
+    "timestamp": "2026-05-31 23:26:09.239597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the settlement fee computation produces a non-zero fee but the fee is less than CBP=1e12, causing the fee to be rounded to 0 in the cbp storage, and subsequent fee claims to revert because claimableSettlementFee is less than the claimed amount, violating the fee accounting invariant? Proof idea: fuzz (tick, units, settlementFee) and assert claimableSettlementFee increases by exactly buyerAssets - sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cf1ed1aa-2498-4d75-9746-5a871a5cb5f4?mode=deep",
+    "timestamp": "2026-05-31 23:26:24.076185",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the totalUnits update (_marketState.totalUnits + buyerCreditIncrease - sellerCreditDecrease) overflows uint128 via toUint128, causing CastOverflow to revert the take, even though the individual credit and debt values are within uint128 bounds? Proof idea: fuzz (totalUnits, buyerCreditIncrease, sellerCreditDecrease) near type(uint128).max and assert no CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_35fea637-0505-4c35-a188-a58ff1066344?mode=deep",
+    "timestamp": "2026-05-31 23:26:38.792145",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: tickToPrice / take] Can a taker be blocked from filling a valid offer at tick T where tickToPrice(T) returns a price P such that the continuousFeeCredit update in _updatePosition overflows uint128 via toUint128, causing CastOverflow to revert the take, even though the position's credit and pendingFee are within bounds? Proof idea: fuzz (credit, continuousFee, timeToMaturity) near their maximums and assert continuousFeeCredit never overflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e3a6517-e82d-43d8-9eda-25fa1b6641b7?mode=deep",
+    "timestamp": "2026-05-31 23:26:52.839121",
+    "report_generated": false
+  }
+]
