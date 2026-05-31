@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's position has been updated (updatePosition() called) and the credit has been slashed due to bad debt, triggering de-ratification that blocks the slashed lender's ability to exit via take(), violating the invariant that slashed lenders must be able to exit positions, causing scoped impact: DoS on slashed lender exit via ratifier de-ratification? Proof idea: state-test with slashed credit, de-ratify, assert slashed lender cannot exit via take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_595f1d6e-4b6a-4d79-8b1d-0caa7aa11d68?mode=deep",
+    "timestamp": "2026-05-31 22:45:41.291195",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower's collateral oracle is a contract that can be made to revert (e.g., by the attacker), triggering a combined oracle revert + ratifier de-ratification that blocks all market actions (take, liquidate, withdrawCollateral), violating the invariant that oracle reverts must not compound with ratifier DoS to create a complete market freeze, causing scoped impact: complete market freeze via combined oracle + ratifier DoS? Proof idea: state-test with revertable oracle and de-ratified offers, assert all market actions revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a0c0e12-855f-446f-9f18-ebeac4ba31c3?mode=deep",
+    "timestamp": "2026-05-31 22:45:54.073769",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: setIsRootRatified] Can an unprivileged ATTACKER who is authorized by maker call setIsRootRatified(maker, root, false) under the precondition that maker's offers are used in a market where the borrower has a position that is exactly at the liquidation lock boundary (liquidationLocked == true due to nested take()), triggering de-ratification that blocks the outer take()'s health check path, violating the invariant that liquidation lock must not compound with ratifier DoS to create inconsistent health check behavior, causing scoped impact: DoS on health check during nested take() via ratifier de-ratification? Proof idea: nested take() state-test with liquidation lock, de-ratify, assert outer take() health check fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_855f35ca-d903-48d3-85d9-7911f2b43489?mode=deep",
+    "timestamp": "2026-05-31 22:46:06.191302",
+    "report_generated": false
+  }
+]
