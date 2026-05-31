@@ -1,0 +1,67 @@
+[
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_32505fd4-41e6-46f5-8338-97f5eda086de?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4c44b88c-4006-455b-b157-13362c94be4b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2cf03f40-bacc-4d19-9b59-8fa6a7a9995b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3d08011e-566b-4c51-beac-c726b2334fe9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f790f7c7-8dc1-4846-b3f1-f07639584b8f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9e115f4b-d50a-44cf-9b8f-ceeb3e58fdc7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4cdbc65f-9908-4d50-921e-51dbe22ad81a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4ebac7b7-2982-4c10-8ae4-0ab8513d0822?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_2ef527d4-65b6-4078-bf45-f52a543795b1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_153384cb-6b5d-4866-addd-c9ebcb6ed3b9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_dcdf8540-7dea-41d4-86bb-e047760eded4?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_99e1c2f4-d03d-4bfd-b037-896e248f9e02?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_818fb9e5-490b-4bc2-a038-bf8d699b3059?mode=deep",
+    "questions_generated": false
+  }
+]
