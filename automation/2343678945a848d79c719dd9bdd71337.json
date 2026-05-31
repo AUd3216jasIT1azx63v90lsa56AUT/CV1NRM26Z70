@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can an unprivileged attacker (any address != roleSetter) under the precondition that roleSetter is a non-zero address call setRoleSetter(attackerAddress) directly, bypassing the require(msg.sender == roleSetter, OnlyRoleSetter()) guard, violating the invariant that only the current roleSetter may reassign any protocol role, causing scoped impact: attacker gains roleSetter and can subsequently set feeSetter, feeClaimer, tickSpacingSetter to attacker-controlled addresses? Proof idea: unit test calling setRoleSetter from address(0xdead) and asserting revert with OnlyRoleSetter selector.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de891750-fd71-42e6-af55-b881cfd6e84e?mode=deep",
+    "timestamp": "2026-05-31 21:30:31.521602",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter] Can an unprivileged attacker under the precondition that feeSetter != msg.sender call setFeeSetter(attackerAddress) directly, bypassing the require(msg.sender == roleSetter, OnlyRoleSetter()) guard, violating the invariant that only roleSetter may assign the feeSetter role, causing scoped impact: attacker gains feeSetter and can set settlement and continuous fees to zero or max on any market? Proof idea: fuzz msg.sender != roleSetter and assert OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_444177ae-ff5e-4993-b19d-1191c5803559?mode=deep",
+    "timestamp": "2026-05-31 21:30:43.249757",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeClaimer] Can an unprivileged attacker under the precondition that feeClaimer is set to a legitimate address call setFeeClaimer(attackerAddress) directly, violating the invariant that only roleSetter may assign feeClaimer, causing scoped impact: attacker gains feeClaimer and can drain all claimableSettlementFee[token] and continuousFeeCredit balances to an arbitrary receiver? Proof idea: unit test calling setFeeClaimer from non-roleSetter and asserting OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77467e78-6314-4813-843e-66541ba0e93b?mode=deep",
+    "timestamp": "2026-05-31 21:30:55.899814",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setTickSpacingSetter] Can an unprivileged attacker under the precondition that tickSpacingSetter is set call setTickSpacingSetter(attackerAddress) directly, violating the invariant that only roleSetter may assign tickSpacingSetter, causing scoped impact: attacker gains tickSpacingSetter and can reduce tick spacing on any market, unlocking previously inaccessible ticks and invalidating maker offer price assumptions? Proof idea: unit test calling setTickSpacingSetter from non-roleSetter and asserting OnlyRoleSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc64e369-b5ed-4753-9825-492c82cb76d4?mode=deep",
+    "timestamp": "2026-05-31 21:31:08.123940",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can an unprivileged attacker under the precondition that feeSetter is set to a legitimate address call setMarketSettlementFee(id, index, newSettlementFee) directly, bypassing the require(msg.sender == feeSetter, OnlyFeeSetter()) guard, violating the invariant that only feeSetter may modify per-market settlement fees, causing scoped impact: attacker sets settlement fee to 0 or max, draining protocol fee revenue or blocking all take() calls for offers with price < new fee? Proof idea: fuzz caller != feeSetter and assert OnlyFeeSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5178e284-6024-4606-8f10-993753fd4645?mode=deep",
+    "timestamp": "2026-05-31 21:31:20.659649",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee] Can an unprivileged attacker under the precondition that defaultSettlementFeeCbp is set for a loan token call setDefaultSettlementFee(loanToken, index, 0) directly, violating the invariant that only feeSetter may modify default settlement fees, causing scoped impact: attacker zeroes default fees for a loan token, causing all newly created markets for that token to inherit zero settlement fees and permanently reducing protocol revenue? Proof idea: unit test calling setDefaultSettlementFee from non-feeSetter and asserting OnlyFeeSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_89a44e8a-7739-4dda-9bce-e4bda8581556?mode=deep",
+    "timestamp": "2026-05-31 21:31:33.104599",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can an unprivileged attacker under the precondition that a market exists with continuousFee > 0 call setMarketContinuousFee(id, 0) directly, violating the invariant that only feeSetter may modify per-market continuous fees, causing scoped impact: attacker zeroes continuous fee for a live market, causing all future credit increases to accrue zero pendingFee and reducing lender obligations to the protocol? Proof idea: fuzz caller != feeSetter and assert OnlyFeeSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84790320-f461-4fa1-8244-4b3f00ef7b0a?mode=deep",
+    "timestamp": "2026-05-31 21:31:45.929788",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultContinuousFee] Can an unprivileged attacker under the precondition that defaultContinuousFee[loanToken] > 0 call setDefaultContinuousFee(loanToken, 0) directly, violating the invariant that only feeSetter may modify default continuous fees, causing scoped impact: attacker zeroes default continuous fee for a loan token, causing all future markets for that token to inherit zero continuous fee and permanently reducing protocol revenue? Proof idea: unit test calling setDefaultContinuousFee from non-feeSetter and asserting OnlyFeeSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9276527c-7e44-4cdb-bf04-98a006624b55?mode=deep",
+    "timestamp": "2026-05-31 21:31:58.471271",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can an unprivileged attacker under the precondition that claimableSettlementFee[token] > 0 call claimSettlementFee(token, amount, attackerAddress) directly, bypassing the require(msg.sender == feeClaimer, OnlyFeeClaimer()) guard, violating the invariant that only feeClaimer may withdraw accrued settlement fees, causing scoped impact: attacker drains all settlement fee reserves to an arbitrary receiver? Proof idea: unit test calling claimSettlementFee from non-feeClaimer and asserting OnlyFeeClaimer revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6afc65fb-3d7c-4226-b162-fe4e6f2ac7af?mode=deep",
+    "timestamp": "2026-05-31 21:32:10.928863",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged attacker under the precondition that marketState[id].continuousFeeCredit > 0 call claimContinuousFee(market, amount, attackerAddress) directly, bypassing the require(msg.sender == feeClaimer, OnlyFeeClaimer()) guard, violating the invariant that only feeClaimer may withdraw accrued continuous fees, causing scoped impact: attacker drains continuousFeeCredit and reduces totalUnits and withdrawable, causing lender credit redemptions to fail? Proof idea: unit test calling claimContinuousFee from non-feeClaimer and asserting OnlyFeeClaimer revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_24ea74e8-3e1d-46f6-b7c7-8733a74d8674?mode=deep",
+    "timestamp": "2026-05-31 21:32:23.268721",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can an unprivileged attacker under the precondition that marketState[id].tickSpacing > 0 call setMarketTickSpacing(id, newTickSpacing) directly, bypassing the require(msg.sender == tickSpacingSetter, OnlyTickSpacingSetter()) guard, violating the invariant that only tickSpacingSetter may reduce market tick spacing, causing scoped impact: attacker reduces tick spacing to 1, unlocking all ticks and invalidating maker offer price assumptions for existing signed offers? Proof idea: fuzz caller != tickSpacingSetter and assert OnlyTickSpacingSetter revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5f77c58-ada0-47bb-8705-eca1ffa8e095?mode=deep",
+    "timestamp": "2026-05-31 21:32:36.012035",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged attacker under the precondition that victim has no prior authorization for attacker call setIsAuthorized(attacker, true, victim) directly, bypassing the require(onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], Unauthorized()) guard, violating the invariant that only the account owner or their authorized operator may modify the isAuthorized mapping, causing scoped impact: attacker gains full control over victim's Midnight positions, collateral, credit, debt, and can further authorize additional addresses? Proof idea: unit test calling setIsAuthorized(attacker, true, victim) from attacker and asserting Unauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba84bd0f-d92d-42f7-89a4-065af9647fd5?mode=deep",
+    "timestamp": "2026-05-31 21:32:48.942988",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + take] Can an authorized operator under the precondition that user has authorized operator call setIsAuthorized(secondaryAttacker, true, user) via operator, then secondaryAttacker calls take() on behalf of user, violating the invariant that authorization grants are scoped to the original user's intent and cannot be transitively delegated without user consent, causing scoped impact: attacker chain-delegates authorization to an unlimited number of addresses, each with full control over user's positions? Proof idea: state-transition test: user authorizes operator, operator calls setIsAuthorized to add attacker, attacker calls withdrawCollateral on user's behalf and assert balance change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5cca0c02-51a1-4d53-80a8-85ec9ca2e414?mode=deep",
+    "timestamp": "2026-05-31 21:33:01.567957",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + multicall] Can an attacker under the precondition that victim has authorized a contract that calls multicall call multicall([setIsAuthorized(attacker, true, victim), withdrawCollateral(...)]) in a single transaction, violating the invariant that multicall must not bypass per-action authorization invariants, causing scoped impact: attacker self-authorizes and immediately withdraws victim's collateral in one atomic transaction? Proof idea: PoC using multicall to chain setIsAuthorized and withdrawCollateral in one call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_da422e38-ea8c-49b4-9cfc-b51432a354ad?mode=deep",
+    "timestamp": "2026-05-31 21:33:14.389600",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + IEnterGate.canIncreaseCredit] Can an attacker under the precondition that a market has enterGate set and attacker is not whitelisted call take() with a buy offer where buyerCreditIncrease == 0 (attacker already has debt >= units), violating the invariant that gate checks must apply to all entry paths, causing scoped impact: attacker bypasses canIncreaseCredit check by structuring the trade so existing debt absorbs all units, effectively entering the market without gate approval? Proof idea: fuzz units <= buyerPos.debt and assert gate is not called when buyerCreditIncrease == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fdfef213-19ef-4f63-b382-2f2d6e829f42?mode=deep",
+    "timestamp": "2026-05-31 21:33:27.174026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + IEnterGate.canIncreaseDebt] Can an attacker under the precondition that a market has enterGate set and attacker is not whitelisted call take() as seller with a sell offer where sellerDebtIncrease == 0 (attacker already has credit >= units), violating the invariant that gate checks must apply to all debt-increasing paths, causing scoped impact: attacker bypasses canIncreaseDebt check by structuring the trade so existing credit absorbs all units, entering the market without gate approval? Proof idea: fuzz units <= sellerPos.credit and assert gate is not called when sellerDebtIncrease == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a638e61-b3fa-4f12-8578-ff2e0f7bdf0c?mode=deep",
+    "timestamp": "2026-05-31 21:33:40.560405",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + IEnterGate.canIncreaseCredit + callback] Can an attacker under the precondition that a market has enterGate set and attacker is not whitelisted use a maker callback (onBuy) to call setIsAuthorized(attacker, true, whitelistedUser) during the take() execution, then re-enter take() as the whitelisted user, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: attacker bypasses enterGate by impersonating a whitelisted user via mid-take authorization mutation? Proof idea: PoC callback that calls setIsAuthorized then re-enters take() and assert gate check uses pre-callback state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3fa513b3-606a-469a-8d47-3737c55a1a50?mode=deep",
+    "timestamp": "2026-05-31 21:33:54.967894",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: liquidate + ILiquidatorGate.canLiquidate] Can an attacker under the precondition that a market has liquidatorGate set and attacker is not whitelisted call liquidate() with seizedAssets=0 and repaidUnits=0 (bad debt realization only), violating the invariant that liquidatorGate must not be bypassed through alternate liquidation paths, causing scoped impact: attacker realizes bad debt and reduces lender credit without being an approved liquidator, socializing losses without authorization? Proof idea: unit test calling liquidate(market, 0, 0, 0, borrower, false, ...) from non-whitelisted address and asserting LiquidatorGatedFromLiquidating revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aff5c5ca-2751-47b5-a887-e42a22a132db?mode=deep",
+    "timestamp": "2026-05-31 21:34:09.210637",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: liquidate + ILiquidatorGate.canLiquidate + authorized operator] Can an attacker under the precondition that a market has liquidatorGate set and attacker is not whitelisted but has been authorized by a whitelisted liquidator call liquidate() on behalf of the whitelisted liquidator, violating the invariant that liquidatorGate checks msg.sender not onBehalf, causing scoped impact: attacker bypasses liquidatorGate by acting as an authorized operator of a whitelisted address, seizing collateral without direct gate approval? Proof idea: state-transition test: whitelisted liquidator authorizes attacker, attacker calls liquidate() and assert canLiquidate is called with msg.sender (attacker) not the whitelisted address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_42dda9d2-9332-4bca-ad43-dd54b36201ea?mode=deep",
+    "timestamp": "2026-05-31 21:34:23.858122",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + IEnterGate + multicall] Can an attacker under the precondition that a market has enterGate set and attacker is not whitelisted use multicall to first call setIsAuthorized(attacker, true, whitelistedUser) (if attacker is already authorized by whitelistedUser) then call take() as whitelistedUser, violating the invariant that gate checks must apply to all entry paths including multicall-composed flows, causing scoped impact: attacker bypasses enterGate by composing authorization mutation and trade in one multicall? Proof idea: PoC multicall([setIsAuthorized, take]) and assert gate check uses correct account.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d5b013b-2455-4bc5-a198-9c88fb5184f5?mode=deep",
+    "timestamp": "2026-05-31 21:34:38.369241",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter + setFeeClaimer] Can an attacker under the precondition that roleSetter is set to a contract that can be called by attacker (e.g., a multisig with a known signer) call setRoleSetter(attacker) then setFeeClaimer(attacker) then claimSettlementFee(token, claimableSettlementFee[token], attacker), violating the invariant that role transitions must not allow fee drainage in the same transaction, causing scoped impact: attacker drains all settlement fees in one atomic multicall after gaining roleSetter? Proof idea: PoC multicall([setRoleSetter, setFeeClaimer, claimSettlementFee]) and assert fee balance is drained.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f8262ac-01be-42fb-9a85-cdd094d336e3?mode=deep",
+    "timestamp": "2026-05-31 21:34:53.123808",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can the feeClaimer under the precondition that marketState[id].continuousFeeCredit < amount call claimContinuousFee(market, amount, receiver) with amount > continuousFeeCredit, violating the invariant that claimContinuousFee must not reduce totalUnits or withdrawable below the sum of all lender credits, causing scoped impact: underflow in continuousFeeCredit, totalUnits, or withdrawable causes accounting desync and lender credit redemptions to revert? Proof idea: fuzz amount > continuousFeeCredit and assert underflow revert or accounting invariant violation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9384f1e3-7ccf-4aab-995e-11738973a320?mode=deep",
+    "timestamp": "2026-05-31 21:35:06.497095",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can the feeClaimer under the precondition that claimableSettlementFee[token] < amount call claimSettlementFee(token, amount, receiver) with amount > claimableSettlementFee[token], violating the invariant that claimableSettlementFee must not go below zero, causing scoped impact: underflow in claimableSettlementFee[token] wraps to a large value, allowing future overclaims that drain the protocol's loan token balance? Proof idea: fuzz amount > claimableSettlementFee[token] and assert underflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f052281-14cf-4815-babc-51f5ecefff06?mode=deep",
+    "timestamp": "2026-05-31 21:35:20.022962",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee + take] Can the feeSetter under the precondition that active offers exist with price close to the current settlement fee call setMarketSettlementFee(id, index, maxSettlementFee(index)) to raise the fee, then a taker calls take() on those offers, violating the invariant that takers must not receive worse prices than expected due to fee changes between offer signing and execution, causing scoped impact: taker pays more than expected or take() reverts for offers with price < new fee, effectively cancelling maker offers without maker consent? Proof idea: state-transition test: sign offer at tick T, raise fee above tickToPrice(T), call take() and assert revert or unexpected asset amounts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_20ee4796-5bf5-4085-819a-c88473153142?mode=deep",
+    "timestamp": "2026-05-31 21:35:34.016048",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee + take] Can the feeSetter under the precondition that lenders have existing credit positions call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) to raise the continuous fee, then a new lender calls take() to increase credit, violating the invariant that existing lenders' pendingFee is fixed at their entry time and must not be retroactively increased, causing scoped impact: new lenders accrue maximum pendingFee while existing lenders are unaffected, creating asymmetric fee obligations that desync from protocol accounting? Proof idea: state-transition test: lender enters at fee F1, feeSetter raises to F2, new lender enters, assert existing lender's pendingFee unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78265e7e-73d9-4ffd-8d9b-ba2bb3cd3598?mode=deep",
+    "timestamp": "2026-05-31 21:35:48.146339",
+    "report_generated": false
+  }
+]
