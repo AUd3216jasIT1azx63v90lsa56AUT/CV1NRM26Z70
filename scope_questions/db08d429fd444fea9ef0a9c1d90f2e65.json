@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_85658aa9-7c70-474a-be5c-b3944011fb5e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b1dee873-6fca-49d5-ab2d-49238dd4427c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e5b60f8d-b67e-4b5c-a739-99ff750ae3d2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_00c9cb84-142a-4828-a9db-c388656d63e0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_40d7f70d-9ba1-4e16-9249-c4173fb2b5fe?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e7b4d0cd-62ce-4889-8f1a-fd3298feb4a3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_aaafd540-930c-4fda-9209-7800928df0cd?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a39cd428-cdf1-40fd-99c1-e40f69e57b16?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9d602b9b-b082-41b2-991b-8690b2cec88b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e511cc81-738b-40fd-9530-1235b92ff98c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_256f6f3a-1a28-45e2-bd04-6d20f49b34ce?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_26ed61a5-f2eb-4c6c-8164-64a2eb1a76e3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4b22013a-0036-43a6-9548-fcd92ca170a0?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8e74918e-884e-4e3c-a693-b655d64913c8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0396256e-f058-453f-a897-e6200670a4a4?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cc3bffb1-ee2e-4c10-8005-a2cd8dbd044b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d1f18352-d411-4f7e-8587-ae41bb8199c3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_df3883ad-97a7-48dd-bc23-966075055c04?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a7d0adbe-1833-4e94-b30b-5618976d2e72?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0223e617-f8f9-4a90-bb63-f1f4fd84f588?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c6b6e9e2-3f78-4a1a-9d30-d2a6d207e7c6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3703adf2-7b9f-4925-a73a-f60dce14e49a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6ea0d298-c5a2-4e5d-9faf-f7b916e85add?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a609ee8a-2dd6-454b-b069-b73cf3a8641a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_39919960-30af-4191-9854-d2ad5469b85b?mode=deep",
+    "questions_generated": false
+  }
+]
