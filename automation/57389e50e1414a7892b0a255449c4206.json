@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take] Can an unprivileged taker, by executing a `take()` where `units` is exactly `buyerPos.debt` (so `buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) = 0`), cause `buyerPendingFeeIncrease = 0` and `buyerPos.debt` to be reduced to zero, and then immediately execute another `take()` where `units > 0` and `buyerCreditIncrease = units` (now that debt is zero), causing the second take to assign `buyerPendingFeeIncrease = units.mulDivDown(continuousFee * timeToMaturity, WAD)` which may be zero if `timeToMaturity` is small, effectively acquiring credit with zero fee? Proof idea: two-step take sequence at `maturity - 1`, assert total `pendingFee` after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80d396f6-3032-4a48-bd78-6e3b2d0a77d7?mode=deep",
+    "timestamp": "2026-05-31 21:14:15.065194",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take / withdraw] Can an unprivileged lender, by acquiring credit via `take()` at `timeToMaturity = 1` (so `pendingFee = 0`), and then calling `withdraw()` before `_updatePosition` is triggered, withdraw the full credit amount with zero fee deducted (since `pendingFee = 0`), while a lender who acquired credit at `timeToMaturity = 100 days` would have a nonzero `pendingFee` deducted on withdrawal, creating a systematic fee avoidance strategy for last-second credit acquisition? Proof idea: compare net assets received by lender acquiring credit at TTM=1 vs TTM=100 days for same `units`.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_26e12ff8-4385-4397-8ce3-8dabd10fb8b2?mode=deep",
+    "timestamp": "2026-05-31 21:14:27.049768",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: liquidate] Can an unprivileged liquidator, by choosing `collateralIndex` for a multi-collateral borrower where `liquidatedCollatPrice` is very high (e.g. near `type(uint128).max`), cause `repaidUnits = seizedAssets.mulDivUp(liquidatedCollatPrice, ORACLE_PRICE_SCALE).mulDivUp(WAD, lif)` to overflow `uint256` in the intermediate `seizedAssets * liquidatedCollatPrice` multiplication (since `seizedAssets` can be up to `type(uint128).max` and `liquidatedCollatPrice` can be up to `type(uint128).max`, their product can be up to ~1.16e77 which fits in uint256), or cause `toUint128` to revert if `repaidUnits > type(uint128).max`? Proof idea: fuzz `seizedAssets` and `liquidatedCollatPrice` near `type(uint128).max`, assert no revert from `toUint128(repaidUnits)`.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8dc13e9e-88f3-443e-acff-cc7300a6e223?mode=deep",
+    "timestamp": "2026-05-31 21:14:39.370674",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take] Can an unprivileged taker, by executing a `take()` on a buy offer where `offer.buy == true` and `_settlementFee > offerPrice` (which should be impossible since `sellerPrice = offerPrice - _settlementFee` would underflow), verify that the protocol correctly reverts or that the fee cap (`MAX_SETTLEMENT_FEE_360_DAYS = 0.005e18`) combined with the minimum tick price prevents `_settlementFee > offerPrice` from ever occurring, ensuring no underflow in `sellerPrice`? Proof idea: assert `settlementFee(id, ttm) < tickToPrice(MAX_TICK)` for all valid TTMs and market configurations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad3759e0-a4b1-4308-b33b-1b5b85c71edb?mode=deep",
+    "timestamp": "2026-05-31 21:14:52.291712",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take / settlementFee] Can an unprivileged taker, by creating a market with all settlement fee breakpoints set to the maximum allowed values and then executing a `take()` at `timeToMaturity = 360 days`, receive `_settlementFee = MAX_SETTLEMENT_FEE_360_DAYS = 0.005e18`, and verify that `sellerPrice = offerPrice - 0.005e18` does not underflow for any valid tick price (minimum tick price at `tick = MAX_TICK = 5820` is near zero), potentially causing an underflow for very low-tick buy offers? Proof idea: assert `tickToPrice(MAX_TICK) > MAX_SETTLEMENT_FEE_360_DAYS` or that `take()` reverts before the underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a23c54de-c523-431d-bbbc-3fe56fe53cb8?mode=deep",
+    "timestamp": "2026-05-31 21:15:05.304712",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take] Can an unprivileged taker, by executing a `take()` where `sellerCreditDecrease = min(units, sellerPos.credit) > 0` and `sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit)` rounds up to `sellerPos.pendingFee` (full pending fee) even when `sellerCreditDecrease < sellerPos.credit` (partial credit reduction), cause the seller's `pendingFee` to be zeroed out while retaining residual credit, permanently eliminating the continuous fee obligation on the remaining credit? Proof idea: set `sellerCreditDecrease = sellerPos.credit - 1`, assert `sellerPendingFeeDecrease < sellerPos.pendingFee`.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4169ffde-bd03-4e2b-8a58-befcdad96b8a?mode=deep",
+    "timestamp": "2026-05-31 21:15:18.902193",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: liquidate / isHealthy] Can an unprivileged liquidator, by exploiting the fact that `isHealthy` uses `mulDivDown` for `maxDebt` while `liquidate` also uses `mulDivDown` but computes `maxDebt` independently in a separate loop, cause a scenario where `isHealthy` returns false (position appears unhealthy) but `liquidate` computes `maxDebt >= debt` (position appears healthy) due to different intermediate rounding states (e.g. if oracle price changes between the two calls), causing `liquidate` to revert with `NotLiquidatable` even though `isHealthy` returned false? Proof idea: assert that `!isHealthy(market, id, borrower)` is sufficient to guarantee `liquidate` does not revert with `NotLiquidatable` in normal mode.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de8e3fbe-5bb1-4203-a902-00c975488c41?mode=deep",
+    "timestamp": "2026-05-31 21:15:32.518388",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take] Can an unprivileged taker, by executing a `take()` on a buy offer at `timeToMaturity` just crossing a fee breakpoint (e.g. from `timeToMaturity = 7 days` to `timeToMaturity = 7 days - 1`), cause the settlement fee to jump discontinuously (since the interpolation segment changes), and by sandwiching this boundary with two takes in the same block (one at TTM=7d, one at TTM=7d-1 via timestamp manipulation), extract the fee difference as profit? Proof idea: assert `|settlementFee(id, 7 days) - settlementFee(id, 7 days - 1)| <= 1 wei` (continuity at breakpoints).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_704f6e85-46df-4674-9c01-dc089b953484?mode=deep",
+    "timestamp": "2026-05-31 21:15:46.535529",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take] Can an unprivileged taker, by executing a `take()` where `units` is chosen to maximize `units.mulDivDown(buyerPrice, WAD) - units.mulDivDown(sellerPrice, WAD)` relative to `units * _settlementFee / WAD`, cause the protocol to collect more settlement fee than the true fee rate implies (overcollection), at the expense of the buyer paying more than `units * buyerPrice / WAD`? Proof idea: assert `claimableSettlementFee_delta <= units * _settlementFee / WAD + 1` for all buy offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5159f668-0140-4320-9b9c-e29ae4bd33b6?mode=deep",
+    "timestamp": "2026-05-31 21:16:01.646248",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: take / updatePositionView] Can an unprivileged lender, by triggering `_updatePosition` at `_lastAccrual = market.maturity - 1` and `block.timestamp = market.maturity`, cause `fee = postSlashPendingFee.mulDivDown(1, 1) = postSlashPendingFee` (full fee in one second), and then immediately take a buy offer to increase credit with a new `pendingFee` based on `timeToMaturity = 0`, effectively paying the full pending fee on old credit while acquiring new credit with zero pending fee, creating a fee accounting discontinuity at maturity? Proof idea: assert `continuousFeeCredit` increases by exactly `postSlashPendingFee` when `_updatePosition` is called at `maturity` with `_lastAccrual = maturity - 1`.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de6e957c-e70b-47c4-a066-0fe776a9c0b5?mode=deep",
+    "timestamp": "2026-05-31 21:16:15.286597",
+    "report_generated": false
+  }
+]
