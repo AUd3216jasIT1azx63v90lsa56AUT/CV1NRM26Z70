@@ -1,0 +1,14 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take (consumed += units before ratifier check ordering)] Can an unprivileged attacker observe that consumed is incremented AFTER the ratifier check (line 356 ratifier check, then line 368/371 consumed increment), meaning the ratifier sees the pre-increment consumed value, and exploit a ratifier that validates consumed < threshold to allow a fill that would exceed the threshold, under the precondition that the ratifier reads consumed[maker][group] and the threshold is set to maxUnits, via the call sequence: consumed = maxUnits - 1, ratifier checks consumed < maxUnits (passes), take() increments consumed to maxUnits, require(newConsumed <= maxUnits) passes, causing scoped impact: ratifier-based consumed validation is consistent with protocol consumed check? Proof idea: implement ratifier that reads consumed and assert both checks are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a340f177-89ea-4c94-aaf1-1bf2077c2521?mode=deep",
+    "timestamp": "2026-05-31 20:08:32.247434",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: Midnight.take (maxAssets mode, buy offer) + loss factor update] Can an unprivileged taker fill a buy offer in a market with nonzero lossFactor, causing _updatePosition to slash the buyer's credit before computing buyerCreditIncrease, resulting in fewer units of credit increase than expected, while consumed still increments by the full buyerAssets, under the precondition that the market has lossFactor > 0 and the buyer has existing credit, via the call sequence: market has bad debt (lossFactor > 0), buyer has credit C, take() calls _updatePosition slashing credit to C', buyerCreditIncrease computed from slashed credit, consumed increments by full buyerAssets, causing scoped impact: consumed accounting reflects full fill but buyer receives less credit than expected due to loss factor? Proof idea: unit test with nonzero lossFactor and assert creditOf(buyer) < expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3004bcf5-de63-4a2d-a96e-bf66c09273f4?mode=deep",
+    "timestamp": "2026-05-31 20:08:44.192912",
+    "report_generated": false
+  }
+]
