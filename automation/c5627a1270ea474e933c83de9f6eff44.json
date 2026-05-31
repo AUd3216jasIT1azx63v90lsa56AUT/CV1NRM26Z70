@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker has ratified two distinct Merkle roots R1 and R2 each containing offers O1 and O2 sharing the same offer.group but with O1.maxUnits=100 and O2.maxUnits=200, execute take(O1, ..., 100) then take(O2, ..., 100), causing consumed[maker][group] to reach 200 while O1's intended cap was 100, violating the invariant that offer fill amount cannot exceed remaining offer capacity per offer, causing scoped impact: offer overfill — maker's O1 capacity is exceeded because the consumed counter is keyed by (maker, group) not (maker, root, offer_hash)? Proof idea: fuzz (maxUnits_O1, maxUnits_O2, fillAmount1, fillAmount2) with O1.group==O2.group, assert consumed[maker][group] <= min(O1.maxUnits, O2.maxUnits) after both fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_21a9c68b-6fe7-4112-b43d-55346ac90cb5?mode=deep",
+    "timestamp": "2026-05-31 17:56:12.694962",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take / setConsumed] Can an unprivileged taker, under the precondition that a maker ratifies root R1 containing offer O (group=G, maxUnits=N), partially fills O for k units (consumed[maker][G]=k), then the maker revokes R1 and ratifies R2 containing a fresh offer O2 (group=G, maxUnits=N, different tick or expiry), cause O2 to be immediately partially consumed (consumed[maker][G]=k) without any fill of O2, violating the invariant that a newly ratified offer should start with zero consumption, causing scoped impact: offer grief — maker cannot reuse group G for fresh capacity without calling setConsumed(G, type(uint256).max, maker) to cancel all offers? Proof idea: unit test with k=N/2, assert consumableUnits(O2) == N/2 instead of N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_546d0389-7e1e-4c40-a286-8a20e53be9f9?mode=deep",
+    "timestamp": "2026-05-31 17:56:24.707551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker simultaneously ratifies roots R1 (containing sell offer O1: group=G, maxAssets=A, tick=T_low) and R2 (containing sell offer O2: group=G, maxAssets=A, tick=T_high), fill O1 first (lower sellerAssets per unit) and then O2, causing the maker to receive fewer total assets than if only O2 were ratified, violating the invariant that ratifier approval must bind correct maker, market, offer, amount, price, and consumption group, causing scoped impact: maker undercharged — taker routes fills to the lower-priced offer first, draining the shared group budget at a worse price for the maker? Proof idea: fuzz (T_low, T_high, fillAmount) with T_low < T_high, assert total sellerAssets received by maker equals expected at T_high.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5daf75b-f124-46ac-ba9e-d2ab1f7b7f4b?mode=deep",
+    "timestamp": "2026-05-31 17:56:36.999960",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N), fill O for exactly N units (consumed[maker][G]=N), then the maker revokes R and ratifies R2 containing O2 (group=G, maxUnits=N), attempt to fill O2 for any units, causing the take to revert with ConsumedUnits because consumed[maker][G] is already N, violating the invariant that a maker can reuse a group after revoking a root, causing scoped impact: offer grief — maker's group G is permanently locked at consumed=N unless they call setConsumed(G, type(uint256).max, maker)? Proof idea: state test asserting that after full fill + root revocation + re-ratification, take(O2, 1) reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd9283e1-bb69-4665-a8fb-58d7f320b327?mode=deep",
+    "timestamp": "2026-05-31 17:56:49.732797",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R1 (O1: group=G, maxUnits=100) and root R2 (O2: group=G, maxUnits=100) simultaneously, fill O1 for 100 units (consumed=100, passes 100<=100) and then fill O2 for 0 units (no-op take), observe that the no-op take on O2 succeeds even though consumed==maxUnits, violating the invariant that a fully-consumed offer admits only no-op takes (which is documented behavior), causing scoped impact: accounting confusion — integrators relying on consumed==maxUnits as a hard stop are surprised by successful no-op takes on exhausted offers? Proof idea: unit test asserting take(O2, 0) succeeds when consumed[maker][G]==O2.maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_745323c1-40a5-468f-ac21-0a644c31f9c3?mode=deep",
+    "timestamp": "2026-05-31 17:57:02.933261",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing a Merkle tree of N offers all sharing group=G with maxUnits=M each, fill each offer sequentially until consumed[maker][G] reaches M (after the first fill), causing all subsequent offers in the tree to be immediately exhausted after the first offer is fully consumed, violating the invariant that each offer in a Merkle tree should have independent capacity unless explicitly sharing a group, causing scoped impact: offer overfill/grief — maker intended N*M total capacity but only M is available because all offers share the same group? Proof idea: fuzz N and M, assert sum of all fills equals M not N*M.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_906a3036-a6f4-4627-88f3-9c340d08417b?mode=deep",
+    "timestamp": "2026-05-31 17:57:17.342823",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / setIsAuthorized / take] Can an authorized operator, under the precondition that maker M authorizes operator OP via setIsAuthorized(OP, true, M), call setIsRootRatified(M, maliciousRoot, true) where maliciousRoot contains an offer with group=G and maxUnits=type(uint256).max, cause a taker to fill the malicious offer for unlimited units, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: offer overfill — authorized operator can ratify arbitrary roots on behalf of the maker, enabling unlimited fills? Proof idea: unit test where OP ratifies a root with maxUnits=type(uint256).max and taker fills for large units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b8f34dd6-f991-4f1e-980d-fb9a1a91e795?mode=deep",
+    "timestamp": "2026-05-31 17:57:31.584037",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R1 (O1: group=G, maxAssets=1000, buy=true) and root R2 (O2: group=G, maxAssets=2000, buy=true), fill O1 for 1000 buyerAssets (consumed=1000, passes 1000<=1000), then fill O2 for 1000 buyerAssets (consumed=2000, passes 2000<=2000), causing the maker to have bought 2000 assets worth of credit while O1's cap was 1000, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: offer overfill — the higher maxAssets in O2 allows the shared group counter to exceed O1's intended cap? Proof idea: fuzz (maxAssets_O1, maxAssets_O2, fill1, fill2) assert total buyerAssets <= min(maxAssets_O1, maxAssets_O2).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a8dc6d09-7923-485e-9862-2ae7ae5497d3?mode=deep",
+    "timestamp": "2026-05-31 17:57:46.726873",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and a griever front-runs the maker's intended take by filling O for k units (consumed[maker][G]=k), cause the maker's own subsequent take (as taker of a different offer) to fail or behave unexpectedly because the group budget is partially consumed, violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: offer grief — front-running partial fill reduces available capacity for the maker's intended routing? Proof idea: state test with front-run fill of k units, assert remaining capacity is N-k.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27df7e93-45f2-4557-9d44-f1f306a003b6?mode=deep",
+    "timestamp": "2026-05-31 17:58:01.655646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take / multicall] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offers O1 and O2 with the same group=G but O1.maxUnits=100 and O2.maxUnits=200, use multicall to atomically take(O1, 100) and take(O2, 100) in the same transaction, causing consumed[maker][G] to reach 200 while O1's cap was 100, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: offer overfill via atomic multicall — the consumed check per offer is satisfied individually but the aggregate exceeds O1's intended cap? Proof idea: multicall PoC asserting consumed[maker][G]==200 after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ab5c67b-a2c8-4cd5-b840-10ba7ff725e1?mode=deep",
+    "timestamp": "2026-05-31 17:58:15.739216",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R1 (O1: group=G, maxUnits=100, buy=true) and root R2 (O2: group=G, maxUnits=100, buy=false), fill O1 for 50 units (consumed[maker][G]=50) and then fill O2 for 50 units (consumed[maker][G]=100), causing the maker to simultaneously hold a buy and sell position in the same group, violating the invariant that all offers in the same group should have the same direction, causing scoped impact: accounting corruption — mixed-direction fills on the same group create unexpected credit/debt netting for the maker? Proof idea: unit test asserting maker's net position after mixed-direction fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ef633ec8-d9c5-4cdb-a95e-39c145912a8e?mode=deep",
+    "timestamp": "2026-05-31 17:58:30.405987",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) across two different markets M1 and M2 (same offer struct except market field, same group), fill O in market M1 for k units (consumed[maker][G]=k) and then fill O in market M2 for k units (consumed[maker][G]=2k), causing the group budget to be consumed across markets, violating the invariant that consumption group budget cannot be exceeded across offers, causing scoped impact: cross-market overfill — the shared consumed counter allows the maker's group budget to be drained across multiple markets? Proof idea: fuzz (k, N) with two markets, assert consumed[maker][G] <= N after fills in both markets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4d4db62-3c3d-4862-b4c6-fdad28b04c94?mode=deep",
+    "timestamp": "2026-05-31 17:58:45.725542",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N, expiry=T), fill O for k units before expiry, then after expiry the maker ratifies root R2 containing O2 (group=G, maxUnits=N, expiry=T2>T), cause O2 to start with consumed=k instead of 0, violating the invariant that a new offer with a new expiry should have fresh capacity, causing scoped impact: offer grief — expired offer's partial fill permanently reduces capacity of successor offers in the same group? Proof idea: state test with time warp past expiry, assert consumableUnits(O2)==N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5697c835-4446-4478-b52a-ebe75f926b7c?mode=deep",
+    "timestamp": "2026-05-31 17:59:00.155500",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxAssets=A, buy=true) and the settlement fee changes between two fills, cause the consumed counter (tracking buyerAssets) to advance by different amounts per unit across fills, allowing the taker to extract more units than the maker intended for the same asset budget, violating the invariant that ratifier approval must bind correct amount and price, causing scoped impact: undercharged — settlement fee change between partial fills causes consumed-per-unit to vary, enabling more units per asset than the offer's price implied? Proof idea: fuzz settlement fee change between fills, assert total units filled <= expected at original fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_96714788-966d-4d86-8c52-7c2e2d006dd3?mode=deep",
+    "timestamp": "2026-05-31 17:59:15.553015",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxAssets=A, buy=true) where buyerAssets = units.mulDivDown(buyerPrice, WAD) rounds down, fill O with units chosen such that buyerAssets rounds down to exactly A-1 (consumed=A-1, passes A-1<=A), then fill again with 1 unit (consumed=A-1+roundedAssets, may still pass), causing the total consumed assets to exceed A by rounding, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: offer overfill by rounding — mulDivDown rounding in buyerAssets computation allows consumed to exceed maxAssets? Proof idea: fuzz units near maxAssets/buyerPrice boundary, assert consumed[maker][G] <= maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3737744c-4501-4a13-a049-4adaabe5ea82?mode=deep",
+    "timestamp": "2026-05-31 17:59:29.610815",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and the maker's authorized operator calls setConsumed(G, N, maker) to cancel the offer, cause a taker to still successfully call take(O, 0) (no-op take) triggering the maker's callback, violating the invariant that cancelled offers cannot be filled, causing scoped impact: offer reuse — a cancelled offer (consumed set to max) can still trigger callbacks via no-op takes, potentially causing unintended side effects in the maker's callback logic? Proof idea: unit test asserting take(O, 0) succeeds after setConsumed(G, N, maker).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e3d3fab8-78da-4805-88ee-c624aabb2408?mode=deep",
+    "timestamp": "2026-05-31 17:59:43.356663",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) with a callback that reads consumed[maker][G] to determine how much to source, fill O for k units causing the callback to observe consumed=k+delta (post-update) instead of k (pre-update), violating the invariant that partial fills must update consumed state before any exploitable reentry point, causing scoped impact: accounting corruption — the callback observes the post-fill consumed value, which may cause the callback to source incorrect amounts or behave unexpectedly? Proof idea: callback PoC that reads consumed during onBuy/onSell and asserts the observed value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_398be4fc-d2d2-478c-854f-05e50e84ad04?mode=deep",
+    "timestamp": "2026-05-31 17:59:56.608162",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R1 (O1: group=G, maxUnits=100) and root R2 (O2: group=G, maxUnits=50), fill O2 for 50 units (consumed=50, passes 50<=50), then fill O1 for 50 units (consumed=100, passes 100<=100), causing the maker to have sold 100 units total while O2's cap was 50, violating the invariant that each offer's maxUnits represents an independent cap, causing scoped impact: offer overfill — the lower-capped offer O2 is filled first, then O1 is filled up to its higher cap, exceeding O2's intended limit? Proof idea: state test asserting total fills == 100 when maker intended max 50 from O2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eefda47a-bbb0-45e0-a37d-981738b0f936?mode=deep",
+    "timestamp": "2026-05-31 18:00:10.493218",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and the maker is also a borrower with debt, use the maker's callback (offer.callback) during take to reenter setIsRootRatified and revoke root R mid-execution, observe that the take still succeeds because isRatified was already called before the consumed update, violating the invariant that ratifier approval must remain valid throughout the take execution, causing scoped impact: offer reuse — root revocation during callback does not prevent the current take from completing, but the consumed state is updated for a now-revoked root? Proof idea: callback PoC that calls setIsRootRatified(maker, R, false) during onBuy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc7601e4-b040-4200-a33f-a30058b37b38?mode=deep",
+    "timestamp": "2026-05-31 18:00:24.528352",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and a griever atomically (via multicall) calls take(O, k) and setConsumed(G, type(uint256).max, maker) (if authorized), cause the maker's group G to be permanently cancelled after a partial fill, violating the invariant that only the maker or their authorized delegate should be able to cancel offers, causing scoped impact: offer grief — an authorized operator can combine a partial fill with immediate cancellation to grief the maker's offer routing? Proof idea: multicall PoC combining take and setConsumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_137526b0-9a54-48c9-b8b9-b3fe2f78ead6?mode=deep",
+    "timestamp": "2026-05-31 18:00:39.116613",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N, reduceOnly=true) and the maker has existing debt, fill O for units that reduce the maker's debt to zero and then continue filling (creating credit), observe that the reduceOnly check passes for the debt-reduction portion but the consumed counter advances for all units, violating the invariant that reduceOnly offers must not increase maker credit or debt, causing scoped impact: accounting corruption — consumed advances for units that should have been rejected by reduceOnly? Proof idea: fuzz units across the debt/credit boundary with reduceOnly=true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70209913-3849-48c6-8a25-41f386176b23?mode=deep",
+    "timestamp": "2026-05-31 18:00:54.788021",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and the market's tickSpacing is later decreased by the tickSpacingSetter, cause the offer's tick (valid at old spacing) to become accessible at a finer granularity, allowing the same offer to be filled at a tick that was previously inaccessible, violating the invariant that offers must only be placed at ticks that are multiples of the market's spacing, causing scoped impact: offer reuse — tick spacing reduction retroactively enables fills at previously inaccessible ticks for existing ratified offers? Proof idea: state test with tick spacing decrease between ratification and fill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_976c5e6f-dfe9-45fd-87fb-a6228d92ca6e?mode=deep",
+    "timestamp": "2026-05-31 18:01:09.999344",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and the market approaches maturity, fill O for k units at time T1 (consumed=k), then fill O for k more units at time T2 near maturity where the settlement fee has changed significantly, cause the maker to receive different effective prices across fills despite the same tick, violating the invariant that ratifier approval must bind correct price, causing scoped impact: undercharged — settlement fee variation across partial fills causes the maker to receive less than expected per unit? Proof idea: fuzz time between fills near fee breakpoints (0, 1, 7, 30, 90, 180, 360 days).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6dbb0198-2bb8-4e49-95d1-62b1e3b042f7?mode=deep",
+    "timestamp": "2026-05-31 18:01:26.587077",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=0, maxAssets=A) and the taker fills with units chosen to produce buyerAssets=A exactly, then fills again with units=1 (buyerAssets rounds down to 0), cause consumed[maker][G] to remain at A (no change from second fill) while the taker receives 1 unit of credit for free, violating the invariant that every credit increase must correspond to valid debt creation or settled repayment, causing scoped impact: direct loss — zero-asset fill extracts credit units without advancing the consumed counter? Proof idea: unit test with units=1 at low price where mulDivDown rounds to 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_621400a3-2077-46d0-9a44-bf460e4d5377?mode=deep",
+    "timestamp": "2026-05-31 18:01:42.239372",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that a maker ratifies root R containing offer O (group=G, maxUnits=N) and the maker's isAuthorized mapping is modified by an authorized operator to add a malicious ratifier, cause the malicious ratifier to be used for a different offer with the same group, advancing consumed[maker][G] without the maker's knowledge, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: accounting corruption — consumed counter advances via a ratifier the maker did not intend to authorize for this group? Proof idea: state test where authorized operator adds malicious ratifier and fills via it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4bfbf19e-4cb9-4c1a-b82a-ac41c375cb79?mode=deep",
+    "timestamp": "2026-05-31 18:01:57.347018",
+    "report_generated": false
+  }
+]
