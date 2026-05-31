@@ -1,3 +1,0 @@
-[
-  "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isR\n\n### Citations\n\n**File:** src/ratifiers/interfaces/IEcrecoverRatifier.sol (L1-33)\n```text\n// SPDX-License-Identifier: GPL-2.0-or-later\n// Copyright (c) 2025 Morpho Association\npragma solidity ^0.8.0;\n\nimport {IRatifier} from"
-]
