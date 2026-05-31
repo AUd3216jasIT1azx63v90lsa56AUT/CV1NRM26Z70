@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall + supplyCollateral loop to reach MAX_COLLATERALS_PER_BORROWER] Can an unprivileged borrower, under the precondition that they already have 15 activated collaterals and compose a multicall with 2 supplyCollateral() calls for new collateral indices, trigger the first call to succeed (reaching 16) and the second to revert with TooManyActivatedCollaterals, causing the entire multicall to revert and leaving the borrower with 15 collaterals, violating the invariant that the TooManyActivatedCollaterals check must be atomic and not leave partial state from the first supplyCollateral call, causing scoped impact: accounting corruption if the first supplyCollateral's storage write persists despite the multicall revert? Proof idea: multicall([supplyCollateral(index_16), supplyCollateral(index_17)]) with 15 existing collaterals; assert entire multicall reverts and collateralBitmap is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cec7553-bb36-46a6-8dde-8de978c13f02?mode=deep",
+    "timestamp": "2026-05-31 18:43:21.664877",
+    "report_generated": false
+  }
+]
