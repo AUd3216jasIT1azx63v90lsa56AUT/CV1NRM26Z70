@@ -1,0 +1,47 @@
+[
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d8ddfb22-0e6a-45fe-ad0c-bcf137502bd2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7d81aeed-e340-4952-b89a-582d71078b34?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_272c76ac-4993-489f-ae56-f1eaa1582c00?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_79679721-a923-4b14-bcbd-d048f5845747?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_dd5fe9e7-03b1-4bfc-a352-e336e1df4631?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_30d13327-a759-478d-9d7b-b03ca0edcbd6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_dbc439e7-120d-4847-b0d6-a94fb916137f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_48c28e44-411e-4a88-bf50-b88fd47eabda?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3801e7cc-bd9d-45c2-92a5-5b81c0b05630?mode=deep",
+    "questions_generated": false
+  }
+]
