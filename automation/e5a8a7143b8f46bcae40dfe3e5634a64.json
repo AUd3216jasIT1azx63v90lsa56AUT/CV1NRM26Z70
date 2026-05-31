@@ -1,0 +1,140 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, settlement fee change via setMarketSettlementFee] Can an unprivileged attacker (who is the fee setter) cause a lender to receive excess credit by the sequence: (1) lender calls buyerAssetsToUnits in block N, getting units_N based on fee_N, (2) fee setter calls setMarketSettlementFee to increase the fee, (3) lender calls take() in block N+1 with units_N, (4) take() uses higher fee, producing lower buyerPrice, so buyerAssets = mulDivUp(units_N * newBuyerPrice, WAD) < targetBuyerAssets, (5) bundler reverts with OutOfOffers(), under the precondition that the fee increases between view and take, violating the invariant that the periphery must produce units valid for the current fee, causing scoped impact: DoS of all pending bundler transactions when fee is increased? Proof idea: state test with fee increase between buyerAssetsToUnits and take(), assert bundler behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_006b384b-e809-4eda-98f3-d718ec5cb4be?mode=deep",
+    "timestamp": "2026-05-31 20:16:49.319520",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, settlement fee decrease] Can an unprivileged attacker (fee setter) cause a lender to receive excess credit by the sequence: (1) lender calls buyerAssetsToUnits in block N with fee_N, getting units_N, (2) fee setter decreases the settlement fee, (3) lender calls take() in block N+1 with units_N, (4) take() uses lower fee, producing higher buyerPrice, so buyerAssets = mulDivUp(units_N * newBuyerPrice, WAD) > targetBuyerAssets, (5) lender receives more credit units than assets paid, under the precondition that the fee decreases between view and take, violating the invariant that credit units must not exceed assets paid, causing scoped impact: lender redeems more loan tokens at maturity than paid? Proof idea: state test with fee decrease between buyerAssetsToUnits and take(), assert credit increase <= assets paid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1912e892-ea33-4855-bc62-4eab9d4e3621?mode=deep",
+    "timestamp": "2026-05-31 20:17:01.386226",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, tick spacing change] Can an unprivileged attacker (tick spacing setter) cause a DoS by the sequence: (1) lender calls buyerAssetsToUnits with an offer at tick T (valid under old spacing S), (2) tick spacing setter calls setMarketTickSpacing to reduce spacing to S/2, (3) lender calls take() with the same offer, (4) take() checks offer.tick % newTickSpacing == 0, which still passes since T is a multiple of S and S/2, but the price changes if the tick is now at a finer grid, violating the invariant that tick spacing changes must not invalidate pending periphery computations, causing scoped impact: no direct impact but confirms tick spacing changes do not affect TakeAmountsLib correctness? Proof idea: assert buyerAssetsToUnits result is unchanged after tick spacing reduction for the same offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c799b7f8-3c95-47f2-9933-1fae98c97a8e?mode=deep",
+    "timestamp": "2026-05-31 20:17:13.934789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, loss factor interaction] Can an unprivileged lender exploit a bad debt realization between buyerAssetsToUnits call and take() execution by the sequence: (1) buyerAssetsToUnits computes units_N based on current state, (2) a liquidation realizes bad debt, increasing lossFactor, (3) take() calls _updatePosition for the buyer, slashing their existing credit, (4) the buyer's net credit after take is units_N - slashed_amount, but they paid targetBuyerAssets, violating the invariant that credit units must correspond to assets paid, causing scoped impact: lender receives fewer redeemable credit units than assets paid due to bad debt socialization? Proof idea: state test with bad debt realization between buyerAssetsToUnits and take(), assert net credit >= assets paid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2de3ae25-410d-452c-896b-f71562708768?mode=deep",
+    "timestamp": "2026-05-31 20:17:26.512543",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, continuous fee interaction] Can an unprivileged lender receive fewer redeemable credit units than expected by the sequence: (1) buyerAssetsToUnits computes units_N, (2) take() calls _updatePosition which accrues continuous fee, reducing the buyer's existing credit by pendingFee, (3) the buyer's net credit after take is units_N + existing_credit - accrued_fee, but they paid targetBuyerAssets for units_N new credit, violating the invariant that the buyer's credit increase must equal units_N regardless of fee accrual, causing scoped impact: lender's effective redemption value is reduced by continuous fee accrual not reflected in the periphery computation? Proof idea: assert that credit increase from take() equals units_N regardless of pendingFee accrual.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eacf5dda-5dea-4d0a-bd50-6cddeb5161a9?mode=deep",
+    "timestamp": "2026-05-31 20:17:39.919083",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: sellerAssetsToUnits, sellerPrice near 1 wei] Can an unprivileged attacker cause an extreme unit inflation in sellerAssetsToUnits by constructing a buy offer (offer.buy=true) with offerPrice just above settlementFee (sellerPrice = 1 wei), under the precondition that targetSellerAssets is large, causing mulDivUp(targetSellerAssets, WAD, 1) = targetSellerAssets * WAD units to be computed, which when fed to take() produces sellerAssets = mulDivDown(units * 1, WAD) = targetSellerAssets, but the units value overflows uint256 or exceeds type(uint128).max, violating the invariant that the periphery must not produce unit values that overflow protocol storage, causing scoped impact: revert DoS or overflow in take() for near-zero sellerPrice offers? Proof idea: fuzz sellerPrice in [1, 100] and targetSellerAssets in [1, 1e18], assert units <= type(uint128).max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_351f0322-49c6-432d-81ba-1c3a06d30f0e?mode=deep",
+    "timestamp": "2026-05-31 20:17:54.294905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, differential test against take()] Can an unprivileged lender find any combination of (tick, settlementFee, targetBuyerAssets, offer.buy) such that buyerAssetsToUnits(target) returns units U where take(U) returns buyerAssets != target, under the precondition that all inputs are within valid protocol bounds, violating the invariant that buyerAssetsToUnits must be a perfect inverse of take()'s buyerAssets computation, causing scoped impact: any deviation allows the buyer to receive more or fewer credit units than economically owed? Proof idea: differential fuzz test over all valid (tick, fee, target, buy) combinations, assert take(buyerAssetsToUnits(target)).buyerAssets == target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_647d9424-eb98-4a60-accb-f5916fd02e90?mode=deep",
+    "timestamp": "2026-05-31 20:18:08.405998",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: sellerAssetsToUnits, differential test against take()] Can an unprivileged seller find any combination of (tick, settlementFee, targetSellerAssets, offer.buy) such that sellerAssetsToUnits(target) returns units U where take(U) returns sellerAssets != target, under the precondition that all inputs are within valid protocol bounds, violating the invariant that sellerAssetsToUnits must be a perfect inverse of take()'s sellerAssets computation, causing scoped impact: any deviation allows the seller to receive more or fewer assets than economically owed? Proof idea: differential fuzz test over all valid (tick, fee, target, buy) combinations, assert take(sellerAssetsToUnits(target)).sellerAssets == target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25f27651-7302-4c20-bd76-1ff46c2e7845?mode=deep",
+    "timestamp": "2026-05-31 20:18:24.173037",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, sell offer, buyerPrice = WAD boundary] Can an unprivileged lender cause excess credit by constructing a sell offer (offer.buy=false) where offerPrice + settlementFee = WAD exactly (buyerPrice = WAD), under the precondition that targetBuyerAssets * WAD / WAD = targetBuyerAssets exactly, causing buyerAssetsToUnits to return units = targetBuyerAssets (since mulDivDown(target, WAD, WAD) = target), and take() to return buyerAssets = mulDivUp(target * WAD, WAD) = target, so no excess, violating the invariant that the WAD boundary is handled correctly, causing scoped impact: confirm no excess credit at buyerPrice=WAD boundary? Proof idea: unit test with buyerPrice=WAD, assert buyerAssetsToUnits(T) = T and take(T) returns buyerAssets=T.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d89ac177-0cf8-4ce7-bb7d-11f4f5c62190?mode=deep",
+    "timestamp": "2026-05-31 20:18:40.354046",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, sell offer, buyerPrice = WAD - 1] Can an unprivileged lender cause excess credit by constructing a sell offer (offer.buy=false) where buyerPrice = WAD - 1, under the precondition that targetBuyerAssets is chosen such that targetBuyerAssets * WAD mod (WAD-1) != 0, causing buyerAssetsToUnits to return units = floor(target * WAD / (WAD-1)), and take() to return buyerAssets = ceil(units * (WAD-1) / WAD) which may equal target or target+1, violating the invariant that credit units must not exceed assets paid, causing scoped impact: lender redeems 1 wei more per take than paid? Proof idea: fuzz targetBuyerAssets mod (WAD-1), assert take(buyerAssetsToUnits(target)).buyerAssets <= target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f415021-08f9-4ffa-acba-bfd5e87c01cc?mode=deep",
+    "timestamp": "2026-05-31 20:18:56.437398",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, multicall atomicity] Can an unprivileged lender use Midnight.multicall to atomically call buyerAssetsToUnits (view) and take() in the same block, ensuring the settlement fee is identical, under the precondition that multicall uses delegatecall so block.timestamp is the same, and assert that this eliminates the fee staleness risk, violating the invariant that the periphery must be safe to use non-atomically, causing scoped impact: confirm that non-atomic use of TakeAmountsLib is the only source of fee staleness? Proof idea: compare atomic (multicall) vs non-atomic (separate tx) use of buyerAssetsToUnits + take(), assert atomic use always produces buyerAssets==target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_120a5c9d-f6c0-4ad3-8ce8-d6229fb3653a?mode=deep",
+    "timestamp": "2026-05-31 20:19:12.057350",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, MidnightBundles.touchMarket fee initialization] Can an unprivileged attacker cause a fee mismatch by the sequence: (1) MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral calls touchMarket to initialize the market with default fees, (2) buyerAssetsToUnits is called using the newly initialized fees, (3) feeSetter immediately calls setMarketSettlementFee before the take() loop executes, (4) take() uses the updated fee, producing buyerAssets != targetFilledBuyerAssets, under the precondition that feeSetter acts in the same block between touchMarket and take(), violating the invariant that the bundler's fee snapshot must be valid for the entire transaction, causing scoped impact: DoS of all bundler transactions in markets where the fee is changed in the same block? Proof idea: state test with fee change between touchMarket and take() in the same block.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3c55ea7-d6f9-46a4-90e6-6d696744b394?mode=deep",
+    "timestamp": "2026-05-31 20:19:26.486079",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, offer.buy=false, sellerPrice=offerPrice, buyerPrice=offerPrice+settlementFee] Can an unprivileged lender verify that for sell offers the sellerPrice equals offerPrice (no fee deduction) and buyerPrice equals offerPrice+settlementFee, under the precondition that this matches Midnight.take()'s computation (sellerPrice = offerPrice for sell offers, buyerPrice = sellerPrice + settlementFee), and assert that buyerAssetsToUnits correctly mirrors this, violating the invariant that the periphery must use the same price decomposition as the core, causing scoped impact: any mismatch in price decomposition allows credit/debt units to be mispriced? Proof idea: unit test asserting buyerAssetsToUnits uses sellerPrice=offerPrice and buyerPrice=offerPrice+settlementFee for sell offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_41a9cfda-0e63-444a-92f6-af761090d82f?mode=deep",
+    "timestamp": "2026-05-31 20:19:41.930432",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: sellerAssetsToUnits, offer.buy=true, sellerPrice=offerPrice-settlementFee] Can an unprivileged seller verify that for buy offers sellerPrice = offerPrice - settlementFee, under the precondition that this matches Midnight.take()'s computation, and assert that sellerAssetsToUnits correctly mirrors this, violating the invariant that the periphery must use the same price decomposition as the core, causing scoped impact: any mismatch allows debt units to be mispriced relative to assets received? Proof idea: unit test asserting sellerAssetsToUnits uses sellerPrice=offerPrice-settlementFee for buy offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8e21eeea-07aa-487d-bee1-2720eeafd8bc?mode=deep",
+    "timestamp": "2026-05-31 20:19:57.070345",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, fuzz all valid ticks] Can an unprivileged lender find any tick in [0, MAX_TICK=5820] and any valid settlement fee such that buyerAssetsToUnits returns units U where take(U) produces buyerAssets strictly greater than targetBuyerAssets for a sell offer, under the precondition that all inputs are within valid protocol bounds, violating the invariant that the buyer must never receive more credit units than assets paid, causing scoped impact: lender redeems more loan tokens at maturity than paid? Proof idea: fuzz tick in [0, 5820] (multiples of DEFAULT_TICK_SPACING=4), fuzz settlementFee in [0, MAX_SETTLEMENT_FEE_360_DAYS], fuzz targetBuyerAssets in [1, 1e24], assert take(buyerAssetsToUnits(target)).buyerAssets <= target for sell offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_14cb1b76-17a9-4cbd-beb4-9bb34b62ffa4?mode=deep",
+    "timestamp": "2026-05-31 20:20:12.950379",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: sellerAssetsToUnits, fuzz all valid ticks] Can an unprivileged seller find any tick in [0, MAX_TICK=5820] and any valid settlement fee such that sellerAssetsToUnits returns units U where take(U) produces sellerAssets strictly greater than targetSellerAssets for a sell offer, under the precondition that all inputs are within valid protocol bounds, violating the invariant that the seller must never receive more assets than the debt units they issued are worth, causing scoped impact: seller receives more loan assets than debt units issued? Proof idea: fuzz tick, settlementFee, targetSellerAssets, assert take(sellerAssetsToUnits(target)).sellerAssets <= target for sell offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4720fcb0-efb8-445f-a042-7021b067304e?mode=deep",
+    "timestamp": "2026-05-31 20:20:27.874828",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, invariant: sum(credit) <= sum(buyerAssets)] Can an unprivileged lender violate the global solvency invariant by the sequence: (1) lender makes K takes via MidnightBundles using buyerAssetsToUnits, (2) each take produces buyerAssets_i >= target_i due to sell-offer rounding, (3) lender's total credit = sum(units_i) > sum(target_i) = total assets paid, (4) at maturity, lender withdraws sum(units_i) loan tokens, but only sum(target_i) were deposited, under the precondition that the protocol's token balance is sum(buyerAssets_i) = sum(target_i) + K*delta, violating the invariant that total withdrawable credit must not exceed total loan token balance, causing scoped impact: protocol insolvency by K*delta loan tokens? Proof idea: invariant test asserting marketState.withdrawable + sum(credit) <= loanToken.balanceOf(midnight) at all times.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d103d67-907a-4c29-b8f6-7eecdf8a1396?mode=deep",
+    "timestamp": "2026-05-31 20:20:43.062780",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, post-maturity trading] Can an unprivileged lender exploit post-maturity trading by the sequence: (1) after maturity, buyerAssetsToUnits is called with TTM=0 (cbp0 fee), (2) take() also uses TTM=0, so they agree, (3) but the lender uses a sell offer (offer.buy=false) where the seller has existing debt, (4) take() reduces seller's debt (sellerCreditDecrease > 0), so sellerDebtIncrease = 0, passing the CannotIncreaseDebtPostMaturity check, (5) buyerAssetsToUnits correctly computes units, but the buyer's credit increase is units - buyerPos.debt, not units, violating the invariant that the buyer's credit increase must equal the units computed by buyerAssetsToUnits minus any debt netted, causing scoped impact: buyer receives fewer credit units than expected if they have existing debt? Proof idea: state test with buyer having existing debt, assert credit increase = units - debt_netted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ddfc184d-dff0-4f5f-8de3-e6bfefec96b0?mode=deep",
+    "timestamp": "2026-05-31 20:20:58.334980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, settlement fee at TTM >= 360 days] Can an unprivileged lender exploit the constant fee regime (TTM >= 360 days) by the sequence: (1) buyerAssetsToUnits is called at TTM = 360 days + 1 second, using cbp6 fee, (2) take() also uses cbp6 fee, so they agree, (3) but if the market was created with TTM > 360 days and the default fee was later changed via setDefaultSettlementFee (which does not affect existing markets), the market's cbp6 is fixed at creation, violating the invariant that the periphery must use the market's actual fee, not the default fee, causing scoped impact: no impact if periphery correctly calls settlementFee(id, TTM) which uses market-specific cbps? Proof idea: assert buyerAssetsToUnits calls settlementFee(id, TTM) not defaultSettlementFeeCbp.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4a1edb4-0135-4784-8a51-1514edeae0e3?mode=deep",
+    "timestamp": "2026-05-31 20:21:14.031886",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, ERC20 fee-on-transfer token] Can an unprivileged lender exploit a fee-on-transfer loan token by the sequence: (1) buyerAssetsToUnits computes units based on nominal buyerAssets, (2) take() transfers buyerAssets from payer to Midnight, but only buyerAssets - fee arrives, (3) Midnight's balance increases by less than buyerAssets, but credit increases by units, violating the invariant that credit units must correspond to actual token balance increases, causing scoped impact: protocol insolvency as credit exceeds actual token balance? Proof idea: deploy fee-on-transfer loan token, assert Midnight.balanceOf increases by exactly buyerAssets after take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e6604b2-92f4-4f86-be3c-86bdc752fdb9?mode=deep",
+    "timestamp": "2026-05-31 20:21:30.778118",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, settlement fee CBP granularity] Can an unprivileged lender exploit the CBP=1e12 granularity of settlement fees by the sequence: (1) the interpolated settlement fee at a given TTM is not a multiple of CBP (since the interpolation formula (feeLower*(end-TTM) + feeUpper*(TTM-start)) / (end-start) may not be a multiple of CBP), (2) buyerAssetsToUnits uses this non-CBP-aligned fee, (3) take() uses the same fee, so they agree, but (4) the fee is not representable in the cbp storage format, violating the invariant that the settlement fee must be a multiple of CBP, causing scoped impact: confirm that the interpolation formula always produces CBP-aligned fees? Proof idea: fuzz TTM across all segments, assert settlementFee(id, TTM) % CBP == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_839ed8f8-234b-4f25-b3b3-94aa4c80f7dd?mode=deep",
+    "timestamp": "2026-05-31 20:21:47.599802",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: buyerAssetsToUnits, group consumption race condition] Can an unprivileged attacker cause a ConsumedAssets revert in take() by the sequence: (1) consumableUnits computes remaining = maxAssets - consumed_at_view_time, (2) another taker fills part of the offer between the view and the take, increasing consumed, (3) buyerAssetsToUnits(remaining) returns units_c, (4) take() computes newConsumed = consumed_at_take_time + buyerAssets > maxAssets, triggering ConsumedAssets(), under the precondition that the offer is partially filled between the view and take, violating the invariant that consumableUnits must account for concurrent fills, causing scoped impact: DoS of bundler when offers are being filled concurrently? Proof idea: state test with concurrent fill between consumableUnits and take(), assert bundler handles ConsumedAssets revert gracefully.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ca0d21d-3ce4-4f61-bf75-7c2b18d4cadd?mode=deep",
+    "timestamp": "2026-05-31 20:22:05.232236",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to red\n\n### Citations\n\n**File:** src/periphery/TakeAmountsLib.sol (L1-47)\n```text\n// SPDX-License-Identifier: GPL-2.0-or-later\npragma solidity ^0.8.0;\n\nimport {IMidnight, Offer} from",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d233b4f-0268-47f4-bfcd-2ce23658289a?mode=deep",
+    "timestamp": "2026-05-31 20:22:22.940678",
+    "report_generated": false
+  }
+]
