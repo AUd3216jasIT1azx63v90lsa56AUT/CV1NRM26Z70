@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/libraries/SafeTransferLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / SafeTransferLib.safeTransferFrom] Can an unprivileged taker under the precondition that the loan token is fee-on-transfer and the offer has maxAssets set to type(uint256).max - 1 trigger the call sequence take(offer, ...) where consumed[maker][group] += buyerAssets and newConsumed <= offer.maxAssets passes, but the protocol receives buyerAssets*(1-fee), violating the invariant that unlimited-capacity offers correctly account for actual token flows, causing scoped impact: offers with very large maxAssets create unbounded insolvency gaps proportional to the total fill volume times the fee rate? Proof idea: fuzz fill volume and fee rate with maxAssets near type(uint256).max, assert protocol_balance_deficit == total_volume * fee_rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_100b028c-60c1-4eba-8497-6cace85c94ef?mode=deep",
+    "timestamp": "2026-05-31 21:29:45.693690",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/SafeTransferLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / SafeTransferLib.safeTransferFrom] Can an unprivileged taker under the precondition that the loan token is fee-on-transfer and the market has a tick spacing of 1 (finest granularity) trigger the call sequence take(offer, ...) at many different ticks where each tick produces a different buyerAssets value, and each safeTransferFrom delivers buyerAssets*(1-fee), violating the invariant that tick-level price granularity does not interact with fee-on-transfer to create differential accounting gaps, causing scoped impact: the accounting gap varies by tick, making it harder to detect and potentially exploitable at specific price points? Proof idea: fuzz tick in [0, MAX_TICK] and fee rate, assert consumed delta == buyerAssets while actual_received == buyerAssets*(1-fee) for each tick.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b59b8574-14a0-446c-9124-7f8837169c39?mode=deep",
+    "timestamp": "2026-05-31 21:29:57.668193",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/SafeTransferLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / SafeTransferLib.safeTransferFrom] Can an unprivileged taker under the precondition that the loan token is fee-on-transfer and the offer has a non-zero continuous fee trigger the call sequence take(offer, ...) where buyerPendingFeeIncrease = buyerCreditIncrease * continuousFee * timeToMaturity / WAD (line 386) is computed from nominal buyerCreditIncrease, but the underlying loan token balance is only buyerAssets*(1-fee), violating the invariant that pendingFee obligations are backed by actual protocol token balance, causing scoped impact: the continuous fee creates additional claims on a token balance that is already depleted by the transfer fee, compounding the insolvency? Proof idea: fuzz continuousFee and transfer fee rate, assert sum(pendingFee) + withdrawable <= Midnight.balanceOf(loanToken) after N takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9622cf2d-d8b8-40b3-b23e-b2e18d0c7a98?mode=deep",
+    "timestamp": "2026-05-31 21:30:09.926483",
+    "report_generated": false
+  }
+]
