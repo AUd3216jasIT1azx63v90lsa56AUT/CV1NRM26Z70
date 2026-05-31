@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can an authorized operator under the precondition that maker has granted coarse isAuthorized[maker][operator]=true call setIsRootRatified(maker, root, true) then immediately call Midnight.take() with an offer from that root, then call setIsRootRatified(maker, root, false) in a single multicall, causing claimableSettlementFee[loanToken] to accumulate beyond the actual loanToken balance held by Midnight, violating the invariant that Midnight.balanceOf(loanToken) >= withdrawable + claimableSettlementFee + continuousFeeCredit? Proof idea: fuzz units and tick across N multicall sequences and assert loanToken balance >= sum of all obligations after each call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_22292d45-2c2f-4b29-931c-738382d301fb?mode=deep",
+    "timestamp": "2026-05-31 23:02:01.191602",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified] Can an authorized operator call setIsRootRatified(maker, root, true) on behalf of maker, after which the maker revokes isAuthorized[maker][operator] via Midnight.setIsAuthorized, but the root remains ratified in isRootRatified[maker][root] permanently, allowing any taker to continue filling offers from that root indefinitely and inflating claimableSettlementFee beyond the token balance? Proof idea: unit test that revokes authorization after root ratification and asserts take still succeeds, then checks Midnight.claimableSettlementFee vs actual balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e55efbe-78b8-4838-961e-e2d6c2b2199b?mode=deep",
+    "timestamp": "2026-05-31 23:02:13.188945",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / isRatified] Can a maker ratify N distinct roots each containing an offer with a unique group field but otherwise identical terms (same tick, same maxAssets), causing N independent consumed[maker][groupN] counters to each fill up to maxAssets, so total loanToken transferred out as sellerAssets across all N takes exceeds what the protocol can cover from repaid debt, causing withdrawable to be inflated beyond actual loanToken balance? Proof idea: fuzz N in [2..20], assert sum(sellerAssets_i) <= Midnight.balanceOf(loanToken) after all takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3910af7c-0786-45e5-a546-78b5fc498969?mode=deep",
+    "timestamp": "2026-05-31 23:02:25.413959",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: isRatified / HashLib.isLeaf] Can a taker supply a ratifierData with proof.length=0 and leafIndex=0 where root == HashLib.hashOffer(offer), and the maker has ratified that root via setIsRootRatified, allowing a single-offer tree to be filled without any Merkle siblings, and if the maker ratifies many such single-offer roots simultaneously, does the total fill across all roots exceed the maker's intended exposure, inflating continuousFeeCredit beyond actual loanToken balance? Proof idea: deploy N single-leaf roots, fill each, assert continuousFeeCredit <= Midnight.balanceOf(loanToken).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b86de865-bb33-4819-bcb0-f08b581ac7ea?mode=deep",
+    "timestamp": "2026-05-31 23:02:38.007596",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified] Can a maker's authorized operator (set via Midnight.setIsAuthorized) call setIsRootRatified(maker, root, true) for a root containing a sell offer with maxAssets=type(uint128).max, causing a taker to fill the offer up to type(uint128).max sellerAssets, which when added to marketState.withdrawable via repay overflows uint128 in UtilsLib.toUint128, reverting all subsequent repay/withdraw calls and freezing lender funds? Proof idea: fuzz large units values and assert toUint128 does not revert on withdrawable accumulation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d49dbee6-6d2b-4490-b612-fe8cbadb8dd9?mode=deep",
+    "timestamp": "2026-05-31 23:02:52.065676",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: isRatified / take] Can a taker call Midnight.take() with an offer whose maker callback re-enters SetterRatifier.setIsRootRatified(maker, newRoot, true) during the onBuy/onSell callback, ratifying a second root mid-take, and then immediately take from the second root in the same callback, causing claimableSettlementFee to be incremented twice in a single transaction while only one set of tokens is transferred, creating a fee balance shortfall? Proof idea: implement a malicious IBuyCallback that calls setIsRootRatified and take, assert claimableSettlementFee <= actual fee tokens received.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e4df20cf-80d3-4596-ae87-891db3319b1a?mode=deep",
+    "timestamp": "2026-05-31 23:03:05.832116",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / claimContinuousFee] Can a maker ratify a root containing a buy offer with a high continuousFee market, causing each take to increase continuousFeeCredit via _updatePosition, and after many takes the accumulated continuousFeeCredit exceeds the actual loanToken balance held by Midnight, so that claimContinuousFee(market, amount, receiver) transfers more tokens than Midnight holds, causing insolvency? Proof idea: fuzz continuousFee and number of takes, assert continuousFeeCredit <= Midnight.balanceOf(loanToken) - withdrawable - claimableSettlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2a8655e-a764-4b4c-acea-3804f89b0507?mode=deep",
+    "timestamp": "2026-05-31 23:03:18.681551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take / withdraw] Can a maker ratify a root containing a sell offer (offer.buy=false) where the taker is a lender with existing credit, causing sellerCreditDecrease to reduce the seller's credit and increase withdrawable, and if the maker simultaneously ratifies a second root with a buy offer for the same market, can the combined effect of both takes cause withdrawable to exceed the actual loanToken balance, allowing a lender to withdraw more than was ever deposited? Proof idea: state-test with two simultaneous roots, assert withdrawable <= Midnight.balanceOf(loanToken) after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_301c863f-fb53-4224-bb3c-11396590569b?mode=deep",
+    "timestamp": "2026-05-31 23:03:32.594664",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / isRatified] Can a maker ratify a root, have the root partially consumed (consumed[maker][group] = X), then call setIsRootRatified(maker, root, false) and immediately setIsRootRatified(maker, root, true) to re-ratify the same root, and does the consumed counter persist across de-ratification/re-ratification cycles, or is there any path where the consumed counter is reset, allowing the offer to be overfilled beyond maxAssets and inflating claimableSettlementFee? Proof idea: unit test de-ratify/re-ratify cycle and assert consumed[maker][group] is monotonically non-decreasing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f69d206-8952-44d3-8ee3-d34d7ca30de8?mode=deep",
+    "timestamp": "2026-05-31 23:03:46.098644",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing an offer with offer.callback set to a contract that calls Midnight.repay() during onSell, increasing marketState.withdrawable, and then the same callback calls Midnight.withdraw() to drain the loanToken balance, leaving claimableSettlementFee uncoverable by the remaining balance, causing insolvency when feeClaimer calls claimSettlementFee? Proof idea: implement malicious ISellCallback that repays and withdraws, assert Midnight.balanceOf(loanToken) >= claimableSettlementFee after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0ba3ba4-95ba-42e9-9908-6deac51c4fd6?mode=deep",
+    "timestamp": "2026-05-31 23:04:00.130690",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a buy offer with offer.reduceOnly=false and a very low tick (near-zero price), causing buyerAssets to be nearly zero while units are large, so that claimableSettlementFee[loanToken] += (buyerAssets - sellerAssets) adds a near-zero or zero amount per take, but the lender's credit increases by units, and after maturity the lender can withdraw units > actual loanToken balance, causing insolvency? Proof idea: fuzz tick near 0 and assert credit redeemable at maturity <= loanToken deposited.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_13f0d90d-0e68-4db6-8ef5-09fac8827df3?mode=deep",
+    "timestamp": "2026-05-31 23:04:14.921982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / HashLib.isLeaf] Can a taker supply a ratifierData with a proof array of length 255 and a leafIndex that has bit 254 set, causing the Merkle traversal in isLeaf to compute a root that matches a ratified root, effectively allowing an offer not intended by the maker to be validated, and if this offer has a higher maxAssets than intended, does it cause claimableSettlementFee to exceed the actual token balance? Proof idea: fuzz proof.length up to 20 (TreeTooHigh limit) and leafIndex, assert only valid offer hashes pass isLeaf.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40b14b99-e768-4d99-9355-408e921337bf?mode=deep",
+    "timestamp": "2026-05-31 23:04:28.549805",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take / liquidate] Can a maker ratify a root containing a sell offer that increases a borrower's debt, and simultaneously a second root containing a buy offer that increases a lender's credit, such that after both takes the market's totalUnits increases but the actual loanToken balance does not increase proportionally, and when bad debt is realized via liquidate the lossFactor computation causes continuousFeeCredit to be scaled incorrectly, leaving claimableSettlementFee uncoverable? Proof idea: invariant test asserting Midnight.balanceOf(loanToken) >= withdrawable + claimableSettlementFee + continuousFeeCredit after any sequence of take/liquidate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_322b712a-05d2-4ef4-98c2-3a93ca1b3b75?mode=deep",
+    "timestamp": "2026-05-31 23:04:44.687311",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified] Can an unprivileged market creator create a market with SetterRatifier as the ratifier, then call setIsRootRatified(attacker, root, true) where attacker == offer.maker, and take the offer as taker, causing the attacker to act as both maker and ratifier-approver, bypassing the intent of the ratifier authorization model and filling offers that inflate claimableSettlementFee beyond the token balance? Proof idea: unit test where market creator == maker == root ratifier, assert SelfTake reverts and no insolvency path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d553903f-42e4-4e6f-bbab-b2b48bef1193?mode=deep",
+    "timestamp": "2026-05-31 23:05:00.107567",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing an offer with offer.expiry = type(uint256).max and offer.start = 0, making the offer permanently valid, and then the maker is unable to de-ratify the root in time (e.g., due to a front-running attack where a taker monitors the mempool and fills the offer before de-ratification lands), causing the offer to be filled at an unfavorable price that inflates claimableSettlementFee beyond the actual token balance? Proof idea: simulate front-running with vm.roll and assert de-ratification cannot be front-run to cause insolvency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31cf75bc-e66b-41c2-afe6-a3a9961c8c62?mode=deep",
+    "timestamp": "2026-05-31 23:05:15.544109",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / isRatified] Can a maker ratify a root R where R is the hash of a Merkle tree containing two offers O1 and O2 with the same group but different maxAssets values, and a taker fills O1 up to its maxAssets, then fills O2 using a different proof path, causing consumed[maker][group] to exceed the lower maxAssets cap and inflate claimableSettlementFee beyond what the protocol can cover? Proof idea: construct a 2-leaf tree with offers sharing a group, fill both, assert consumed[maker][group] <= min(O1.maxAssets, O2.maxAssets).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90e6a012-0304-4a38-ab27-77b454c2e2fb?mode=deep",
+    "timestamp": "2026-05-31 23:05:31.172261",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer with offer.callback pointing to a contract that calls Midnight.flashLoan() during onSell, borrowing loanTokens and using them to repay debt, increasing withdrawable, and then the flashLoan repayment is satisfied by the sellerAssets received in the same take, causing a double-counting of loanToken inflows that inflates withdrawable beyond the actual balance? Proof idea: implement ISellCallback that calls flashLoan, assert Midnight.balanceOf(loanToken) >= withdrawable after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5f58aab-e693-4a8d-91e7-e51e8e2743cc?mode=deep",
+    "timestamp": "2026-05-31 23:05:46.371580",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a buy offer where payer is determined as offer.callback (since buyerCallback != address(0)), and the callback contract returns CALLBACK_SUCCESS without actually transferring buyerAssets - sellerAssets to Midnight, causing claimableSettlementFee to be incremented without a corresponding token inflow, making Midnight insolvent when feeClaimer calls claimSettlementFee? Proof idea: implement IBuyCallback that returns CALLBACK_SUCCESS but skips the transfer, assert SafeTransferLib.safeTransferFrom reverts or balance is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_19eafddd-b934-46b5-956e-5f610609d60b?mode=deep",
+    "timestamp": "2026-05-31 23:06:00.600609",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer at tick=0 (maximum price near WAD), where sellerAssets = units.mulDivUp(buyerPrice, WAD) rounds up to units+1 for large units values, causing the protocol to transfer one extra loanToken per take to the seller, and after many takes the cumulative rounding error causes Midnight.balanceOf(loanToken) < withdrawable + claimableSettlementFee? Proof idea: fuzz units and tick, assert sum(sellerAssets_i) + claimableSettlementFee <= loanToken deposited.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_904d7c05-e233-49be-96df-670c5d023717?mode=deep",
+    "timestamp": "2026-05-31 23:06:15.149050",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take / claimContinuousFee] Can a maker ratify a root containing a buy offer in a market with MAX_CONTINUOUS_FEE, causing each take to add buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) to the buyer's pendingFee, and after many takes the accumulated continuousFeeCredit (via _updatePosition) exceeds the actual loanToken balance, so claimContinuousFee causes insolvency? Proof idea: fuzz continuousFee=MAX_CONTINUOUS_FEE and timeToMaturity, assert continuousFeeCredit <= Midnight.balanceOf(loanToken) - withdrawable - claimableSettlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6cb27b51-bcbc-4b98-b65a-4ec909c9e892?mode=deep",
+    "timestamp": "2026-05-31 23:06:29.631613",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing an offer with offer.market.enterGate set to a contract that always returns true for canIncreaseCredit but reverts for canIncreaseDebt, and a taker takes the offer as seller (increasing debt), causing the gate check to revert and the take to fail, but if the maker's callback has already transferred tokens to Midnight before the revert, does the revert correctly roll back all state including the token transfer, or can tokens be stranded in Midnight without corresponding accounting entries? Proof idea: implement IEnterGate that reverts on canIncreaseDebt, assert no tokens are stranded after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e953b9f-0fd1-4718-a3de-b03bdf37d4a9?mode=deep",
+    "timestamp": "2026-05-31 23:06:45.086612",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer where offer.receiverIfMakerIsSeller is set to address(0), causing SafeTransferLib.safeTransfer(loanToken, address(0), sellerAssets) to burn sellerAssets, reducing Midnight's effective loanToken balance without reducing withdrawable, so that subsequent withdraw calls by lenders cause Midnight to be insolvent? Proof idea: unit test with receiver=address(0), assert Midnight.balanceOf(loanToken) >= withdrawable after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5ec5d3f3-2016-40b1-8cd7-41aa9aedd80d?mode=deep",
+    "timestamp": "2026-05-31 23:07:01.221762",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a buy offer where the maker's callback (IBuyCallback) calls Midnight.setIsAuthorized(maker, attacker, true) during onBuy, granting the attacker full authorization over the maker's position, and the attacker then calls setIsRootRatified(maker, maliciousRoot, true) in the same callback, ratifying a second root with a large-maxAssets offer that inflates claimableSettlementFee beyond the token balance? Proof idea: implement IBuyCallback that grants authorization and ratifies a second root, assert no insolvency after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6101f86-780a-451f-9684-fb463152b509?mode=deep",
+    "timestamp": "2026-05-31 23:07:17.072065",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer with offer.group = bytes32(0) (the zero group), and after the offer is fully consumed (consumed[maker][bytes32(0)] = maxAssets), the maker calls Midnight.setConsumed(bytes32(0), type(uint256).max, maker) to cancel all offers in the zero group, but then ratifies a new root with a different offer using the same zero group, and since setConsumed only increases consumed, does the new offer's maxAssets check correctly prevent overfill, or can the consumed counter be manipulated to allow additional fills that inflate claimableSettlementFee? Proof idea: unit test setConsumed(group, type(uint256).max) followed by new root ratification, assert take reverts with ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ca22707-9e64-4f62-9e91-67c6f873ffd5?mode=deep",
+    "timestamp": "2026-05-31 23:07:32.074673",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Protocol insolvency where Midnight contract token balances cannot cover collateral, withdrawable assets, or claimable fees'] [Function: setIsRootRatified / take] Can a maker ratify a root containing a sell offer at a tick that is not a multiple of the market's tickSpacing, causing take to revert with TickNotAccessible, but if the tickSpacingSetter later decreases the tick spacing to make the tick accessible, can the same root be used to fill the offer at the newly accessible tick, and does this allow the maker's offer to be filled at a price the maker did not intend for the new tick spacing, inflating claimableSettlementFee? Proof idea: ratify root with tick=2, set tickSpacing=2, assert take succeeds and claimableSettlementFee is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f5cf5c8f-caa9-4a8b-8497-f18e61a3a713?mode=deep",
+    "timestamp": "2026-05-31 23:07:48.272006",
+    "report_generated": false
+  }
+]
