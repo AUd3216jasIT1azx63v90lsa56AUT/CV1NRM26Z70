@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / IRatifier.isRatified] Can an unprivileged attacker who is already isAuthorized[victim][attacker] call setIsAuthorized(malicious_ratifier, true, victim) to authorize a malicious IRatifier that unconditionally returns CALLBACK_SUCCESS, then construct an Offer with offer.maker=victim and offer.ratifier=malicious_ratifier and call take() with a sell offer (offer.buy=false) so that victim becomes the seller and accrues debt without consent, violating the invariant that debt must only increase through maker-authorized ratification, causing scoped impact: unauthorized debt increase on victim's position? Proof idea: deploy MaliciousRatifier that returns CALLBACK_SUCCESS unconditionally; fuzz units and tick; assert victim.debt increases without victim signing or calling anything.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c4584f8-70f9-4140-9760-235eeaadc95f?mode=deep",
+    "timestamp": "2026-05-31 18:58:38.097251",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / liquidationLocked / transient storage] Can an unprivileged attacker acting as a sell-offer maker set offer.callback to a reentrant contract that, during onSell(), calls take() again with a new sell offer for the same seller, exploiting the fact that wasLocked=true causes the inner take's health check at line 476 to be skipped (liquidationLocked returns true), and the outer take's health check is also skipped for the same reason, allowing the seller to accumulate debt across nested takes beyond their collateral capacity, violating the invariant that every borrow must pass a health check, causing scoped impact: unauthorized over-borrowing / bad debt creation? Proof idea: stateful fuzz with nested take depth 2-4; assert position.debt > maxDebt after all takes complete.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7368bef9-6f21-45bd-93c6-4855d7135bfd?mode=deep",
+    "timestamp": "2026-05-31 18:58:49.950260",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.setIsRootRatified / Midnight.take] Can an attacker who is isAuthorized[victim][attacker] call SetterRatifier.setIsRootRatified(victim, malicious_root, true) to ratify a Merkle tree of attacker-crafted sell offers with victim as maker, then fill those offers via take() to force victim into debt positions the victim never approved, violating the invariant that ratifier approval must bind correct maker intent, causing scoped impact: unauthorized borrowing on victim's account? Proof idea: unit test where authorized attacker ratifies a root containing a sell offer; assert victim.debt increases after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_504d92fc-212a-48cb-a08d-92aa2e66e818?mode=deep",
+    "timestamp": "2026-05-31 18:59:02.128676",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.isRatified / Midnight.isAuthorized] Can an attacker who is isAuthorized[victim][attacker] call Midnight.setIsAuthorized(attacker_controlled_signer, true, victim) so that attacker_controlled_signer satisfies the check _signer == offer.maker || isAuthorized[offer.maker][_signer] in EcrecoverRatifier line 44, then sign arbitrary sell offers for victim using attacker_controlled_signer's key, enabling take() to fill those offers and increase victim's debt without victim's knowledge, violating the invariant that EIP-712 signatures must reflect maker intent, causing scoped impact: unauthorized debt creation via delegated signer? Proof idea: fuzz offer fields; assert any offer signed by attacker_controlled_signer passes isRatified for victim as maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a3c7260-f1fa-4708-8936-15ff07671c5f?mode=deep",
+    "timestamp": "2026-05-31 18:59:14.792112",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.cancelRoot / Midnight.isAuthorized] Can an attacker who is isAuthorized[victim][attacker] call EcrecoverRatifier.cancelRoot(victim, root) to cancel all of victim's valid signed offer roots, then immediately re-ratify a different root containing attacker-crafted offers via a second authorized call, causing victim's legitimate offers to be permanently blocked while attacker-crafted offers become fillable, violating the invariant that only the maker should control offer cancellation and ratification, causing scoped impact: unauthorized offer cancellation and unauthorized debt creation? Proof idea: unit test; cancel victim root; assert victim's original offers revert with RootCanceled; assert attacker-crafted offers succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d649acda-6c2d-46f4-97aa-c0137c5b0c36?mode=deep",
+    "timestamp": "2026-05-31 18:59:28.051433",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.setIsAuthorized / EcrecoverAuthorizer.setIsAuthorized] Can an attacker obtain a victim's EIP-712 signed Authorization (e.g., via phishing) and call EcrecoverAuthorizer.setIsAuthorized() to grant themselves isAuthorized[victim][attacker]=true, then use that authorization to authorize a malicious ratifier and fill sell offers against victim, violating the invariant that authorization must reflect the authorizer's current intent and cannot be replayed, causing scoped impact: full position takeover enabling unauthorized borrowing and collateral seizure? Proof idea: replay a signed authorization; assert attacker gains full control; fuzz deadline and nonce boundaries.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3712a74c-1a70-4b0f-8ebe-ab0de2316a71?mode=deep",
+    "timestamp": "2026-05-31 18:59:41.284664",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / IEnterGate.canIncreaseDebt] Can an attacker bypass the enterGate.canIncreaseDebt check for a gated market by constructing a sell offer where the seller (borrower) is the offer.callback contract, and the callback contract reenters take() with a second sell offer for the same seller during onSell(), where the second take's gate check fires but the gate state has already been queried and the lock prevents the health check, allowing debt to increase in a gated market for an unauthorized account, violating the invariant that every debt increase must pass the enter gate, causing scoped impact: gate bypass enabling unauthorized borrowing? Proof idea: deploy a gate that allows only whitelisted addresses; deploy reentrant callback; assert non-whitelisted seller accrues debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a10e0a5a-4a44-4f2f-9230-378b8c39340a?mode=deep",
+    "timestamp": "2026-05-31 18:59:54.912835",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.liquidate / ILiquidatorGate.canLiquidate] Can an attacker bypass the liquidatorGate.canLiquidate(msg.sender) check by calling liquidate() from an authorized operator address that is not gated, where the gate only blocks specific addresses but the authorized operator is not in the blocked set, allowing unauthorized liquidation and collateral seizure from a borrower in a market intended to restrict liquidators, violating the invariant that the liquidator gate must apply to all liquidation paths, causing scoped impact: unauthorized collateral seizure via gate bypass? Proof idea: deploy a gate that blocks address A but not address B; authorize B for A; call liquidate from B; assert seizure succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2581a6c4-3f47-4a02-ade3-e4668cbae6f0?mode=deep",
+    "timestamp": "2026-05-31 19:00:09.411196",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.repay / IRepayCallback.onRepay] Can an attacker acting as an authorized operator of a borrower call repay() with a malicious callback contract as the callback parameter, where the callback reenters take() with a sell offer for the borrower during onRepay() (after debt is reduced at line 508 but before token pull at line 520), increasing the borrower's debt back to or beyond the original level, then the outer repay pulls tokens for the original reduction, resulting in the borrower's debt being net-increased while the attacker pays nothing, violating the invariant that repay must reduce net debt, causing scoped impact: unauthorized debt increase via repay callback reentrancy? Proof idea: fuzz repay units and reentrant take units; assert net debt change and token balance conservation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e3373b1f-d0c5-4e0c-aadb-a42135f60c73?mode=deep",
+    "timestamp": "2026-05-31 19:00:25.167110",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / offer.ratifier address(0)] Can an attacker call take() with offer.ratifier=address(0) where isAuthorized[offer.maker][address(0)]=false, causing the RatifierUnauthorized check at line 355 to revert, but if a market or integration mistakenly calls setIsAuthorized(address(0), true, maker), then IRatifier(address(0)).isRatified() would be called on the zero address and revert or return unexpected data, and if the EVM returns empty bytes for a call to address(0), the return value would not equal CALLBACK_SUCCESS, causing RatifierFail—but verify whether any code path allows address(0) ratifier to pass both checks, violating the invariant that ratifier must be a valid authorized contract, causing scoped impact: unauthorized offer fill if zero-address ratifier is accidentally authorized? Proof idea: unit test with isAuthorized[maker][address(0)]=true; assert take reverts at RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_318a3a2d-4e14-4ab7-884f-69a62989bb41?mode=deep",
+    "timestamp": "2026-05-31 19:00:39.590898",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.isRatified / HashLib.isLeaf] Can an attacker supply a ratifierData with proof.length=0 and leafIndex=0 to isRatified(), causing isLeaf() to return true iff root==hashOffer(offer), and then construct an offer whose EIP-712 hash equals a root that the maker has signed, effectively using the offer hash itself as the Merkle root to bypass the tree structure, and if the maker signed this root (a single-leaf tree), fill the offer without a proper Merkle tree, violating the invariant that the Merkle proof must bind the offer to a maker-approved tree, causing scoped impact: unauthorized offer fill if single-leaf tree semantics are not intended? Proof idea: compute hashOffer(offer); sign it as root; call isRatified with empty proof; assert it passes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4629b578-71d4-4dad-9e36-c8528c5e72bd?mode=deep",
+    "timestamp": "2026-05-31 19:00:54.362178",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.isRatified / block.chainid vs INITIAL_CHAIN_ID] Can an attacker exploit the discrepancy between EcrecoverRatifier using block.chainid in its domain separator (line 40) while Midnight uses INITIAL_CHAIN_ID for market IDs, such that after a hard fork where block.chainid changes, the same market ID exists on both chains but EcrecoverRatifier signatures are chain-specific, and an attacker on the original chain replays a signature that was intended only for the forked chain (or vice versa), violating the invariant that signatures must be chain-bound to the correct deployment, causing scoped impact: cross-chain signature replay enabling unauthorized offer fill? Proof idea: differential test simulating chainid change; assert signature validity differs between chains.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a22ec6fd-61bb-4dda-a917-0689fc8b0d4c?mode=deep",
+    "timestamp": "2026-05-31 19:01:08.279170",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / consumed mapping / setConsumed] Can an attacker who is isAuthorized[victim][attacker] call setConsumed(group, type(uint256).max, victim) to cancel all of victim's offers in a group, then call setConsumed(group, 0, victim)—which would revert due to AlreadyConsumed—but instead construct a new offer with a different group that shares the same economic terms, effectively forcing victim's offers offline while the attacker fills their own offers, violating the invariant that only the maker should control offer cancellation, causing scoped impact: authorized-operator-induced DoS on victim's offer book? Proof idea: unit test; authorized attacker cancels victim's group; assert all victim offers in group revert with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66d61802-70a0-4f44-800c-f1be7e4bb189?mode=deep",
+    "timestamp": "2026-05-31 19:01:23.082482",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / payer logic line 422] Can an attacker acting as taker set takerCallback to a contract that has pre-approved Midnight for large token amounts (e.g., a DeFi vault or router), causing the payer to be the takerCallback contract (line 422: payer = buyerCallback != address(0) ? buyerCallback : ...), and the contract pays buyerAssets to Midnight and sellerAssets to the receiver, draining the callback contract's tokens without its consent, violating the invariant that token transfers must only occur with the payer's explicit consent for the specific take, causing scoped impact: unauthorized token drain from callback contract? Proof idea: deploy a vault with Midnight approval; set it as takerCallback; assert vault balance decreases without vault's onBuy returning CALLBACK_SUCCESS (which would revert—so verify if any path allows payment without callback success).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b8b10af6-adaf-4a31-a4c4-405a97ed76c0?mode=deep",
+    "timestamp": "2026-05-31 19:01:36.367136",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / sellerCallback / liquidationLocked transient storage] Can an attacker as a sell-offer maker set offer.callback to a contract that during onSell() calls withdrawCollateral() for the seller, and since the liquidation lock only prevents liquidate() (not withdrawCollateral()), the collateral is withdrawn while the seller's debt is already increased (from the outer take), and the outer take's health check is then evaluated—but if the lock is set and the health check is skipped (liquidationLocked=true), the seller ends up with debt but no collateral, violating the invariant that collateral must cover debt after any take, causing scoped impact: unauthorized collateral withdrawal leaving undercollateralized debt? Proof idea: fuzz collateral amount and withdrawal amount; assert isHealthy after all callbacks complete.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_93b0ccf6-ca9b-45dd-a5a0-61b6236247c8?mode=deep",
+    "timestamp": "2026-05-31 19:01:51.776475",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / offer.reduceOnly / sellerDebtIncrease] Can an attacker fill a reduceOnly=true sell offer (where the maker intended only to reduce existing credit, not increase debt) in a state where the seller has zero credit, causing sellerCreditDecrease=0 and sellerDebtIncrease=units>0, which violates the reduceOnly invariant check at line 393 (require(!offer.reduceOnly || sellerDebtIncrease==0)), and confirm this correctly reverts—but then test whether a race condition exists where the seller's credit is reduced to zero between offer signing and take execution, causing the offer to become unfillable and the maker to be stuck, violating the invariant that reduceOnly offers must remain fillable when credit exists, causing scoped impact: fund freeze on maker's position? Proof idea: fuzz credit state at take time; assert reduceOnly offer reverts when credit=0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80333dea-a29f-4f43-900b-ef606bf37ec4?mode=deep",
+    "timestamp": "2026-05-31 19:02:05.079459",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.liquidate / onLiquidate callback / reentrancy] Can an attacker as liquidator set callback to a contract that during onLiquidate() reenters liquidate() for the same borrower (since no liquidation lock is set during liquidate(), unlike take()), seizing additional collateral in the inner call before the outer call's token pull, and if the inner call reduces debt to zero, the outer call's token pull at line 717 still executes for the original repaidUnits, causing the liquidator to pay twice or the accounting to desync, violating the invariant that liquidation must not double-count debt reduction or collateral seizure, causing scoped impact: accounting corruption or unauthorized double collateral seizure? Proof idea: stateful fuzz with reentrant liquidate; assert sum of seized collateral equals expected; assert borrower.debt >= 0 after all calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce2566a5-03f4-4293-bc9a-64a5bc96819f?mode=deep",
+    "timestamp": "2026-05-31 19:02:18.490800",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / IEnterGate.canIncreaseCredit / canIncreaseDebt] Can an attacker create a market with a malicious enterGate that returns true for canIncreaseDebt(attacker) but reverts or returns false for canIncreaseDebt(victim), then fill a sell offer where victim is the seller (maker), causing the take to revert for victim but succeed for attacker, effectively monopolizing borrowing capacity in the market and freezing victim's ability to borrow, violating the invariant that gate checks must be consistent and not selectively applied, causing scoped impact: selective gate-based DoS on victim's borrowing? Proof idea: deploy discriminatory gate; assert victim's sell offers revert; assert attacker's sell offers succeed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4af71d3f-99c2-489b-84c1-05e290827f0e?mode=deep",
+    "timestamp": "2026-05-31 19:02:33.026219",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / isAuthorized / taker authorization line 346] Can an attacker call take() with taker=victim where isAuthorized[victim][attacker]=true, filling a buy offer (offer.buy=true) where victim is the buyer, causing victim's credit to increase and victim to pay buyerAssets tokens (via payer logic), without victim's knowledge or consent for this specific take, violating the invariant that taker authorization must reflect the taker's intent for the specific trade, causing scoped impact: unauthorized credit purchase forcing victim to pay tokens? Proof idea: unit test; authorized attacker fills buy offer on behalf of victim; assert victim's token balance decreases and credit increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de5f768f-eee6-42f8-a204-7baefaf5d2d2?mode=deep",
+    "timestamp": "2026-05-31 19:02:46.525473",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.withdraw / isAuthorized line 482] Can an attacker who is isAuthorized[victim][attacker] call withdraw(market, units, victim, attacker) to withdraw victim's credit to attacker's address as receiver, draining victim's loan token balance without victim's consent, violating the invariant that withdrawals must only occur to addresses authorized by the position owner, causing scoped impact: unauthorized withdrawal of victim's credit to attacker? Proof idea: unit test; authorized attacker calls withdraw with receiver=attacker; assert attacker receives tokens and victim.credit decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28828be5-a4a5-47c2-8f4b-31aaab6040b9?mode=deep",
+    "timestamp": "2026-05-31 19:03:01.300509",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.withdrawCollateral / isAuthorized line 556] Can an attacker who is isAuthorized[victim][attacker] call withdrawCollateral(market, collateralIndex, assets, victim, attacker) to seize victim's collateral to attacker's address, as long as the health check passes (victim has no debt or sufficient remaining collateral), violating the invariant that collateral withdrawal must only be authorized by the position owner, causing scoped impact: unauthorized collateral seizure by authorized operator? Proof idea: unit test; authorized attacker withdraws all collateral from debt-free victim; assert attacker receives collateral tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39767d73-de0c-4234-9033-648dd9cfa0b6?mode=deep",
+    "timestamp": "2026-05-31 19:03:16.010638",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.setIsAuthorized / authorization chain escalation] Can an attacker who is isAuthorized[victim][attacker] call setIsAuthorized(attacker2, true, victim) to grant a second attacker full control over victim's position, and attacker2 then calls setIsAuthorized(attacker3, true, victim) to further delegate, creating an unbounded authorization chain that the victim cannot revoke atomically (since each revocation requires a separate transaction), violating the invariant that authorization delegation must be bounded and revocable, causing scoped impact: permanent position takeover via authorization chain? Proof idea: build authorization chain of depth N; assert victim cannot atomically revoke all; assert each delegate can perform unauthorized withdrawals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0110cb1f-db78-4e16-b233-aa5b8b0b5390?mode=deep",
+    "timestamp": "2026-05-31 19:03:33.158651",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.isRatified / offerTreeTypeHash / proof.length] Can an attacker supply a ratifierData with an extremely large proof array (e.g., length=20, the maximum allowed by offerTreeTypeHash before TreeTooHigh revert) where the proof contains crafted sibling hashes that produce a valid root for a different offer than the one being filled, exploiting any weakness in the Merkle proof verification in HashLib.isLeaf(), violating the invariant that the Merkle proof must uniquely bind the offer hash to the root, causing scoped impact: unauthorized offer fill via Merkle proof forgery? Proof idea: differential test against a reference Merkle implementation; fuzz proof arrays of all valid lengths; assert no false positives.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bde41c9e-7028-4554-aa6a-81a8b25f5868?mode=deep",
+    "timestamp": "2026-05-31 19:03:48.073871",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: EcrecoverRatifier.isRatified / ecrecover / signature malleability] Can an attacker take a valid (v, r, s) signature for a Merkle root and produce a second valid signature (v', r, -s mod n) that ecrecover accepts for the same digest, using ECDSA signature malleability (since EcrecoverRatifier does not enforce s <= secp256k1n/2), to fill the same offer with a different signature bytes, violating the invariant that each signature should correspond to a unique authorization, causing scoped impact: signature malleability enabling unexpected offer fills or bypassing signature-based revocation? Proof idea: compute malleable signature; assert isRatified accepts both; assert no revocation mechanism distinguishes them.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32ff599a-9ba7-4107-9cae-0b25cb5ea094?mode=deep",
+    "timestamp": "2026-05-31 19:04:05.193508",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: Midnight.take / offer.expiry / offer.start timing] Can an attacker front-run a maker's cancelRoot() transaction by submitting a take() in the same block before the cancellation, filling the offer at the last moment before the root is canceled, and if the maker intended the cancellation to prevent any further fills, the front-run fill violates the maker's intent, violating the invariant that offer cancellation must be atomic with respect to fills, causing scoped impact: unauthorized offer fill after maker's cancellation intent? Proof idea: simulate mempool front-run; assert fill succeeds in same block as cancelRoot; assert maker has no atomic cancel-and-prevent mechanism.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0faaf301-d564-46af-a111-b22c6ca9c6e1?mode=deep",
+    "timestamp": "2026-05-31 19:04:20.591343",
+    "report_generated": false
+  }
+]
