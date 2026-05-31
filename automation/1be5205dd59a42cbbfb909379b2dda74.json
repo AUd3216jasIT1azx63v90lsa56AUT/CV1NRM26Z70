@@ -1,0 +1,38 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and a market with an enter gate, call take() in a flashLoan callback where the flashLoan provides the buyer assets, bypassing any off-chain gate check that was performed before the flashLoan, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: gate bypassed via flashLoan-funded take? Proof idea: deploy flashLoan callback that calls take, assert gate check fires within flashLoan callback context.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_409a6e72-7934-452c-a7f5-686a2717bd38?mode=deep",
+    "timestamp": "2026-05-31 22:57:34.871034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a market with an enter gate, exploit the fact that the gate check for canIncreaseCredit is skipped when buyerCreditIncrease == 0, to fill the offer repeatedly with units <= buyerPos.debt (each fill reduces debt without gate check), exhausting the offer's maxAssets capacity without ever triggering the gate, violating the invariant that gate checks must apply to all entry paths that advance consumed, causing scoped impact: offer fully consumed without any gate validation? Proof idea: give buyer large debt, fill offer in many small chunks each <= remaining debt, assert consumed reaches maxAssets without gate ever called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73993590-8db7-4d60-944f-ecabb42db169?mode=deep",
+    "timestamp": "2026-05-31 22:57:47.060035",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a sell offer with offer.maxUnits > 0 and a market with an enter gate, call take() where the seller has credit >= units (sellerDebtIncrease == 0, gate not called), then after the fill the seller's credit is reduced and they have no more credit buffer, call take() again with units > 0 (now sellerDebtIncrease > 0, gate called), demonstrating that the gate is only called for the second fill but not the first, violating the invariant that gate checks must apply to all entry paths that advance consumed, causing scoped impact: first partial fill bypasses gate, second fill triggers gate? Proof idea: give seller credit=50, fill 50 units (no gate), fill 1 more unit (gate fires), assert first fill advanced consumed without gate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a2a8c1f5-e81a-4ee9-804a-d6b711be5d36?mode=deep",
+    "timestamp": "2026-05-31 22:57:59.567891",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a market with an enter gate, exploit the fact that the gate check fires with the buyer's address but the consumed counter is keyed on (maker, group) not (buyer, market), to fill the same offer from multiple markets sharing the same group without the gate being called for each market's fill, violating the invariant that gate checks must apply to all entry paths that advance consumed, causing scoped impact: gate called only once for multi-market group fill? Proof idea: create two markets with same maker and group, fill both, assert gate called for each fill independently.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70218e15-e2ba-4629-8131-46c78bce7b0d?mode=deep",
+    "timestamp": "2026-05-31 22:58:12.486235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxUnits > 0 and a market with an enter gate, call take() where the gate's canIncreaseCredit function reads the market's totalUnits or withdrawable state (which is updated AFTER the gate check at line 416-418), causing the gate to make an access control decision based on pre-fill market state, violating the invariant that gate checks must apply to all entry paths with correct state, causing scoped impact: gate makes incorrect decision based on stale market state? Proof idea: deploy gate that reads totalUnits, call take, assert gate sees pre-fill totalUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1f4459f-b2d3-412a-9140-46dc01570d36?mode=deep",
+    "timestamp": "2026-05-31 22:58:25.839606",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take] Can an unprivileged taker, given a buy offer with offer.maxAssets > 0 and a market with an enter gate, exploit the fact that the gate check is skipped when buyerCreditIncrease == 0 (buyer has debt >= units), to fill the offer and advance consumed in a market where the gate would block the fill if called, then use the credit gained (after debt is fully repaid in a later fill) to withdraw assets, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: credit gained on gated market without gate validation via debt-reduction path? Proof idea: give buyer debt, fill offer without gate check, repay debt, withdraw credit, assert credit withdrawn from gated market without gate ever approving.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_010d74fe-ecfa-45ee-bd6b-84f1cb8646bc?mode=deep",
+    "timestamp": "2026-05-31 22:58:39.037911",
+    "report_generated": false
+  }
+]
