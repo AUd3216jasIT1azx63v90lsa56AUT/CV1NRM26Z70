@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: mulDivDown / updatePositionView (lastAccrual stale)] Can an unprivileged user under the precondition that a lender has credit and lastAccrual < market.maturity trigger take() which calls _updatePosition for the buyer, computing fee = postSlashPendingFee.mulDivDown(accrualEnd - _lastAccrual, market.maturity - _lastAccrual) and setting _position.lastAccrual = uint128(block.timestamp), then during IBuyCallback.onBuy the callback reenters take() which calls _updatePosition again for the same buyer, computing fee with the updated lastAccrual = block.timestamp, so that the outer take's _updatePosition already set lastAccrual and the inner take's _updatePosition computes fee = 0 (since accrualEnd - lastAccrual = 0), violating the invariant that continuous fee accrual must be monotonically increasing and must not be skipped, causing scoped impact: continuous fee is accrued only once for the outer take's period, and the inner take's period is skipped? Proof idea: assert total accrued fee across nested _updatePosition calls equals the correct fee for the full time period.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_024d9ad1-d4b7-4760-9bdd-03628e95b21f?mode=deep",
+    "timestamp": "2026-05-31 22:22:55.109797",
+    "report_generated": false
+  }
+]
