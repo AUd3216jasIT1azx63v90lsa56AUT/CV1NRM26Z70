@@ -1,0 +1,86 @@
+[
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) where the buyer has both credit and debt (a net position), under preconditions where _updatePosition is called for the buyer (hasCredit returns true), reducing credit by slashing, by calling take() so that buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) uses the post-slash debt (unchanged) but the post-slash credit (reduced), violating the invariant that buying units must reduce existing debt before increasing credit, causing scoped impact: if the buyer's debt is reduced by units but their credit was already slashed, the totalUnits update may not correctly reflect the net change? Proof idea: create buyer with both credit and debt, realize bad debt, take buy offer, assert totalUnits == sum of all lenders' post-slash credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_099ba61f-ed94-4e33-8491-ad25e45e7e92?mode=deep",
+    "timestamp": "2026-05-31 20:20:02.222893",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: withdrawCollateral] Can an unprivileged borrower, when withdrawing collateral from a market with multiple collaterals, under preconditions where the borrower has debt and the health check (line 568: isHealthy) iterates over the collateralBitmap AFTER the withdrawal (bitmap already updated at line 565), by calling withdrawCollateral() so that the health check uses the post-withdrawal bitmap (correct behavior), but the oracle for a remaining collateral returns a price that makes maxDebt < debt, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy, causing scoped impact: the revert correctly prevents the withdrawal, but if the oracle is manipulable, an attacker can manipulate the oracle to prevent a legitimate withdrawal? Proof idea: verify isHealthy uses post-withdrawal state, assert UnhealthyBorrower revert when appropriate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b1aac2ee-d0b4-4f1a-bc1b-09a72cc43880?mode=deep",
+    "timestamp": "2026-05-31 20:20:14.138376",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a sell offer (offer.buy == false) with a receiver set (offer.receiverIfMakerIsSeller), under preconditions where receiver != seller (line 423: 'offer.buy ? receiverIfTakerIsSeller : offer.receiverIfMakerIsSeller'), by calling take() so that sellerAssets are transferred to receiver (line 456: safeTransferFrom(loanToken, payer, receiver, sellerAssets)) instead of to the seller, violating the invariant that asset transfers must go to the correct party, causing scoped impact: if receiver is a malicious contract, it can receive assets intended for the seller without the seller's consent? Proof idea: set offer.receiverIfMakerIsSeller to attacker address, call take(), assert attacker receives sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_35a96d3c-cbd3-4461-a916-ea39e589a2ec?mode=deep",
+    "timestamp": "2026-05-31 20:20:26.454524",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) with units == 0, under preconditions where the offer has maxUnits > 0 and consumed[maker][group] < maxUnits, by calling take() with units == 0 so that buyerAssets == 0, sellerAssets == 0, buyerCreditIncrease == 0, sellerCreditDecrease == 0, and consumed += 0 (no change), violating the invariant that no-ops must not corrupt state, causing scoped impact: the callback is still invoked (if set) with zero amounts, potentially allowing a callback to execute arbitrary logic without any accounting change? Proof idea: call take() with units == 0 and a callback, assert callback is invoked, assert all accounting unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6c629bb-d08e-464d-88f5-9e97c6b72364?mode=deep",
+    "timestamp": "2026-05-31 20:20:39.027875",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate] Can an unprivileged liquidator, when liquidating a borrower in normal mode (not postMaturityMode), under preconditions where the borrower has debt > maxDebt (unhealthy), by calling liquidate() with seizedAssets == 0 and repaidUnits == 0 (only bad debt realization), so that _position.debt is reduced by badDebt (line 628) and lossFactor is updated (line 631-633), but the borrower's position is not checked for health after the bad debt realization, violating the invariant that liquidation must not leave accounting desynced, causing scoped impact: after bad debt realization, the borrower's remaining debt may still exceed maxDebt, but the position is not re-checked, allowing the borrower to remain in an unhealthy state? Proof idea: realize bad debt with zero seize/repay, assert borrower is still liquidatable if remaining debt > maxDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_19d18279-9d06-42b8-9e1f-9b3cb5061773?mode=deep",
+    "timestamp": "2026-05-31 20:20:51.921111",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) in a market with an enterGate, under preconditions where the gate's canIncreaseCredit returns false for the buyer, by calling take() with units <= buyerPos.debt (so buyerCreditIncrease == 0), so that the gate check (line 398-401: 'buyerCreditIncrease == 0' short-circuits the gate) is bypassed, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: a gated buyer can reduce their debt via a buy offer without triggering the gate, which is the intended behavior (gate only restricts credit increase), but verify this is not exploitable? Proof idea: create gated market, set gate to reject buyer, call take() with units <= buyerPos.debt, assert success (gate not called).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0f07c93-59c9-4d64-bd86-860a2094baee?mode=deep",
+    "timestamp": "2026-05-31 20:21:05.455733",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a sell offer (offer.buy == false) in a market with an enterGate, under preconditions where the gate's canIncreaseDebt returns false for the seller, by calling take() with units <= sellerPos.credit (so sellerDebtIncrease == 0), so that the gate check (line 402-406: 'sellerDebtIncrease == 0' short-circuits the gate) is bypassed, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: a gated seller can reduce their credit via a sell offer without triggering the gate, which is the intended behavior, but verify this is not exploitable to bypass the gate for debt increase? Proof idea: create gated market, set gate to reject seller, call take() with units <= sellerPos.credit, assert success (gate not called).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8bae301c-7d4b-4b87-87b6-1be5b2830a0c?mode=deep",
+    "timestamp": "2026-05-31 20:21:19.476249",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / liquidate] Can an unprivileged attacker, when combining a take() (as taker/seller) with a liquidate() callback, under preconditions where the attacker is both the seller in a take() and the liquidator in a liquidate() callback, by calling take() so that the sell callback reenters liquidate() for a different borrower (not the seller, since the seller is locked), violating the invariant that callbacks must not corrupt partial state, causing scoped impact: the liquidate() inside the callback modifies totalUnits and lossFactor while the outer take() has already updated position state, leading to accounting desync? Proof idea: implement ISellCallback that calls liquidate() for a different borrower, assert totalUnits and lossFactor are consistent after both calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e230a12f-1a2d-4d7b-acae-b989adb399f4?mode=deep",
+    "timestamp": "2026-05-31 20:21:33.240651",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) where the buyer callback sources funds via a flash loan from the same Midnight contract, under preconditions where the flash loan is taken inside IBuyCallback.onBuy, by calling take() so that the flash loan temporarily reduces the contract's loanToken balance, and the subsequent safeTransferFrom (line 455-456) pulls from the payer (buyerCallback), violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: if the flash loan is not repaid before the transfer, the contract's balance is insufficient, causing a revert; verify no path allows the flash loan to be used to avoid paying for the take? Proof idea: implement IBuyCallback that takes a flash loan and uses it to pay for the take, assert loanToken balance of contract is correct after.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b855e9a-7c0e-478c-8411-4bc9beaeaeed?mode=deep",
+    "timestamp": "2026-05-31 20:21:45.983212",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate] Can an unprivileged liquidator, when liquidating a borrower with a liquidate callback (ILiquidateCallback.onLiquidate), under preconditions where the callback reenters take() for the same market, by calling liquidate() so that the callback executes after collateral is transferred to receiver (line 696) but before the loan token is pulled from payer (line 717), and the reentrant take() modifies the borrower's position, violating the invariant that callbacks must not corrupt partial state, causing scoped impact: the reentrant take() sees the post-seize but pre-repay state of the borrower, potentially allowing incorrect health checks or double-counting? Proof idea: implement ILiquidateCallback that reenters take(), assert borrower position is consistent after both calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0eed3d12-f89c-4445-9bd3-c36889eabd10?mode=deep",
+    "timestamp": "2026-05-31 20:21:59.559923",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) with a non-standard ERC20 token (fee-on-transfer) as the loan token, under preconditions where the token charges a fee on transferFrom, by calling take() so that safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) (line 455) transfers less than buyerAssets - sellerAssets to the contract, violating the invariant that Midnight must send/receive exactly the requested amount on transfers, causing scoped impact: the contract's loanToken balance increases by less than the settlement fee, causing claimableSettlementFee to be overcounted relative to actual balance? Proof idea: deploy fee-on-transfer token, create market, take offer, assert claimableSettlementFee <= actual token balance increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e90a745-6ab1-4d7c-a0ab-0a496215d62c?mode=deep",
+    "timestamp": "2026-05-31 20:22:13.026840",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a sell offer (offer.buy == false) with a non-standard ERC20 token (fee-on-transfer) as the loan token, under preconditions where the token charges a fee on transfer, by calling take() so that safeTransferFrom(loanToken, payer, receiver, sellerAssets) (line 456) transfers less than sellerAssets to the receiver (seller), violating the invariant that the seller must receive exactly sellerAssets, causing scoped impact: seller receives fewer assets than their credit entitles them to, resulting in direct loss of funds for the seller? Proof idea: deploy fee-on-transfer token, take sell offer, assert receiver balance increase < sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc99821b-aaaf-4db0-8868-8872e213ab6c?mode=deep",
+    "timestamp": "2026-05-31 20:22:27.389418",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a buy offer (offer.buy == true) where the buyer has existing credit and the market has had bad-debt realizations, under preconditions where _updatePosition is called for the buyer (line 379: hasCredit returns true), reducing the buyer's credit and pendingFee, by calling take() so that buyerPendingFeeIncrease is added to the post-slash pendingFee (line 409: buyerPos.pendingFee += buyerPendingFeeIncrease), violating the invariant that pendingFee must be proportional to credit, causing scoped impact: after slashing, the buyer's pendingFee/credit ratio may be incorrect, leading to over or under fee accrual in future updatePosition calls? Proof idea: realize bad debt, take buy offer for buyer with credit, assert pendingFee/credit ratio is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7de11a1c-6c81-44f8-b404-9d31b7d9d7d3?mode=deep",
+    "timestamp": "2026-05-31 20:22:41.005421",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take] Can an unprivileged taker, when taking a sell offer (offer.buy == false) where the seller has existing credit and the market has had bad-debt realizations, under preconditions where _updatePosition is called for the seller (line 380: hasCredit returns true), reducing the seller's credit, by calling take() so that sellerCreditDecrease = min(units, sellerPos.credit) uses the post-slash credit (line 383), and sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit) (line 388) uses the post-slash credit as denominator, violating the invariant that pendingFee must decrease proportionally to credit, causing scoped impact: if post-slash credit is very small, the division may round up significantly, reducing pendingFee by more than the proportional share? Proof idea: realize bad debt to near-zero credit, take sell offer, assert pendingFee decrease is proportional.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1df3813d-da08-476b-b07a-e5926414b7e9?mode=deep",
+    "timestamp": "2026-05-31 20:22:55.825977",
+    "report_generated": false
+  }
+]
