@@ -1,0 +1,110 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / lossFactor update with totalUnits == badDebt] Can an unprivileged liquidator, in a market where totalUnits equals exactly the badDebt being realized, cause the lossFactor computation UtilsLib.toUint128(type(uint128).max - (type(uint128).max - _lossFactor).mulDivDown(0, totalUnits)) to set lossFactor to type(uint128).max, triggering MarketLossFactorMaxedOut on all subsequent take() calls, violating the invariant that valid take paths must remain open, causing scoped impact: permanent freeze of all future takes in the market? Proof idea: set totalUnits = badDebt and assert lossFactor after liquidation and whether take() reverts with MarketLossFactorMaxedOut.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be3b3c31-6de1-472a-bdd2-9103ec0bdfa6?mode=deep",
+    "timestamp": "2026-05-31 19:59:26.848937",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / maxRepaid computation] Can an unprivileged liquidator trigger liquidate() to revert with arithmetic overflow in (_position.debt - maxDebt).mulDivUp(WAD * WAD, WAD * WAD - lif * lltv) when WAD * WAD - lif * lltv is very small (near zero for high LLTV and high LIF), causing the division result to overflow uint256, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent freeze of the liquidation path for high-LLTV markets? Proof idea: fuzz lltv near WAD and lif near maxLif and assert mulDivUp does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_95509fea-1b2f-4bce-86ec-6f6c7f73122c?mode=deep",
+    "timestamp": "2026-05-31 19:59:38.657643",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: zeroFloorSub / take buyerCreditIncrease] Can an unprivileged taker, by taking a buy offer where units < buyerPos.debt, cause zeroFloorSub(units, buyerPos.debt) to return 0 (buyerCreditIncrease = 0), and then the subsequent _updatePosition call for the buyer to be skipped (since hasCredit is false and units <= buyerPos.debt), causing the buyer's pendingFee and lossFactor to remain stale, violating the invariant that credit accounting must be up to date before position modification, causing scoped impact: long-term freeze of the buyer's credit redemption due to stale loss factor? Proof idea: take with units < buyerPos.debt and assert buyer's lastLossFactor is updated correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c76783d-d47f-4e58-8bda-80085ec991d7?mode=deep",
+    "timestamp": "2026-05-31 19:59:50.898687",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / postSlashCredit in updatePositionView] Can an unprivileged actor cause updatePositionView() to return a postSlashCredit value that, when cast to uint128 via the return statement uint128(postSlashCredit), silently truncates if postSlashCredit > type(uint128).max, corrupting the lender's credit and causing subsequent withdraw() to revert with underflow when _position.credit -= units underflows, violating the invariant that valid withdraw paths must remain open, causing scoped impact: permanent freeze of the lender's withdraw path? Proof idea: fuzz credit and lossFactor combinations and assert uint128(postSlashCredit) == postSlashCredit always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27645af2-0588-46fd-ab96-124cbdf89797?mode=deep",
+    "timestamp": "2026-05-31 20:00:03.437042",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: toUint128 / _updatePosition lastAccrual] Can an unprivileged actor cause _updatePosition() to set _position.lastAccrual = uint128(block.timestamp) where block.timestamp > type(uint128).max (far future), causing toUint128 to silently truncate (since the cast is direct, not via UtilsLib.toUint128), corrupting lastAccrual and causing updatePositionView() to compute a negative market.maturity - _lastAccrual in subsequent calls, violating the invariant that valid withdraw paths must remain open, causing scoped impact: permanent freeze of the lender's withdraw path? Proof idea: warp block.timestamp to type(uint128).max + 1 and assert _updatePosition does not corrupt lastAccrual.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_88c547d7-ebf1-44d6-9993-db278ade81d9?mode=deep",
+    "timestamp": "2026-05-31 20:00:17.468710",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / continuousFeeCredit slashing in liquidate] Can an unprivileged liquidator, by realizing bad debt in a market where _lossFactor is near type(uint128).max and _marketState.lossFactor is also near type(uint128).max, cause the continuousFeeCredit slashing computation _marketState.continuousFeeCredit.mulDivDown(type(uint128).max - _marketState.lossFactor, type(uint128).max - _lossFactor) to produce a near-zero result, effectively destroying all continuousFeeCredit, and then cause claimContinuousFee() to revert for any nonzero amount, violating the invariant that valid fee claim paths must remain open, causing scoped impact: permanent freeze of the continuous fee claim? Proof idea: fuzz lossFactor near type(uint128).max and assert continuousFeeCredit after liquidation matches expected slashed value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2779d522-8e92-4f51-b5a2-7e160304a9f1?mode=deep",
+    "timestamp": "2026-05-31 20:00:30.935024",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / lif post-maturity ramp] Can an unprivileged liquidator, by calling liquidate() in post-maturity mode at block.timestamp = market.maturity + TIME_TO_MAX_LIF exactly, cause the lif computation WAD + (_maxLif - WAD) * (block.timestamp - market.maturity) / TIME_TO_MAX_LIF to produce lif = _maxLif, and then verify whether the subsequent mulDivDown(seizedAssets, lif, WAD) overflows for seizedAssets near type(uint128).max and _maxLif near maxLif(LLTV_0, LIQUIDATION_CURSOR_HIGH), violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent freeze of the post-maturity liquidation path? Proof idea: fuzz seizedAssets and lif at the ramp boundary and assert no overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3023c616-061d-46eb-a7f0-ab94e152ad1f?mode=deep",
+    "timestamp": "2026-05-31 20:00:44.887024",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: atMostOneNonZero / liquidate] Can an unprivileged liquidator bypass the UtilsLib.atMostOneNonZero(repaidUnits, seizedAssets) check by passing both as zero (which satisfies atMostOneNonZero since both are zero), causing liquidate() to execute the bad debt realization branch without seizing any collateral or repaying any debt, and if badDebt > 0, incorrectly reducing the borrower's debt and updating lossFactor without any token transfer, violating the invariant that bad debt must be realized with correct accounting, causing scoped impact: long-term freeze of lender credit redemption due to incorrect lossFactor? Proof idea: call liquidate() with seizedAssets=0 and repaidUnits=0 on an undercollateralized borrower and assert lossFactor and totalUnits are updated correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ab4dd9b-6420-4e60-aa6c-baf3f540df33?mode=deep",
+    "timestamp": "2026-05-31 20:00:59.390046",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / pendingFee proportional decrease in withdraw] Can an unprivileged lender trigger withdraw() to revert with underflow at _position.pendingFee -= pendingFeeDecrease when mulDivUp(_position.pendingFee, units, _position.credit) rounds up to a value greater than _position.pendingFee (possible when credit is very small and pendingFee is large), violating the invariant that valid withdraw paths must remain open, causing scoped impact: permanent freeze of the lender's withdraw path? Proof idea: fuzz pendingFee and credit near dust values and assert pendingFeeDecrease <= pendingFee always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5527abee-8160-4fce-9cfb-7a213ad94bb0?mode=deep",
+    "timestamp": "2026-05-31 20:01:12.730196",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivUp / sellerPendingFeeDecrease in take] Can an unprivileged taker cause take() to revert with underflow at sellerPos.pendingFee -= sellerPendingFeeDecrease when UtilsLib.toUint128(sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit)) rounds up to a value greater than sellerPos.pendingFee, violating the invariant that valid take paths must remain open, causing scoped impact: permanent freeze of the take path for that seller? Proof idea: fuzz sellerPos.pendingFee, sellerCreditDecrease, and sellerPos.credit near dust values and assert sellerPendingFeeDecrease <= sellerPos.pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c257601-efff-4320-9edb-0bb6fff1f0bc?mode=deep",
+    "timestamp": "2026-05-31 20:01:25.887378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: min / lif capping in liquidate] Can an unprivileged liquidator, by calling liquidate() in post-maturity mode at block.timestamp >> market.maturity + TIME_TO_MAX_LIF, cause the lif computation WAD + (_maxLif - WAD) * (block.timestamp - market.maturity) / TIME_TO_MAX_LIF to overflow uint256 before UtilsLib.min() caps it, causing liquidate() to revert, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent freeze of the post-maturity liquidation path for very old markets? Proof idea: warp block.timestamp to market.maturity + type(uint256).max / (_maxLif - WAD) and assert no overflow before min() is applied.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23bbc0b8-90be-4992-b180-030ca1d87ecd?mode=deep",
+    "timestamp": "2026-05-31 20:01:39.589431",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / maxDebt computation in isHealthy multi-collateral] Can an unprivileged borrower, by activating 16 collaterals each with collateral near type(uint128).max / 16 and oracle prices near ORACLE_PRICE_SCALE, cause the maxDebt accumulation loop in isHealthy() to overflow uint256 at the += step, causing isHealthy() to revert, which in turn causes withdrawCollateral() and take() (when seller has debt) to revert, violating the invariant that valid exit paths must remain open, causing scoped impact: permanent freeze of the borrower's collateral withdrawal? Proof idea: fuzz 16 collateral values and prices near overflow boundary and assert maxDebt accumulation does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0045329-9f34-4810-9b75-1e2440f8be84?mode=deep",
+    "timestamp": "2026-05-31 20:01:54.205784",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: toUint128 / take pendingFee overflow] Can an unprivileged taker, by taking a buy offer with a very large buyerCreditIncrease in a market with maximum continuousFee and maximum timeToMaturity (100 years), cause UtilsLib.toUint128(buyerCreditIncrease.mulDivDown(_marketState.continuousFee * timeToMaturity, WAD)) to revert with CastOverflow when the result exceeds type(uint128).max, violating the invariant that valid take paths must remain open, causing scoped impact: permanent freeze of the take path for large credit increases in long-maturity markets? Proof idea: fuzz buyerCreditIncrease near type(uint128).max with continuousFee = MAX_CONTINUOUS_FEE and timeToMaturity = 100 years and assert no CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6e31fbe-345f-4087-8aa0-580a50fe7be5?mode=deep",
+    "timestamp": "2026-05-31 20:02:09.115769",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / lossFactor update underflow] Can an unprivileged liquidator trigger liquidate() to revert with arithmetic underflow at _marketState.totalUnits -= UtilsLib.toUint128(badDebt) when badDebt > totalUnits (possible if totalUnits was reduced by prior withdrawals below the outstanding debt), violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent freeze of the liquidation path? Proof idea: fuzz totalUnits in [0, badDebt - 1] and assert liquidate() does not revert with underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7ba0fd5-a51c-438f-801d-ddb4c5a70a11?mode=deep",
+    "timestamp": "2026-05-31 20:02:21.869657",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / fee accrual with maturity == lastAccrual] Can an unprivileged actor cause updatePositionView() to enter the fee computation branch (_lastAccrual < market.maturity) with market.maturity - _lastAccrual = 1 (minimum), causing mulDivDown(postSlashPendingFee, accrualEnd - _lastAccrual, market.maturity - _lastAccrual) to return postSlashPendingFee * (accrualEnd - _lastAccrual) / 1, and if accrualEnd - _lastAccrual > 1, the fee exceeds postSlashPendingFee, causing uint128(postSlashPendingFee) - fee to underflow, violating the invariant that valid withdraw paths must remain open, causing scoped impact: permanent freeze of the lender's withdraw path? Proof idea: fuzz lastAccrual = maturity - 1 and accrualEnd > lastAccrual and assert fee <= postSlashPendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66c6f38b-79a7-4cf6-acb2-69ae70c107fd?mode=deep",
+    "timestamp": "2026-05-31 20:02:35.962762",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / postSlashPendingFee computation] Can an unprivileged actor cause updatePositionView() to compute postSlashPendingFee = _pendingFee - _pendingFee.mulDivUp(credit - postSlashCredit, credit) where mulDivUp rounds up to a value greater than _pendingFee (when credit - postSlashCredit > credit, which is impossible since postSlashCredit >= 0), or where the subtraction underflows due to rounding, causing updatePositionView() to revert, violating the invariant that valid withdraw paths must remain open, causing scoped impact: permanent freeze of the lender's withdraw path? Proof idea: fuzz credit, postSlashCredit, and pendingFee and assert postSlashPendingFee <= pendingFee always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5e80fe40-417d-454a-99fa-e222e45bbd31?mode=deep",
+    "timestamp": "2026-05-31 20:02:50.216130",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: mulDivDown / buyerPendingFeeIncrease with zero timeToMaturity] Can an unprivileged taker, by taking a buy offer at exactly block.timestamp == market.maturity (timeToMaturity = 0), cause buyerPendingFeeIncrease = UtilsLib.toUint128(buyerCreditIncrease.mulDivDown(_marketState.continuousFee * 0, WAD)) = 0, and then verify whether the subsequent _updatePosition for the buyer correctly handles zero pendingFee increase, or whether a stale pendingFee causes withdraw() to revert with underflow, violating the invariant that valid withdraw paths must remain open, causing scoped impact: long-term freeze of the buyer's withdraw path? Proof idea: take at maturity boundary and assert pendingFee accounting is correct for zero timeToMaturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_db511908-ab13-4ff8-8560-75fbd45ed72e?mode=deep",
+    "timestamp": "2026-05-31 20:03:05.133479",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: toUint128 / take totalUnits underflow] Can an unprivileged taker, by taking a sell offer where sellerCreditDecrease > totalUnits (possible if totalUnits was reduced by concurrent withdrawals), cause _marketState.totalUnits + buyerCreditIncrease - sellerCreditDecrease to underflow uint256 before the toUint128 cast, causing take() to revert, violating the invariant that valid take paths must remain open, causing scoped impact: permanent freeze of the take path? Proof idea: fuzz totalUnits and sellerCreditDecrease near the underflow boundary and assert take() does not revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bde61d0f-fcfc-480d-a111-d41f6740859e?mode=deep",
+    "timestamp": "2026-05-31 20:03:19.616725",
+    "report_generated": false
+  }
+]
