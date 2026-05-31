@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can a user call setIsAuthorized(user, true, user) to authorize themselves (self-authorization), and does this create any unexpected behavior since isAuthorized[user][user] would be true, potentially affecting the authorization check in setIsAuthorized, setConsumed, withdraw, repay, withdrawCollateral, and supplyCollateral? Proof idea: unit test where user self-authorizes and assert all authorization-gated functions behave identically to when user calls them directly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b560400f-9633-434c-b375-5142cf87a339?mode=deep",
+    "timestamp": "2026-05-31 22:31:49.513675",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization with deadline == block.timestamp and observe that the check block.timestamp <= authorization.deadline passes (non-strict), allowing a signature that was intended to expire at the current block to still be used, and does this create a one-block replay window? Proof idea: unit test where deadline == block.timestamp and assert the call succeeds, then assert it fails at block.timestamp + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4048cc05-9d18-4769-a06a-8c839eb74caa?mode=deep",
+    "timestamp": "2026-05-31 22:32:01.423606",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization with nonce == type(uint256).max, causing nonce[authorization.authorizer]++ to overflow to 0 in unchecked arithmetic (Solidity 0.8.34 uses checked arithmetic by default), and does this revert with arithmetic overflow, or does the nonce increment succeed and wrap around, allowing nonce reuse? Proof idea: unit test where nonce is set to type(uint256).max and assert the increment either reverts or wraps correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_728e9809-064f-4e47-b528-03304a4c9f0d?mode=deep",
+    "timestamp": "2026-05-31 22:32:13.790306",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverAuthorizer.setIsAuthorized] The EcrecoverAuthorizer domain separator uses block.chainid (not INITIAL_CHAIN_ID). Can an attacker replay a valid authorization signature on a forked chain where block.chainid differs from the original chain, and does the domain separator change prevent replay, or is there a window where the same chainid exists on both chains? Proof idea: unit test simulating a chain fork by changing block.chainid and assert the signature is rejected on the forked chain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d312450-32ac-42a5-88e8-0e475974d92d?mode=deep",
+    "timestamp": "2026-05-31 22:32:26.399533",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can the feeSetter set settlementFeeCbp0 (index=0, TTM=0d) to its maximum value (0.14 bps = 1400 cbp), and does this affect post-maturity takes where timeToMaturity=0 and the settlement fee is the index-0 value, potentially making all post-maturity buy offers with offerPrice < settlementFee revert, freezing post-maturity unwinding? Proof idea: unit test where feeSetter sets index-0 fee to max, warp past maturity, and assert take reverts for low-price buy offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6de56bb-7d5e-4bf3-9614-4be2f5176686?mode=deep",
+    "timestamp": "2026-05-31 22:32:39.705995",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can the feeSetter set a per-market settlement fee to a value that is not a multiple of CBP (1e12), and does the require(newSettlementFee % CBP == 0, FeeNotMultipleOfFeeCbp()) check correctly reject this, or is there an edge case with newSettlementFee=0 where 0 % CBP == 0 passes and sets the fee to zero? Proof idea: fuzz test with all newSettlementFee values and assert FeeNotMultipleOfFeeCbp is thrown iff newSettlementFee % CBP != 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d8dcc86f-cdc8-4220-b947-ca44f64887d4?mode=deep",
+    "timestamp": "2026-05-31 22:32:52.809492",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can the feeSetter set continuousFee to 0 on a market with existing lenders who have non-zero pendingFee, and does this cause their pendingFee to stop accruing but not be retroactively zeroed, leaving them with a pending fee obligation that will never be crystallized into continuousFeeCredit? Proof idea: unit test where feeSetter sets continuousFee to 0 after lenders have accrued pendingFee and assert continuousFeeCredit does not increase further.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dbb01201-72ab-4a8f-a5e3-7a0e6b43852d?mode=deep",
+    "timestamp": "2026-05-31 22:33:05.417243",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultContinuousFee / touchMarket] Can the feeSetter call setDefaultContinuousFee(loanToken, MAX_CONTINUOUS_FEE) before a market is created, causing all new markets for that loan token to inherit the maximum continuous fee, and does this affect ConsumableUnitsLib.consumableUnits() for buy offers in those markets by increasing buyerPendingFeeIncrease in take? Proof idea: invariant test asserting that after market creation with max continuous fee, the pendingFee charged per unit of credit equals MAX_CONTINUOUS_FEE * timeToMaturity / WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e1f1ca8-f944-4ce2-ab87-ce22250127d3?mode=deep",
+    "timestamp": "2026-05-31 22:33:18.965365",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can the feeClaimer call claimContinuousFee(market, amount, receiver) where amount > withdrawable, causing _marketState.withdrawable -= toUint128(amount) to underflow and revert, or does the Solidity 0.8 checked arithmetic correctly protect against this, and is there a scenario where continuousFeeCredit > withdrawable making the claim impossible? Proof idea: unit test where continuousFeeCredit > withdrawable and feeClaimer tries to claim continuousFeeCredit and assert it reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2291516d-5a98-427a-8173-16529f84b252?mode=deep",
+    "timestamp": "2026-05-31 22:33:32.349571",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can the feeClaimer call claimSettlementFee(token, amount, receiver) where token is a fee-on-transfer ERC20, causing the actual amount received by receiver to be less than amount while claimableSettlementFee[token] is decremented by the full amount, creating an accounting discrepancy where the protocol believes it has paid out more than it actually has? Proof idea: unit test with a fee-on-transfer token and assert claimableSettlementFee decreases by amount but receiver receives amount - fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b15f322b-35fa-47c2-8fa8-7c1e40a1274c?mode=deep",
+    "timestamp": "2026-05-31 22:33:46.160066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can the current roleSetter call setRoleSetter(address(0)) to permanently renounce the role, and does this create a state where feeSetter, feeClaimer, and tickSpacingSetter can never be changed again, freezing fee governance and potentially locking accumulated fees if feeClaimer is also address(0)? Proof idea: unit test where roleSetter calls setRoleSetter(address(0)) and assert all subsequent setFeeSetter, setFeeClaimer, setTickSpacingSetter calls revert with OnlyRoleSetter.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2929d09c-2b79-4c14-a218-0b9d81da5ea1?mode=deep",
+    "timestamp": "2026-05-31 22:33:59.736494",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter / setMarketSettlementFee] Can the roleSetter change feeSetter to a new address mid-market-lifecycle, and does the new feeSetter immediately gain the ability to set settlement fees for all existing markets, potentially retroactively affecting the effective price of all pending offers (since settlement fee is applied at take time, not offer creation time)? Proof idea: state-transition test where feeSetter is changed and new feeSetter sets fees to max, then assert existing offers are effectively cancelled due to buyerPrice > WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5a6054f-9e18-4f51-8665-a27bdd62d793?mode=deep",
+    "timestamp": "2026-05-31 22:34:13.396721",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: consumableUnits / setMarketTickSpacing] When tickSpacingSetter refines tick spacing from 4 to 2, ConsumableUnitsLib.consumableUnits() is called for an offer at tick 2922 (divisible by 2 but not 4). Does consumableUnits correctly return the remaining capacity, and does the subsequent take succeed, or does the stale tickSpacing cached in the offer struct cause a TickNotAccessible revert? Proof idea: unit test where tick spacing is refined and consumableUnits is called for a newly accessible tick offer and assert take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82ccbd20-3eb6-412b-add7-8fef2255640d?mode=deep",
+    "timestamp": "2026-05-31 22:34:26.981639",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / repay] Can an authorized operator call repay(market, units, borrower, callback, data) on behalf of a borrower, where the callback is a malicious contract that reenters setIsAuthorized to revoke the operator's authorization mid-repay, and does this cause any state inconsistency since repay updates debt before the callback? Proof idea: unit test with a reentrant callback that calls setIsAuthorized(operator, false, borrower) during onRepay and assert debt is correctly updated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e5789ab-8b71-49d7-aa6e-7db83f38a1d4?mode=deep",
+    "timestamp": "2026-05-31 22:34:41.700176",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / withdraw] Can an authorized operator call withdraw(market, units, victim, attacker) to redirect victim's credit withdrawal to the attacker's address, since the receiver parameter is not restricted to onBehalf or msg.sender, violating the invariant that user funds must not be stolen? Proof idea: unit test where operator calls withdraw(market, units, victim, attacker) and assert attacker receives the loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f30821a7-c7e3-49f0-bf7d-3d91b1b7e867?mode=deep",
+    "timestamp": "2026-05-31 22:34:54.947740",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / withdrawCollateral] Can an authorized operator call withdrawCollateral(market, collateralIndex, assets, victim, attacker) to redirect victim's collateral to the attacker's address, since the receiver parameter is not restricted, violating the invariant that user funds must not be stolen or seized outside valid protocol rules? Proof idea: unit test where operator calls withdrawCollateral with receiver=attacker and assert attacker receives the collateral tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c9be5b30-acfc-49af-8cad-9c932946eca6?mode=deep",
+    "timestamp": "2026-05-31 22:35:08.308900",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / setConsumed] Can an authorized operator call setConsumed(group, offer.maxUnits, maker) to exhaust a maker's offer before it is filled, effectively front-running and cancelling the offer, and does ConsumableUnitsLib.consumableUnits() correctly return 0 after this, preventing any further fills? Proof idea: unit test where operator exhausts offer via setConsumed and assert consumableUnits returns 0 and take with units>0 reverts with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_13bdd570-1880-4ece-a635-73866a7f4695?mode=deep",
+    "timestamp": "2026-05-31 22:35:21.575495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: consumableUnits] When offer.maxUnits == 0 and offer.maxAssets == 0, ConsumableUnitsLib.consumableUnits() returns TakeAmountsLib.sellerAssetsToUnits(midnight, id, offer, 0.zeroFloorSub(consumed)) = sellerAssetsToUnits(midnight, id, offer, 0) = 0. Does this correctly signal that the offer has no capacity, and does take with units=0 succeed as a no-op (per the comment that no-ops are allowed), potentially allowing a callback to be triggered on a zero-capacity offer? Proof idea: unit test with maxUnits=0 and maxAssets=0 and assert consumableUnits returns 0 and take(units=0) succeeds as no-op.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2faddeee-3116-4471-88d6-9a152d56e3c4?mode=deep",
+    "timestamp": "2026-05-31 22:35:37.928850",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee / consumableUnits] Can the feeSetter set settlementFeeCbp for index 6 (360d breakpoint) to maxSettlementFee(6) = 50 bps, and does ConsumableUnitsLib.buyerAssetsToUnits correctly compute units for a buy offer with TTM > 360 days (where the fee is capped at the 360d breakpoint value), or does the piecewise linear interpolation in settlementFee() return an incorrect value? Proof idea: fuzz test with TTM > 360 days and assert settlementFee(id, TTM) == settlementFee(id, 360 days).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f36afa25-b861-4756-a0ad-8382d864e11d?mode=deep",
+    "timestamp": "2026-05-31 22:35:50.746701",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / take] Can an authorized operator call take(offer, ratifierData, units, taker=victim, receiverIfTakerIsSeller=attacker, takerCallback, takerCallbackData) where taker=victim is the seller, causing the seller's loan assets to be sent to attacker's address via receiverIfTakerIsSeller, violating the invariant that user funds must not be stolen? Proof idea: unit test where operator takes a sell offer on behalf of victim with receiver=attacker and assert attacker receives sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8456a926-759f-40d7-95b6-223f1f829c6a?mode=deep",
+    "timestamp": "2026-05-31 22:36:04.007613",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / supplyCollateral] Can an authorized operator call supplyCollateral(market, collateralIndex, assets, victim) to supply collateral on behalf of victim, activating a collateral index in victim's bitmap, and if the oracle for that collateral later reverts, does this cause victim's liquidate, isHealthy, withdrawCollateral, and take calls to revert, effectively freezing victim's position? Proof idea: unit test where operator supplies collateral with a reverting oracle and assert victim's subsequent operations revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73e774d0-6b6b-4271-95bd-30813f45c034?mode=deep",
+    "timestamp": "2026-05-31 22:36:17.492825",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized / setIsAuthorized recursion] Can an authorized operator A call setIsAuthorized(B, true, victim) to authorize B, then B calls setIsAuthorized(C, true, victim) to authorize C, creating an unbounded authorization chain, and does each link in the chain have full control over victim's Midnight state including the ability to add more authorizations? Proof idea: unit test with 3-level authorization chain and assert C can call withdraw(market, units, victim, C) and receive victim's funds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84dd5c6d-63d7-48a9-9c80-b075093d8034?mode=deep",
+    "timestamp": "2026-05-31 22:36:31.661335",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee / solvency] Can the feeClaimer call claimContinuousFee(market, amount, receiver) where amount equals the full continuousFeeCredit, and does this correctly decrement totalUnits and withdrawable by the same amount, maintaining the solvency invariant that contract token balance >= withdrawable + sum(collateral) + claimableSettlementFee? Proof idea: invariant test asserting solvency holds after claimContinuousFee drains all continuousFeeCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e0458f0-a13b-479c-bea6-a967e45d3212?mode=deep",
+    "timestamp": "2026-05-31 22:36:46.925700",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee / setMarketContinuousFee] Can the feeSetter atomically call multicall([setMarketSettlementFee(id, 0, maxFee), setMarketContinuousFee(id, MAX_CONTINUOUS_FEE)]) to simultaneously maximize both fee types, and does this cause ConsumableUnitsLib.consumableUnits() to return incorrect values for offers that were computed under the old fee regime? Proof idea: state-transition test where both fees are maximized atomically and assert consumableUnits output changes correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cdb6c84b-0a8e-4283-b6d6-e591dec5bb4d?mode=deep",
+    "timestamp": "2026-05-31 22:37:01.242127",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setConsumed / consumableUnits] When offer.maxAssets > 0 and consumed[maker][group] > offer.maxAssets, ConsumableUnitsLib.consumableUnits() calls zeroFloorSub(offer.maxAssets, consumed) which returns 0, then passes 0 to buyerAssetsToUnits or sellerAssetsToUnits. Does buyerAssetsToUnits(midnight, id, offer, 0) correctly return 0 units (since 0.mulDivUp(WAD, buyerPrice) = 0), and does this prevent any further fills? Proof idea: unit test where consumed > maxAssets and assert consumableUnits returns 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7709377-4f05-4641-bed1-2c542b84d288?mode=deep",
+    "timestamp": "2026-05-31 22:37:16.687650",
+    "report_generated": false
+  }
+]
