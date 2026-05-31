@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: take / IEnterGate.canIncreaseCredit + isHealthy while-loop] Can an unprivileged attacker under the precondition that they are a taker on a buy offer and the seller has 16 activated collaterals with expensive oracles trigger the call sequence attacker calls take() -> position updates complete -> isHealthy(market, id, seller) is called at Midnight.sol:476 iterating 16 oracles, violating the invariant that the taker must not bear the gas cost of the seller's collateral configuration, causing scoped impact: gas griefing where a seller with 16 expensive-oracle collaterals makes every take against their offers prohibitively expensive for takers? Proof idea: fuzz oracle gas cost and collateral count; assert that the taker's gas cost for take() is bounded regardless of the seller's collateral configuration.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be55495b-5af4-4b42-b898-8c5484293773?mode=deep",
+    "timestamp": "2026-05-31 20:21:00.526890",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / collateralBitmap while-loop] Can an unprivileged borrower under the precondition that they activate 16 collaterals and then withdraw all but one trigger the call sequence borrower activates 16 collaterals -> borrower withdraws 15 collaterals to zero -> collateralBitmap has 15 bits cleared -> borrower becomes unhealthy -> liquidator calls liquidate(), violating the invariant that the bitmap loop must only iterate over actually-activated collaterals, causing scoped impact: gas griefing where the bitmap loop iterates over cleared bits if clearBit is not correctly applied? Proof idea: assert that after withdrawCollateral reduces collateral[i] to zero, collateralBitmap.clearBit(i) is called at Midnight.sol:565 and the subsequent liquidate() bitmap loop iterates only 1 time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b619a195-e50e-4b42-902a-e21593c27024?mode=deep",
+    "timestamp": "2026-05-31 20:21:13.030035",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / unbounded calls loop + supplyCollateral] Can an unprivileged attacker under the precondition that they are an authorized operator of a victim trigger the call sequence attacker calls multicall([supplyCollateral(market, 0, 1, victim), supplyCollateral(market, 1, 1, victim), ..., supplyCollateral(market, 15, 1, victim)]) to activate 16 collaterals for the victim in a single transaction, violating the invariant that multicall must not enable bulk collateral activation that bypasses per-call gas limits, causing scoped impact: gas griefing where the victim's subsequent isHealthy and liquidate calls become expensive due to 16 activated collaterals? Proof idea: assert that multicall with 16 supplyCollateral calls correctly sets collateralBitmap and that the TooManyActivatedCollaterals check at Midnight.sol:538-540 is enforced per call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_17ba0f01-f440-420d-94af-17f7da60ba8f?mode=deep",
+    "timestamp": "2026-05-31 20:21:25.503608",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: take / IEnterGate.canIncreaseCredit + canIncreaseDebt] Can an unprivileged attacker under the precondition that they are a taker and the market has an IEnterGate that checks a time-based condition trigger the call sequence attacker calls take() at a specific timestamp where canIncreaseCredit returns true -> attacker calls take() again at a different timestamp where canIncreaseCredit returns false, violating the invariant that gate state changes between calls must not create inconsistent position states, causing scoped impact: accounting corruption where a position is partially updated across two takes with different gate states? Proof idea: deploy a TimedGate; fuzz timestamps; assert that each take() is atomic and gate state at call time is the only relevant state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63435bd8-86ab-4b5e-9a30-b03a3ae83db5?mode=deep",
+    "timestamp": "2026-05-31 20:21:38.571729",
+    "report_generated": false
+  }
+]
