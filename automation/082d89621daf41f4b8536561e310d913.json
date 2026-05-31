@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: consumableUnits / MidnightBundles.supplyCollateralAndSellWithUnitsTarget SellerIsLiquidatable check] Can an unprivileged taker under the precondition that the taker (seller) is unhealthy after the take trigger the sequence: (1) consumableUnits returns nonzero units, (2) bundle calls take with taker as seller, (3) take increases taker's debt, (4) isHealthy check at end of take fails, (5) take reverts with SellerIsLiquidatable, (6) try/catch swallows, (7) filledUnits not incremented, (8) OutOfOffers revert, violating the invariant that the bundle must not attempt takes that make the seller unhealthy, causing scoped impact: bundle DoS when taker is near health threshold and take pushes them over? Proof idea: fuzz taker's collateral and debt near health threshold and assert bundle handles SellerIsLiquidatable gracefully.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d4dca76-1b4c-4bc5-aa49-f9410b18f03d?mode=deep",
+    "timestamp": "2026-05-31 23:49:31.975200",
+    "report_generated": false
+  }
+]
