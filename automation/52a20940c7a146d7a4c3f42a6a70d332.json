@@ -1,0 +1,128 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: SafeTransferLib.safeTransfer] Can an unprivileged taker using a token whose transfer() returns false (non-reverting failure) under the precondition that bundler calls safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets) trigger transfer() returning false → TransferReturnedFalse() revert, violating the invariant that a successful token transfer must complete the bundle, causing scoped impact: fund freeze (referral fee transfer fails, entire bundle reverts, user cannot complete the operation even though they have sufficient balance)? Proof idea: deploy token whose transfer() returns false; call any bundler function with referralFeePct > 0; assert TransferReturnedFalse().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a3bc34d-ce21-4ce4-92aa-5c88d7ee299f?mode=deep",
+    "timestamp": "2026-05-31 20:12:52.742200",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: SafeTransferLib.safeTransferFrom] Can an unprivileged taker using a token whose transferFrom() returns false (non-reverting failure) under the precondition that bundler calls pullToken(token, from, amount, permit) trigger safeTransferFrom() returning false → TransferFromReturnedFalse() revert, violating the invariant that pullToken must succeed when from has sufficient balance and allowance, causing scoped impact: fund freeze (bundle always reverts for this token even with valid approvals)? Proof idea: deploy token whose transferFrom() returns false; call any bundler function; assert TransferFromReturnedFalse().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c1dcf363-5616-4a19-b2d7-6ae0042eb76b?mode=deep",
+    "timestamp": "2026-05-31 20:13:04.725998",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker using a rebasing loanToken that increases balances under the precondition that the token rebases upward between pullToken and the final safeTransfer trigger pullToken(maxBuyerAssets) → rebase increases bundler balance → safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets), violating the invariant that the refund must equal exactly maxBuyerAssets - filledBuyerAssets - referralFeeAssets (not more), causing scoped impact: accounting corruption (excess rebase gains are locked in bundler permanently, not returned to msg.sender)? Proof idea: deploy rebasing token; trigger rebase mid-call; assert bundler retains excess balance after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0582c45-df97-4c15-8ccf-e1aa1aaa4caa?mode=deep",
+    "timestamp": "2026-05-31 20:13:17.254306",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker using a rebasing loanToken that decreases balances (negative rebase) under the precondition that the token rebases downward between pullToken and MIDNIGHT.take() trigger pullToken(maxBuyerAssets) → negative rebase reduces bundler balance → MIDNIGHT.take() pulls filledBuyerAssets from bundler but bundler has less than filledBuyerAssets, violating the invariant that bundler must hold sufficient tokens for MIDNIGHT to pull, causing scoped impact: fund freeze (MIDNIGHT's safeTransferFrom reverts mid-take, entire bundle reverts)? Proof idea: deploy negative-rebasing token; trigger rebase between pullToken and take; assert MIDNIGHT.take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_22bcb25b-5fb5-4538-8d18-f3eab129c082?mode=deep",
+    "timestamp": "2026-05-31 20:13:30.441979",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithUnitsTarget / supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker using a rebasing collateral token that decreases balances under the precondition that the token rebases downward between pullToken and MIDNIGHT.supplyCollateral() trigger pullToken(collateralToken, msg.sender, assets) → negative rebase → MIDNIGHT.supplyCollateral(market, index, assets, taker) pulls assets from bundler but bundler holds less, violating the invariant that bundler collateral balance >= assets when MIDNIGHT pulls, causing scoped impact: fund freeze (MIDNIGHT's safeTransferFrom reverts, entire bundle reverts)? Proof idea: deploy negative-rebasing collateral token; trigger rebase between pullToken and supplyCollateral; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd23d3a6-c885-4263-a31c-8054b5ae8f3f?mode=deep",
+    "timestamp": "2026-05-31 20:13:43.604088",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: repayAndWithdrawCollateral] Can an unprivileged repayer using a fee-on-transfer loanToken under the precondition that referralFeePct == 0 (units = assets) trigger pullToken(loanToken, msg.sender, assets) → bundler receives assets - fee → MIDNIGHT.repay(market, units=assets, ...) pulls assets from bundler, violating the invariant that bundler must hold at least units = assets when MIDNIGHT pulls, causing scoped impact: fund freeze (bundler only holds assets - fee < assets, so MIDNIGHT's safeTransferFrom reverts, making repayAndWithdrawCollateral permanently unusable with fee-on-transfer loanToken)? Proof idea: deploy fee-on-transfer loanToken; call repayAndWithdrawCollateral with referralFeePct=0; assert MIDNIGHT.repay reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ef89c3c5-ade6-49e0-8a97-8579e12ba7e0?mode=deep",
+    "timestamp": "2026-05-31 20:13:56.859187",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: pullToken (ERC2612 path)] Can an unprivileged taker using a fee-on-transfer token with ERC2612 permit under the precondition that permit.kind == ERC2612 and token charges fee on transferFrom trigger IERC20Permit.permit() → SafeTransferLib.safeTransferFrom(token, from, address(this), amount) → bundler receives amount - fee → subsequent MIDNIGHT call uses amount in accounting, violating the invariant that pullToken amount must equal bundler balance increase, causing scoped impact: fund freeze (MIDNIGHT pulls amount but bundler only has amount - fee, causing revert)? Proof idea: deploy fee-on-transfer ERC2612 token; use ERC2612 permit path; assert MIDNIGHT call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4afdaeb2-dae7-4fdc-90aa-428067a0d605?mode=deep",
+    "timestamp": "2026-05-31 20:14:10.686859",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker where a single take() call reverts mid-loop (e.g., maker callback reverts) under the precondition that some takes succeed and some revert trigger partial filledUnits < targetUnits → revert OutOfOffers(), violating the invariant that a partial fill followed by revert must not leave any tokens stranded in the bundler, causing scoped impact: fund freeze (verify that the outer revert correctly undoes all successful take() state changes and returns all tokens to msg.sender)? Proof idea: make first take succeed, second take revert; assert OutOfOffers() revert and msg.sender balance is fully restored.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_94b15937-5c78-4aec-b124-1dca6bc00e41?mode=deep",
+    "timestamp": "2026-05-31 20:14:24.113950",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker where take() calls revert after collateral has been supplied under the precondition that MIDNIGHT.supplyCollateral() succeeds but all MIDNIGHT.take() calls revert trigger collateral supply → take loop all-revert → filledUnits == 0 → revert OutOfOffers(), violating the invariant that the outer revert must undo MIDNIGHT.supplyCollateral() state changes, causing scoped impact: fund freeze (if MIDNIGHT.supplyCollateral is not reverted, taker's collateral is deposited but no debt is created, and collateral cannot be withdrawn without a separate call)? Proof idea: verify MIDNIGHT.supplyCollateral is reverted by outer revert; assert taker collateral balance in MIDNIGHT is 0 after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_96bdcdca-5516-49e9-9ab3-5150d9637df5?mode=deep",
+    "timestamp": "2026-05-31 20:14:38.681060",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker using a token with transfer restrictions (e.g., blacklist) where referralFeeRecipient is blacklisted under the precondition that loanToken.transfer(referralFeeRecipient, referralFeeAssets) reverts trigger safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets) → revert, violating the invariant that a valid bundle must not be blocked by the referral recipient's token status, causing scoped impact: fund freeze (entire bundle reverts because referral fee cannot be sent, even though the taker's operation is valid)? Proof idea: deploy token with blacklist; blacklist referralFeeRecipient; call bundle with referralFeePct > 0; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d1ee2b9-8ebe-4452-9443-bfe6bd860bfe?mode=deep",
+    "timestamp": "2026-05-31 20:14:53.684373",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker using a token with transfer restrictions where receiver is restricted under the precondition that loanToken.transfer(receiver, filledSellerAssets - referralFeeAssets) reverts trigger safeTransfer(loanToken, receiver, ...) → revert, violating the invariant that a valid sell bundle must not be blocked by the receiver's token status, causing scoped impact: fund freeze (entire bundle reverts, collateral supply and takes are undone, but user cannot complete the operation)? Proof idea: deploy token with transfer restrictions; restrict receiver; call supplyCollateralAndSellWithUnitsTarget; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a4f13022-dac8-44cf-9b10-12dcd1aee9ed?mode=deep",
+    "timestamp": "2026-05-31 20:15:06.931370",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: forceApproveMax] Can an unprivileged taker using a token that has a maximum allowance cap lower than type(uint256).max (e.g., max allowance = type(uint128).max) under the precondition that safeApprove(token, MIDNIGHT, type(uint256).max) reverts because type(uint256).max exceeds the token's max allowance trigger forceApproveMax(token, MIDNIGHT) → safeApprove(token, MIDNIGHT, 0) succeeds → safeApprove(token, MIDNIGHT, type(uint256).max) reverts, violating the invariant that forceApproveMax must succeed for tokens with capped allowances, causing scoped impact: fund freeze (all bundler operations revert for this token)? Proof idea: deploy token with max allowance = type(uint128).max; call any bundler function; assert revert in safeApprove.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_facf4cc7-c528-4f88-b57e-7fc94022adc5?mode=deep",
+    "timestamp": "2026-05-31 20:15:20.352903",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker using a fee-on-transfer loanToken under the precondition that referralFeePct > 0 and referralFeeAssets = filledBuyerAssets * referralFeePct / (WAD - referralFeePct) trigger the refund safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets) to succeed but send more tokens than bundler actually holds (if token charges fee on the referral transfer), violating the invariant that bundler token balance must be non-negative after all transfers, causing scoped impact: accounting corruption (bundler sends tokens it does not have, draining residual balance from other users' concurrent calls)? Proof idea: deploy fee-on-transfer token; run concurrent calls; assert bundler balance never goes negative.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d58997f-f5f1-4b12-91ce-c23c6ea4312d?mode=deep",
+    "timestamp": "2026-05-31 20:15:34.332957",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under the precondition that referralFeePct is set such that referralFeeAssets = targetSellerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) overflows uint256 trigger the overflow in referralFeeAssets computation, violating the invariant that referral fee computation must not overflow, causing scoped impact: accounting corruption (overflow wraps referralFeeAssets to a small value, making targetFilledSellerAssets = targetSellerAssets + small_value, so the loop fills far fewer units than expected)? Proof idea: fuzz targetSellerAssets near type(uint256).max and referralFeePct near WAD-1; assert overflow revert in Solidity 0.8.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aad4fcd8-eeb5-471a-9628-fc4be2a83bfb?mode=deep",
+    "timestamp": "2026-05-31 20:15:48.706411",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: pullToken] Can an unprivileged taker using a token with a pausable transferFrom under the precondition that the token is paused after permit() but before safeTransferFrom() trigger IERC20Permit.permit() succeeds → token paused → safeTransferFrom reverts, violating the invariant that a successful permit must enable the subsequent transfer, causing scoped impact: fund freeze (bundle reverts, user cannot complete operation while token is paused)? Proof idea: deploy pausable ERC2612 token; pause between permit and transferFrom; assert safeTransferFrom reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6003dc74-bed6-4879-a550-8b77bc77c001?mode=deep",
+    "timestamp": "2026-05-31 20:16:04.455442",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral / buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker using a fee-on-transfer loanToken under the precondition that MIDNIGHT.take() returns resBuyerAssets based on units taken (not actual tokens received by MIDNIGHT) trigger filledBuyerAssets accumulation based on MIDNIGHT's return values → final refund = maxBuyerAssets - filledBuyerAssets - referralFeeAssets uses MIDNIGHT's accounting, not actual bundler balance, violating the invariant that refund amount must equal actual bundler balance after takes, causing scoped impact: accounting corruption (bundler attempts to refund more than it holds because MIDNIGHT's resBuyerAssets does not account for fee-on-transfer deductions)? Proof idea: trace MIDNIGHT.take return values vs actual bundler balance with fee-on-transfer token; assert discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf24f2e2-eb9e-461c-85c9-e17c9bfa9292?mode=deep",
+    "timestamp": "2026-05-31 20:16:18.122379",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithUnitsTarget / supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker using a fee-on-transfer loanToken under the precondition that MIDNIGHT.take() returns resSellerAssets based on units taken (not actual tokens sent to address(this)) trigger filledSellerAssets accumulation based on MIDNIGHT's return values → final safeTransfer(loanToken, receiver, filledSellerAssets - referralFeeAssets) uses MIDNIGHT's accounting, not actual bundler balance, violating the invariant that transfer amount must not exceed actual bundler balance, causing scoped impact: fund freeze or accounting corruption (bundler attempts to send more than it holds)? Proof idea: trace MIDNIGHT.take resSellerAssets vs actual bundler balance with fee-on-transfer token; assert discrepancy causes revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a8b3001-4f60-4193-9b47-e7f3c8ef9f7e?mode=deep",
+    "timestamp": "2026-05-31 20:16:32.815955",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: forceApproveMax] Can an unprivileged taker using a token that emits no return data from approve() (bare USDT-style) under the precondition that allowance < type(uint96).max/2 trigger safeApprove(token, MIDNIGHT, 0) → returndata.length == 0 → require passes → safeApprove(token, MIDNIGHT, type(uint256).max) → returndata.length == 0 → require passes, violating the invariant that safeApprove must correctly handle zero-length returndata as success, causing scoped impact: verify no false positive (this should work correctly; test that USDT-style tokens are not incorrectly rejected)? Proof idea: deploy USDT-style token with no return from approve(); call any bundler function; assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a59e18c-6fd2-4ce1-9c2e-ad0f1ee79c5f?mode=deep",
+    "timestamp": "2026-05-31 20:16:46.751087",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker using a fee-on-transfer loanToken under the precondition that multiple takes succeed and each MIDNIGHT.take() pull charges a fee trigger cumulative fee deductions across multiple takes making bundler balance insufficient for the final refund, violating the invariant that sum of all fees across N takes must not exceed maxBuyerAssets - filledBuyerAssets - referralFeeAssets, causing scoped impact: fund freeze (final safeTransfer reverts after N successful takes due to cumulative fee deductions)? Proof idea: fuzz N takes with fee-on-transfer token; assert final safeTransfer reverts when N * feePerTake > maxBuyerAssets - filledBuyerAssets - referralFeeAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8742e5f6-f428-4de0-b50a-5e3be34193a0?mode=deep",
+    "timestamp": "2026-05-31 20:17:02.009497",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: repayAndWithdrawCollateral] Can an unprivileged repayer using a fee-on-transfer loanToken under the precondition that referralFeePct is set such that units = assets - referralFeeAssets < assets - feeOnPull (i.e., referralFeeAssets > feeOnPull) trigger pullToken(assets) → bundler receives assets - feeOnPull → MIDNIGHT.repay(market, units=assets-referralFeeAssets) pulls units from bundler → bundler has assets - feeOnPull - units = referralFeeAssets - feeOnPull → safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets) fails because bundler only has referralFeeAssets - feeOnPull, violating the invariant that bundler must hold referralFeeAssets after repay, causing scoped impact: fund freeze? Proof idea: set referralFeePct such that referralFeeAssets > feeOnPull; assert safeTransfer to referralFeeRecipient reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba648f7a-7fdf-48e7-8e43-d0ae2db17c93?mode=deep",
+    "timestamp": "2026-05-31 20:17:16.575556",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker using multiple different fee-on-transfer collateral tokens under the precondition that each collateral token charges a different fee rate trigger pullToken(token_i, msg.sender, assets_i) for each collateral → bundler receives assets_i - fee_i → MIDNIGHT.supplyCollateral(market, index_i, assets_i, taker) pulls assets_i from bundler, violating the invariant that bundler must hold assets_i for each collateral when MIDNIGHT pulls, causing scoped impact: fund freeze (MIDNIGHT's safeTransferFrom reverts for the first collateral with fee > 0, blocking the entire bundle)? Proof idea: deploy multiple fee-on-transfer collateral tokens; call supplyCollateralAndSellWithUnitsTarget with multiple collateralSupplies; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6b1cf1b8-3e7d-49f7-8bc4-8a5fafd55925?mode=deep",
+    "timestamp": "2026-05-31 20:17:29.232725",
+    "report_generated": false
+  }
+]
