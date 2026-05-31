@@ -1,0 +1,38 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, then take those offers with units=0 (no-op take), bypassing gate checks because buyerCreditIncrease==0 and sellerDebtIncrease==0, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: unauthorized callback execution in a gated market? Proof idea: take with units=0 in gated market, assert gate checks are skipped for zero-unit takes and no credit/debt changes occur.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d841c72a-22de-4917-a5ba-d192db3632a6?mode=deep",
+    "timestamp": "2026-05-31 22:04:24.250429",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, where the buyer already has existing debt (so buyerCreditIncrease = units - buyerPos.debt could be zero), causing the gate check for canIncreaseCredit to be skipped even though units > 0, violating the invariant that enter gate must restrict credit increase, causing scoped impact: unauthorized credit increase in a gated market? Proof idea: set up buyer with existing debt >= units, assert buyerCreditIncrease==0 causes gate check to be skipped, verify this is intended behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_873f7024-07d7-4501-9516-160223cb75c8?mode=deep",
+    "timestamp": "2026-05-31 22:04:36.241122",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, where the seller already has existing credit (so sellerDebtIncrease = units - sellerPos.credit could be zero), causing the gate check for canIncreaseDebt to be skipped even though units > 0, violating the invariant that enter gate must restrict debt increase, causing scoped impact: unauthorized debt increase in a gated market? Proof idea: set up seller with existing credit >= units, assert sellerDebtIncrease==0 causes gate check to be skipped, verify this is intended behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39d53a28-cf19-4e89-a122-c60ba3474afa?mode=deep",
+    "timestamp": "2026-05-31 22:04:48.518185",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with liquidatorGate, then use midnight.flashLoan to obtain loan tokens and call liquidate within the flashLoan callback, where msg.sender is the flashLoan callback contract (not whitelisted by liquidatorGate), violating the invariant that liquidator gate must not be bypassed through alternate liquidation paths, causing scoped impact: unauthorized liquidation? Proof idea: implement flashLoan callback that calls liquidate, assert liquidatorGate checks msg.sender of the liquidate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_523de3b4-9649-424f-a3ae-16b48f9ded7b?mode=deep",
+    "timestamp": "2026-05-31 22:05:01.661715",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, then use midnight.multicall to batch multiple takes in a single transaction, where each take individually passes gate checks but the combined effect exceeds the gate's intended restriction, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: unauthorized credit/debt increase in a gated market? Proof idea: batch multiple takes in multicall, assert gate checks are enforced independently per take call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62ac488e-4196-4c34-baa9-99f1db8429d2?mode=deep",
+    "timestamp": "2026-05-31 22:05:16.864828",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, where the gate contract is a malicious contract that returns true for canIncreaseCredit/canIncreaseDebt for the operator but false for other users, allowing the operator to selectively enable credit/debt increases for themselves while blocking others, violating the invariant that gate checks must apply uniformly, causing scoped impact: unauthorized selective credit/debt increase? Proof idea: deploy gate that whitelists only operator, assert operator can increase credit/debt while others cannot.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e70a796-3ce0-4e09-9f75-36ed1a46c227?mode=deep",
+    "timestamp": "2026-05-31 22:05:30.835620",
+    "report_generated": false
+  }
+]
