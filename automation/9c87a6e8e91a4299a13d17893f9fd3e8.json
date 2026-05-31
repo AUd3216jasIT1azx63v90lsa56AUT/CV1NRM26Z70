@@ -1,0 +1,44 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.market.collateralParams is a memory array that was modified after being passed to hashOffer under the precondition that hashOffer takes a memory Offer and iterates collateralParams by index, causing hashOffer to hash the collateralParams as they exist at call time, resulting in a non-critical behavioral property that in-memory mutation of the offer before hashing would produce a different hash than the on-chain stored root? Proof idea: unit test hashOffer with a modified collateralParams array, assert hash differs from unmodified version.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba19abe9-c6a6-4930-bf0b-1cab55adfebe?mode=deep",
+    "timestamp": "2026-05-31 21:02:35.140112",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.market.maturity equals exactly block.timestamp under the precondition that hashOffer encodes maturity as a uint256 field and Midnight uses zeroFloorSub(maturity, block.timestamp) for timeToMaturity, causing timeToMaturity=0 and settlementFee to use the 0d breakpoint, while the offer hash is still valid, resulting in a non-critical behavioral edge case where at-maturity offers are ratifiable and takeable? Proof idea: unit test isRatified with market.maturity=block.timestamp, assert CALLBACK_SUCCESS; then test full take() with buy offer, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1509ef8c-1f23-4375-a444-2d04e183d9b1?mode=deep",
+    "timestamp": "2026-05-31 21:02:47.127058",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.maxAssets and offer.maxUnits are both nonzero under the precondition that hashOffer encodes both fields and Midnight checks atMostOneNonZero(offer.maxAssets, offer.maxUnits), causing isRatified to return CALLBACK_SUCCESS for an offer that Midnight will reject with MultipleNonZero, resulting in a non-critical behavioral divergence where the ratifier validates offers that Midnight will reject? Proof idea: unit test isRatified with maxAssets=1 and maxUnits=1, assert CALLBACK_SUCCESS; then test full take(), assert MultipleNonZero revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eb607d26-b512-4f73-ac26-9243bd0579d0?mode=deep",
+    "timestamp": "2026-05-31 21:02:59.489003",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.maker equals the taker address under the precondition that hashOffer encodes offer.maker as a field and Midnight checks offer.maker != taker, causing isRatified to return CALLBACK_SUCCESS for a self-take offer that Midnight will reject with SelfTake, resulting in a non-critical behavioral divergence where the ratifier validates self-take offers? Proof idea: unit test isRatified with offer.maker==taker, assert CALLBACK_SUCCESS; then test full take(), assert SelfTake revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8b014443-d8a4-4083-a226-c2dd44c8a2a2?mode=deep",
+    "timestamp": "2026-05-31 21:03:11.996458",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.market.maturity is set to block.timestamp + 100*365 days + 1 (exceeding MaturityTooFar) under the precondition that hashOffer encodes maturity as a field and Midnight checks maturity <= block.timestamp + 100*365 days in touchMarket, causing isRatified to return CALLBACK_SUCCESS for an offer whose market creation will revert with MaturityTooFar, resulting in a non-critical behavioral divergence where the ratifier validates offers for markets that cannot be created? Proof idea: unit test isRatified with maturity=block.timestamp+100*365 days+1, assert CALLBACK_SUCCESS; then test touchMarket, assert MaturityTooFar revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b7e93a3-5914-418a-89f0-a80f62e026b6?mode=deep",
+    "timestamp": "2026-05-31 21:03:25.198207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: setIsRootRatified / isRatified] Can a maker call setIsRootRatified(maker, root, true) where root is the same bytes32 value as CALLBACK_SUCCESS (keccak256('morpho.midnight.callbackSuccess')) under the precondition that SetterRatifier does not blacklist reserved bytes32 values, causing isRootRatified[maker][CALLBACK_SUCCESS] to be set to true, resulting in a non-critical behavioral edge case where a reserved protocol constant is used as a Merkle root? Proof idea: unit test setIsRootRatified with root=CALLBACK_SUCCESS, assert no revert and mapping is set.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_355bf799-bee3-4f73-9828-ca29c044532d?mode=deep",
+    "timestamp": "2026-05-31 21:03:39.655398",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: isRatified / HashLib.hashOffer] Can a taker call take() with an offer where offer.ratifier is address(0) under the precondition that hashOffer encodes offer.ratifier as a field and Midnight checks isAuthorized[offer.maker][offer.ratifier] before calling isRatified, causing isRatified to never be called (Midnight reverts with RatifierUnauthorized before reaching the isRatified call), resulting in a non-critical behavioral divergence where a zero-address ratifier field in the offer hash is never validated by the ratifier itself? Proof idea: unit test take() with offer.ratifier=address(0), assert RatifierUnauthorized revert before isRatified is called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5dfbdf2d-e868-4e99-89e0-ec26aa708cd6?mode=deep",
+    "timestamp": "2026-05-31 21:03:52.603301",
+    "report_generated": false
+  }
+]
