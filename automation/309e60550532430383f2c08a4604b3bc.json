@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under referralFeePct near WAD-1 and filledBuyerAssets at max uint128 trigger buyWithUnitsTargetAndWithdrawCollateral, causing referralFeeAssets = filledBuyerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) to overflow or exceed maxBuyerAssets, violating the invariant that msg.sender refund = maxBuyerAssets - filledBuyerAssets - referralFeeAssets >= 0, causing scoped impact: settlement fee overclaim or fund freeze via arithmetic underflow on refund transfer? Proof idea: fuzz referralFeePct in [WAD/2, WAD-1] and filledBuyerAssets near type(uint128).max and assert loanToken.balanceOf(address(midnightBundles)) == 0 after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_18881e69-0c6e-48cd-a6b4-f6f38d6a5e79?mode=deep",
+    "timestamp": "2026-05-31 18:49:28.340772",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under nonzero referralFeePct and a settlement fee that increases between the touchMarket call and the take call trigger buyWithAssetsTargetAndWithdrawCollateral, causing TakeAmountsLib.buyerAssetsToUnits to compute units using the old fee while Midnight.take charges buyerAssets using the new higher fee, violating the invariant that filledBuyerAssets == targetFilledBuyerAssets, causing scoped impact: settlement fee overclaim where the bundler pays more than targetFilledBuyerAssets to Midnight, leaving referralFeeAssets stranded in the bundler? Proof idea: set settlement fee to F1, call touchMarket, then atomically increase fee to F2 > F1 and call buyWithAssetsTargetAndWithdrawCollateral, assert loanToken.balanceOf(address(midnightBundles)) > 0 after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ff6e4045-fc57-4177-99bf-2e4e772f4a5b?mode=deep",
+    "timestamp": "2026-05-31 18:49:40.281964",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under referralFeePct > 0 and a single sell offer trigger buyWithAssetsTargetAndWithdrawCollateral, causing the referralFeeAssets = targetBuyerAssets.mulDivDown(referralFeePct, WAD) to be computed before takes but never refunded to msg.sender if filledBuyerAssets < targetFilledBuyerAssets due to rounding in TakeAmountsLib.buyerAssetsToUnits, violating the invariant that msg.sender net cost equals filledBuyerAssets + referralFeeAssets, causing scoped impact: settlement fee underclaim where referralFeeAssets tokens are permanently locked in the bundler? Proof idea: fuzz targetBuyerAssets and referralFeePct such that mulDivDown rounding causes filledBuyerAssets != targetFilledBuyerAssets and assert bundler balance == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_55940b94-a7b7-4649-86f6-d83fdacd2108?mode=deep",
+    "timestamp": "2026-05-31 18:49:52.807509",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged seller under nonzero referralFeePct and multiple buy offers with per-leg rounding trigger supplyCollateralAndSellWithAssetsTarget, causing filledSellerAssets to exceed targetFilledSellerAssets by up to N wei (N = number of takes) due to mulDivUp rounding in take, violating the invariant that filledSellerAssets == targetFilledSellerAssets exactly, causing scoped impact: settlement fee underclaim where excess seller assets are permanently locked in the bundler? Proof idea: fuzz N takes with small units and assert loanToken.balanceOf(address(midnightBundles)) == 0 after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9921361a-7f40-4e6e-991c-b39ecdc1ad4f?mode=deep",
+    "timestamp": "2026-05-31 18:50:05.494799",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged seller under referralFeePct = WAD/2 and targetSellerAssets near type(uint128).max/4 trigger supplyCollateralAndSellWithAssetsTarget, causing referralFeeAssets = targetSellerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) to overflow uint256, violating the invariant that referralFeeAssets + targetSellerAssets == targetFilledSellerAssets, causing scoped impact: settlement fee mis-accounting where the referral fee is computed incorrectly and the wrong amount is sent to the referrer? Proof idea: fuzz referralFeePct in [WAD/2, WAD-1] and targetSellerAssets near type(uint256).max / 2 and assert no overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c70a9a6-472f-41ff-9acc-1572bb511391?mode=deep",
+    "timestamp": "2026-05-31 18:50:19.177550",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower under referralFeePct > 0 and assets exactly equal to outstanding debt trigger repayAndWithdrawCollateral, causing units = assets - referralFeeAssets < debt, violating the invariant that the borrower's debt is fully repaid when assets = debt, causing scoped impact: settlement fee charged to the wrong side where the borrower pays the referral fee but the debt is not fully cleared, leaving residual debt that accrues no further settlement fee but blocks collateral withdrawal? Proof idea: set assets = debtOf(id, borrower), call repayAndWithdrawCollateral with referralFeePct > 0, assert debtOf(id, borrower) == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_025ceb79-7204-42ec-83a3-d8f97300d038?mode=deep",
+    "timestamp": "2026-05-31 18:50:33.220753",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: repayAndWithdrawCollateral] Can an unprivileged borrower under referralFeePct = 0 and assets = 0 trigger repayAndWithdrawCollateral, causing referralFeeAssets = 0 and units = 0, violating the invariant that a zero-asset repay is a no-op with no fee transfer, causing scoped impact: settlement fee underclaim where the referral fee recipient receives 0 tokens but the bundler still calls safeTransfer(loanToken, referralFeeRecipient, 0) which may revert on non-standard tokens? Proof idea: deploy a token that reverts on transfer(addr, 0), call repayAndWithdrawCollateral with referralFeePct = 0 and assets = 0, assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aabe4d3a-8522-48b3-ad23-42af1cd40831?mode=deep",
+    "timestamp": "2026-05-31 18:50:47.702429",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a buy offer (offer.buy = true) with offerPrice exactly equal to settlementFee trigger take, causing sellerPrice = offerPrice - settlementFee = 0 and sellerAssets = 0, violating the invariant that claimableSettlementFee increases by buyerAssets - sellerAssets = buyerAssets, causing scoped impact: settlement fee overclaim where the entire buyerAssets is credited as settlement fee while the seller receives nothing? Proof idea: set offerPrice = settlementFee, take 1 unit, assert claimableSettlementFee == buyerAssets and sellerAssets == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_adda9f88-67bd-42d6-9ec4-8de2d04e8f9a?mode=deep",
+    "timestamp": "2026-05-31 18:51:02.485911",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under units = 1 and a nonzero settlementFee trigger take, causing buyerAssets - sellerAssets = 0 due to mulDivDown/mulDivUp rounding on 1 unit, violating the invariant that claimableSettlementFee[loanToken] increases by at least floor(units * settlementFee / WAD) = 0 for units = 1, causing scoped impact: settlement fee underclaim where the protocol collects 0 fee on a nonzero-fee take? Proof idea: fuzz units in [1, 10] and settlementFee in [1, CBP] and assert claimableSettlementFee delta >= 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6cb6ee5b-ddff-4613-a0b1-ec8e2df5c231?mode=deep",
+    "timestamp": "2026-05-31 18:51:17.174681",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: settlementFee (Midnight.sol)] Can an unprivileged market creator under TTM exactly at a breakpoint boundary (e.g., TTM = 1 days exactly) trigger settlementFee, causing the interpolation formula (feeLower * (end - TTM) + feeUpper * (TTM - start)) / (end - start) to return feeLower when TTM = start, violating the invariant that settlementFee(id, breakpointTime(i)) == marketSettlementFee(id, i), causing scoped impact: settlement fee mis-accounting where the fee at a breakpoint is not the stored breakpoint value? Proof idea: set all 7 breakpoint fees to distinct values, call settlementFee at each exact breakpoint, assert equality with stored values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_91715619-1ffc-469e-84d8-deaa5d005afa?mode=deep",
+    "timestamp": "2026-05-31 18:51:31.649243",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: settlementFee (Midnight.sol)] Can an unprivileged taker under TTM between two breakpoints with feeLower > feeUpper (decreasing fee schedule) trigger settlementFee, causing the interpolation to return a value outside [feeUpper, feeLower], violating the invariant that the interpolated fee is bounded by its two adjacent breakpoint values, causing scoped impact: settlement fee overclaim or underclaim where the fee charged is outside the expected range? Proof idea: set settlementFeeCbp1 > settlementFeeCbp2, call settlementFee at TTM = 3 days, assert result in [settlementFeeCbp2 * CBP, settlementFeeCbp1 * CBP].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a5d2f746-e921-4361-93b1-6205d46ce049?mode=deep",
+    "timestamp": "2026-05-31 18:51:45.993412",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimSettlementFee (Midnight.sol)] Can an unprivileged fee claimer under claimableSettlementFee[token] = X trigger claimSettlementFee(token, X, receiver), causing the contract's token balance to decrease by X, violating the solvency invariant that contract balance >= withdrawable + sum(collateral) + claimableSettlementFee, causing scoped impact: settlement fee overclaim where the fee claimer drains tokens needed to cover lender withdrawals? Proof idea: create market, take with fee, claim full fee, then have lender withdraw, assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_481d1fb8-526f-47d7-8510-17eebebd1a13?mode=deep",
+    "timestamp": "2026-05-31 18:51:59.252394",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimSettlementFee (Midnight.sol)] Can an unprivileged fee claimer under two markets sharing the same loanToken trigger claimSettlementFee, causing fees from market A to be claimed against the balance contributed by market B's takes, violating the invariant that each market's settlement fee is backed by its own token transfers, causing scoped impact: settlement fee overclaim where the fee claimer extracts more than the protocol earned from a specific market? Proof idea: create two markets with same loanToken, take in market A only, claim amount > market A's fee, assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ac45eec-9600-4b6d-876e-282ccb795f98?mode=deep",
+    "timestamp": "2026-05-31 18:52:13.586855",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee (Midnight.sol)] Can an unprivileged fee claimer under continuousFeeCredit > withdrawable trigger claimContinuousFee(market, continuousFeeCredit, receiver), causing the require(amount <= withdrawable) check to revert, violating the invariant that all accrued continuous fees are claimable, causing scoped impact: continuous fee unclaimable where the fee claimer cannot extract fees that have been crystallized into continuousFeeCredit but not yet backed by repayments? Proof idea: accrue fees via updatePosition without any repayments, assert claimContinuousFee(market, continuousFeeCredit, receiver) reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ac303a4-78c9-4a1e-93a9-4dcaddb4ec38?mode=deep",
+    "timestamp": "2026-05-31 18:52:27.031776",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee (Midnight.sol)] Can an unprivileged fee claimer under amount = continuousFeeCredit trigger claimContinuousFee, causing _marketState.totalUnits -= amount and _marketState.withdrawable -= amount, violating the invariant that lenders can still withdraw their full credit after the fee claim, causing scoped impact: continuous fee overclaim where the fee claimer reduces withdrawable below the sum of lender credits, making lender withdrawals revert? Proof idea: accrue fees, repay debt to make withdrawable = totalUnits, claim full continuousFeeCredit, then have lender withdraw credit - pendingFee, assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cbe0387-234b-47cc-b032-5e752ca645e6?mode=deep",
+    "timestamp": "2026-05-31 18:52:40.470816",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: _updatePosition (Midnight.sol)] Can an unprivileged lender under lastAccrual = 0 (fresh position, never interacted) and market.maturity = 1 trigger updatePositionView, causing accrualEnd - _lastAccrual = min(block.timestamp, 1) - 0 to be a very large number if block.timestamp >> maturity, violating the invariant that fee = postSlashPendingFee * (accrualEnd - lastAccrual) / (maturity - lastAccrual) <= pendingFee, causing scoped impact: continuous fee overclaim where the lender's entire pendingFee is consumed in one update even for a position that was never active? Proof idea: create position with lastAccrual = 0, warp past maturity, call updatePosition, assert fee <= pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4018a484-d620-4c7a-b4ae-041570ae5a31?mode=deep",
+    "timestamp": "2026-05-31 18:52:53.738940",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a buy offer with continuousFee = MAX_CONTINUOUS_FEE and timeToMaturity = 360 days trigger take, causing buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) to overflow uint128 when cast via UtilsLib.toUint128, violating the invariant that pendingFee <= credit, causing scoped impact: continuous fee overclaim where the lender's pendingFee exceeds their credit, making future updatePosition calls reduce credit below zero? Proof idea: fuzz buyerCreditIncrease near type(uint128).max with MAX_CONTINUOUS_FEE and 360 days TTM, assert pendingFee <= credit after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9129945e-7489-4553-9fc0-bcb1b05f7910?mode=deep",
+    "timestamp": "2026-05-31 18:53:06.787337",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a sell offer where the seller has existing credit and pendingFee trigger take, causing sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit) to round up by 1 wei more than the proportional share, violating the invariant that the seller's remaining pendingFee / remaining credit ratio is preserved, causing scoped impact: continuous fee underclaim where the seller's pendingFee is reduced by more than their proportional share, effectively gifting fee reduction to the seller? Proof idea: fuzz sellerPos.credit, sellerPos.pendingFee, and sellerCreditDecrease, assert pendingFee_after / credit_after <= pendingFee_before / credit_before.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7df5940-797a-4509-8ddb-b202e2fea47c?mode=deep",
+    "timestamp": "2026-05-31 18:53:20.731182",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a buy offer where the buyer has existing debt (buyerCreditIncrease = 0) trigger take, causing buyerPendingFeeIncrease = 0 * continuousFee * timeToMaturity / WAD = 0, violating the invariant that the buyer's pendingFee increases proportionally to their new credit, causing scoped impact: continuous fee underclaim where a buyer who nets out debt pays no continuous fee on the units they acquire? Proof idea: give buyer existing debt = units, take units, assert buyerPendingFeeIncrease == 0 and continuousFeeCredit unchanged for buyer's portion.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6740db90-596f-4b6c-b025-2f40ddeaf4d1?mode=deep",
+    "timestamp": "2026-05-31 18:53:34.984543",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: withdraw (Midnight.sol)] Can an unprivileged lender under credit = 1 and pendingFee = 1 trigger withdraw(market, 1, lender, receiver), causing pendingFeeDecrease = pendingFee.mulDivUp(units, credit) = 1.mulDivUp(1, 1) = 1, violating the invariant that pendingFee after withdraw = pendingFee - pendingFeeDecrease >= 0, causing scoped impact: continuous fee underclaim where the lender's full pendingFee is consumed on a full withdrawal but continuousFeeCredit is not updated (no _updatePosition called in withdraw before the decrease)? Proof idea: set credit = pendingFee = 1, withdraw 1 unit, assert pendingFee == 0 and continuousFeeCredit increased by accrued fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcccb1cf-ed9d-4daa-b974-3ea448a5e354?mode=deep",
+    "timestamp": "2026-05-31 18:53:50.091118",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: setMarketContinuousFee (Midnight.sol)] Can an unprivileged market creator under an existing lender with pendingFee = P trigger setMarketContinuousFee(id, 0), causing the market's continuousFee to drop to 0 while the lender's pendingFee remains P (not updated), violating the invariant that the fee setter cannot retroactively change the fee owed by existing lenders, causing scoped impact: continuous fee underclaim where the fee setter reduces the market fee but existing lenders still owe their crystallized pendingFee, and the continuousFeeCredit correctly accumulates it on next updatePosition? Proof idea: lend at rate R, change rate to 0, warp time, updatePosition, assert accrued fee matches original rate not new rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40a16049-cd3a-4b31-9912-4d2924d6a719?mode=deep",
+    "timestamp": "2026-05-31 18:54:06.128132",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a sell offer where the seller has credit = 0 and pendingFee = 0 trigger take, causing sellerPendingFeeDecrease = 0 (due to sellerPos.credit == 0 branch), violating the invariant that a seller with no credit has no pending fee to decrease, causing scoped impact: continuous fee accounting is correct but the zero-credit branch silently skips the proportional decrease, potentially leaving stale pendingFee if credit was set to 0 by a prior slash? Proof idea: slash seller to credit = 0, take sell offer, assert sellerPendingFeeDecrease == 0 and pendingFee unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5ae629aa-bc4c-46fb-98cb-41670dd46716?mode=deep",
+    "timestamp": "2026-05-31 18:54:23.458002",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: updatePositionView (Midnight.sol)] Can an unprivileged lender under lastLossFactor = type(uint128).max (position fully slashed) trigger updatePositionView, causing postSlashCredit = credit.mulDivDown(type(uint128).max - lossFactor, type(uint128).max - type(uint128).max) to divide by zero, violating the invariant that updatePositionView never reverts for valid positions, causing scoped impact: continuous fee unclaimable where the fee claimer cannot call claimContinuousFee because updatePosition reverts for slashed positions? Proof idea: create bad debt until lossFactor = type(uint128).max, call updatePositionView for a lender, assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4afee8e3-2d86-45ca-87f7-f870f3c03503?mode=deep",
+    "timestamp": "2026-05-31 18:54:40.307946",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a buy offer with offer.maxAssets > 0 trigger take, causing consumed[maker][group] += buyerAssets (not units), violating the invariant that the settlement fee is not double-counted in the consumption tracking, causing scoped impact: settlement fee mis-accounting where the maker's offer cap is consumed by buyerAssets (which includes the settlement fee spread) rather than the net sellerAssets, causing the offer to be exhausted faster than the maker intended? Proof idea: set maxAssets = N, take with nonzero settlement fee, assert consumed == buyerAssets > sellerAssets and remaining capacity = maxAssets - buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee704961-6557-42a7-a647-05e9ccb1898c?mode=deep",
+    "timestamp": "2026-05-31 18:54:58.469456",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: take (Midnight.sol)] Can an unprivileged taker under a sell offer with offer.maxAssets > 0 trigger take, causing consumed[maker][group] += sellerAssets (not units), violating the invariant that the settlement fee is not double-counted in the consumption tracking, causing scoped impact: settlement fee mis-accounting where the maker's offer cap is consumed by sellerAssets (which excludes the settlement fee spread), causing the offer to be fillable for more total value than the maker intended? Proof idea: set maxAssets = N, take with nonzero settlement fee, assert consumed == sellerAssets < buyerAssets and remaining capacity = maxAssets - sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9048eb0-20cf-4bb0-aeb3-482a77a83218?mode=deep",
+    "timestamp": "2026-05-31 18:55:13.431622",
+    "report_generated": false
+  }
+]
