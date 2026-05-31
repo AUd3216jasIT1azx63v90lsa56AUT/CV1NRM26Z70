@@ -1,0 +1,74 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / updatePositionView (denominator = 0)] Can an unprivileged user under preconditions where position.lastLossFactor == type(uint128).max - 1 and marketState.lossFactor == type(uint128).max trigger updatePositionView -> the guard _lastLossFactor < type(uint128).max is true, so credit.mulDivDown(type(uint128).max - type(uint128).max, type(uint128).max - (type(uint128).max - 1)) = credit.mulDivDown(0, 1) = 0, which is fine, but if lastLossFactor == type(uint128).max and lossFactor < type(uint128).max, the guard returns 0 without calling mulDivDown, so no revert — verify this edge case is handled correctly, violating the invariant that credit accounting must be correct, causing scoped impact: accounting corruption — lender credit is zeroed incorrectly? Proof idea: set lastLossFactor = type(uint128).max, lossFactor = 0, credit = 1e18 and assert updatePositionView returns (0, 0, 0).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_840be5b6-aade-4f1a-820c-9228e3615182?mode=deep",
+    "timestamp": "2026-05-31 22:56:31.529412",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: toUint128 / liquidate (withdrawable overflow)] Can an unprivileged liquidator under preconditions where marketState.withdrawable is near type(uint128).max and repaidUnits > 0 trigger liquidate -> _marketState.withdrawable += UtilsLib.toUint128(repaidUnits) overflowing uint128 in Solidity 0.8 checked arithmetic and reverting, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: liquidation failure — a liquidator cannot repay debt in a market where withdrawable is near max, permanently blocking liquidation? Proof idea: fuzz withdrawable near type(uint128).max and repaidUnits in [1, 100] and assert liquidate reverts with arithmetic overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84288327-a532-47de-ac36-e772e8b842a4?mode=deep",
+    "timestamp": "2026-05-31 22:56:43.370814",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / liquidate (lif * lltv near WAD^2)] Can an unprivileged liquidator under preconditions where lif = maxLif(LLTV_7, LIQUIDATION_CURSOR_HIGH) and lltv = LLTV_7 = 0.98e18 trigger liquidate -> (_position.debt - maxDebt).mulDivUp(WAD * WAD, WAD * WAD - lif * lltv) where WAD * WAD - lif * lltv is very small (close to 0), causing maxRepaid to be very large, and then repaidUnits <= maxRepaid is always satisfied, effectively deactivating the RCF — verify this does not cause a division by zero or overflow that blocks valid liquidations, violating the invariant that repay amount must be consistent with close factor, causing scoped impact: accounting corruption — RCF is silently bypassed for high-LLTV markets? Proof idea: compute WAD * WAD - maxLif(LLTV_7, LIQUIDATION_CURSOR_HIGH) * LLTV_7 and assert it is > 0 and the division does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf3d618d-6d51-4a84-a75b-8e723731e00f?mode=deep",
+    "timestamp": "2026-05-31 22:56:55.722690",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: atMostOneNonZero / take] Can an unprivileged taker under preconditions where offer.maxAssets > 0 and offer.maxUnits > 0 trigger take -> UtilsLib.atMostOneNonZero(offer.maxAssets, offer.maxUnits) returns false and the require reverts with MultipleNonZero, violating the invariant that valid offers must be fillable, causing scoped impact: fund freeze — a maker who accidentally sets both maxAssets and maxUnits nonzero has their offer permanently unfillable, and any taker who tries is blocked? Proof idea: set maxAssets = 1 and maxUnits = 1 and assert take reverts with MultipleNonZero; verify atMostOneNonZero(1, 1) = false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2106b6bb-558d-4004-805f-0dbb9006db3c?mode=deep",
+    "timestamp": "2026-05-31 22:57:08.455573",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: atMostOneNonZero / liquidate] Can an unprivileged liquidator under preconditions where both seizedAssets > 0 and repaidUnits > 0 trigger liquidate -> UtilsLib.atMostOneNonZero(repaidUnits, seizedAssets) returns false and the require reverts with InconsistentInput, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: liquidation failure — a liquidator who passes both inputs nonzero is blocked even if the combination would be economically valid? Proof idea: set seizedAssets = 1 and repaidUnits = 1 and assert liquidate reverts with InconsistentInput.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_937a6e00-bd82-4df5-a38e-8012382bf172?mode=deep",
+    "timestamp": "2026-05-31 22:57:21.330046",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: min / updatePositionView (accrualEnd)] Can an unprivileged user under preconditions where block.timestamp > market.maturity trigger updatePositionView -> accrualEnd = UtilsLib.min(block.timestamp, market.maturity) = market.maturity, and fee = postSlashPendingFee.mulDivDown(market.maturity - _lastAccrual, market.maturity - _lastAccrual) = postSlashPendingFee (if _lastAccrual < market.maturity), causing the entire pendingFee to be accrued in one call post-maturity, violating the invariant that continuous fee accrual must be proportional to time, causing scoped impact: accounting corruption — a lender's entire pendingFee is crystallized at the first post-maturity interaction regardless of when they last accrued? Proof idea: set lastAccrual = 0, maturity = 1000, block.timestamp = 2000 and assert fee = pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6616a9a1-2f05-4202-95a5-32d2c4572ae8?mode=deep",
+    "timestamp": "2026-05-31 22:57:34.640432",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / take (sellerPrice underflow)] Can an unprivileged taker under preconditions where offer.buy = true and offerPrice < settlementFee trigger take -> sellerPrice = offerPrice - _settlementFee underflows (Solidity 0.8 checked arithmetic) and reverts with arithmetic error, violating the invariant that valid takes must succeed, causing scoped impact: fund freeze — a taker trying to fill a buy offer with a price below the settlement fee is blocked by an arithmetic underflow before any state is written? Proof idea: set offerPrice = 1 wei (tick = MAX_TICK), settlementFee = MAX_SETTLEMENT_FEE_360_DAYS and assert take reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_07007cea-f879-4efd-9a3a-18814fde9b53?mode=deep",
+    "timestamp": "2026-05-31 22:57:47.854384",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: toUint128 / take (totalUnits decrease path)] Can an unprivileged taker under preconditions where a sell offer is taken (sellerCreditDecrease > buyerCreditIncrease) and totalUnits would decrease trigger take -> UtilsLib.toUint128(_marketState.totalUnits + buyerCreditIncrease - sellerCreditDecrease) where the subtraction is safe (no underflow) and the result is < totalUnits, so toUint128 succeeds — verify this path never reverts with CastOverflow, violating the invariant that valid takes must succeed, causing scoped impact: fund freeze — a lender reducing their credit via a sell offer is incorrectly blocked? Proof idea: fuzz totalUnits, buyerCreditIncrease, sellerCreditDecrease with sellerCreditDecrease > buyerCreditIncrease and assert toUint128 never reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc6e2a77-5816-47f4-843d-e76e81258a68?mode=deep",
+    "timestamp": "2026-05-31 22:58:01.942985",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / liquidate (badDebt with zero totalUnits)] Can an unprivileged liquidator under preconditions where marketState.totalUnits == badDebt (all units are bad debt) trigger liquidate -> (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits) = (type(uint128).max - _lossFactor).mulDivDown(0, _totalUnits) = 0, so lossFactor = type(uint128).max, and then the take function reverts with MarketLossFactorMaxedOut, violating the invariant that valid protocol operations must succeed, causing scoped impact: fund freeze — after a total-loss bad debt event, all subsequent takes in the market are permanently blocked? Proof idea: set totalUnits = badDebt = 1e18 and assert lossFactor becomes type(uint128).max after liquidate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73b740f3-3ce4-4eb1-8a10-fe10fe9c128d?mode=deep",
+    "timestamp": "2026-05-31 22:58:14.950383",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / liquidate (totalUnits = 0 division by zero)] Can an unprivileged liquidator under preconditions where marketState.totalUnits == 0 and badDebt > 0 trigger liquidate -> (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits) = mulDivDown(x, y, 0) reverting with division by zero, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: liquidation failure — a borrower in a market with zero totalUnits (all credit withdrawn) cannot be liquidated even if they have bad debt? Proof idea: set totalUnits = 0, badDebt = 1 and assert liquidate reverts with division by zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79da68e6-7029-4e69-b7de-f55b669643e5?mode=deep",
+    "timestamp": "2026-05-31 22:58:29.066876",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: toUint128 / take (pendingFee decrease overflow)] Can an unprivileged taker under preconditions where sellerPos.pendingFee = type(uint128).max and sellerPos.credit = 1 and sellerCreditDecrease = 1 trigger take -> sellerPendingFeeDecrease = UtilsLib.toUint128(sellerPos.pendingFee.mulDivUp(1, 1)) = toUint128(type(uint128).max) which succeeds, but then sellerPos.pendingFee -= type(uint128).max = 0 — verify this edge case does not cause an unexpected revert or accounting error, violating the invariant that credit/debt accounting must stay solvent, causing scoped impact: accounting corruption — a seller's pendingFee is zeroed in a single take? Proof idea: set pendingFee = type(uint128).max, credit = 1, sellerCreditDecrease = 1 and assert pendingFee becomes 0 after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2cb7c4a-72e6-4043-8efe-a4fe7c1cfb6d?mode=deep",
+    "timestamp": "2026-05-31 22:58:42.508840",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: mulDivDown / take (buyerAssets - sellerAssets overflow)] Can an unprivileged taker under preconditions where buyerAssets > sellerAssets and their difference exceeds the available loan token balance trigger take -> claimableSettlementFee[loanToken] += buyerAssets - sellerAssets overflowing uint256 (unchecked in Solidity 0.8 for mapping values), violating the invariant that total credit, debt, collateral, fees, and token balances must stay solvent, causing scoped impact: accounting corruption — claimableSettlementFee overflows and the fee claimer cannot claim the correct amount? Proof idea: fuzz units and price to maximize buyerAssets - sellerAssets and assert claimableSettlementFee does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_069570b2-fde4-457c-a07f-b21839b43d51?mode=deep",
+    "timestamp": "2026-05-31 22:58:55.469606",
+    "report_generated": false
+  }
+]
