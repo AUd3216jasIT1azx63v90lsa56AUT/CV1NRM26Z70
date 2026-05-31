@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits reads consumed(offer.maker, offer.group) which is a uint256 that can be set to type(uint256).max via setConsumed, causing zeroFloorSub(offer.maxUnits, type(uint256).max) to return 0 for any maxUnits value, and zeroFloorSub(offer.maxAssets, type(uint256).max) to return 0 for any maxAssets value, causing consumableUnits to always return 0 for cancelled groups, and the bundler to silently skip all offers in the group? Proof idea: call setConsumed(group, type(uint256).max) and assert consumableUnits returns 0 for all offers in the group.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b18fac4c-b076-451f-b80c-a49e46a69aa5?mode=deep",
+    "timestamp": "2026-05-31 17:49:21.545195",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker exploit the fact that MidnightBundles calls touchMarket before consumableUnits, which sets the settlement fee to the default value for a newly created market, but consumableUnits then uses this newly set fee to compute units, while a subsequent fee setter action could change the fee before take() executes, causing a mismatch between the units computed by consumableUnits and the units accepted by take()? Proof idea: change settlement fee between touchMarket and take() and assert consumableUnits and take() disagree on units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e58932c-4e18-4399-aaca-60d5ffe826e2?mode=deep",
+    "timestamp": "2026-05-31 17:49:33.411358",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not validate that offer.market matches the id parameter, such that passing a mismatched (id, offer) pair causes settlementFee(id, ttm) to return the fee for a different market than the one in offer.market, producing incorrect units that cause take() to revert or under-fill? Proof idea: pass id of market A and offer.market of market B and assert consumableUnits returns incorrect units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a5820519-f9c1-446c-9521-0fa40ae49ceb?mode=deep",
+    "timestamp": "2026-05-31 17:49:45.911571",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / TakeAmountsLib] Can an unprivileged taker exploit the fact that buyerAssetsToUnits and sellerAssetsToUnits both call settlementFee(id, ttm) as a view function, but Midnight.take() also calls settlementFee internally, such that if the market's settlement fee cbp values are updated between the two calls (via setMarketSettlementFee), the units computed by consumableUnits are stale, causing the take to consume a different amount of assets than expected and potentially reverting with ConsumedAssets? Proof idea: update settlement fee between consumableUnits and take() and assert ConsumedAssets revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_650b8033-6d7d-4d77-be45-02ff2a55e2b5?mode=deep",
+    "timestamp": "2026-05-31 17:49:58.519628",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits returns a unit count based on the current consumed value, but between the consumableUnits call and the take() call, another taker fills the same offer (front-run), increasing consumed, such that the units computed by consumableUnits now exceed the remaining capacity, causing take() to revert with ConsumedAssets or ConsumedUnits, caught by try/catch, and the bundler to revert with OutOfOffers? Proof idea: front-run the bundle with a fill of the same offer and assert OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec154287-6244-49f0-a2ed-54c0281031d7?mode=deep",
+    "timestamp": "2026-05-31 17:50:11.995895",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker exploit the interaction between consumableUnits and TakeAmountsLib.buyerAssetsToUnits where both are called in the same bundle iteration, such that the min(buyerAssetsToUnits(...), takes[i].units, consumableUnits(...)) computation produces 0 units when consumableUnits returns 0 but buyerAssetsToUnits returns non-zero, causing a 0-unit take() call that is a no-op, silently wasting a loop iteration and causing OutOfOffers? Proof idea: set consumed==maxAssets and assert the bundle wastes a loop iteration.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0e09505-b9a6-4dee-ae0c-6a1b5b2c985b?mode=deep",
+    "timestamp": "2026-05-31 17:50:25.387750",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not check whether the market has been touched (tickSpacing>0), such that for an untouched market, settlementFee() reverts with MarketNotCreated inside buyerAssetsToUnits/sellerAssetsToUnits, propagating the revert through consumableUnits and causing the entire bundle to revert, even though MidnightBundles calls touchMarket before consumableUnits? Proof idea: verify that touchMarket is always called before consumableUnits in all bundle functions and assert no revert path exists for untouched markets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1715f3a3-1601-434e-9c9a-efb219de5235?mode=deep",
+    "timestamp": "2026-05-31 17:50:38.584411",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits uses offer.group to look up consumed, but the group is a bytes32 that can be set to bytes32(0) (the default group), causing all offers with group=bytes32(0) to share a single consumed counter, such that filling any offer in the default group reduces the apparent remaining capacity of all other offers in the default group, causing consumableUnits to return 0 for valid offers and the bundle to revert with OutOfOffers? Proof idea: use multiple offers with group=bytes32(0) and assert consumableUnits correctly accounts for shared consumption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e9aea689-c135-446f-8d87-757ed7edb975?mode=deep",
+    "timestamp": "2026-05-31 17:50:53.500244",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker exploit the fact that buyerAssetsToUnits computes buyerPrice = sellerPrice + settlementFee where sellerPrice = offerPrice - settlementFee for buy offers, such that for a buy offer at tick=0 (price close to 1 WAD), buyerPrice = offerPrice (since settlementFee is subtracted then added back), and the mulDivUp rounding in buyerAssetsToUnits produces units that cause buyerAssets in take() to exceed maxAssets by exactly 1, causing ConsumedAssets revert? Proof idea: fuzz tick near 0 and settlementFee near 0 and assert no off-by-one ConsumedAssets revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d542d7fb-6a25-40b9-9f07-1baf54eae05a?mode=deep",
+    "timestamp": "2026-05-31 17:51:08.554974",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits is a view function that reads state at a specific block, but MidnightBundles executes consumableUnits and take() in the same transaction, such that any state change between the two calls (impossible in the same tx) is not a concern, but the rounding mismatch between consumableUnits and take() is a deterministic bug that can be reproduced with specific (maxAssets, consumed, tick, settlementFee) values, causing user loss on every bundle execution with those parameters? Proof idea: enumerate all (tick, settlementFee) pairs and find those where ceil(R*WAD/buyerPrice)*buyerPrice/WAD > R for any R.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3716515a-1303-4c96-91a5-867d41229b7b?mode=deep",
+    "timestamp": "2026-05-31 17:51:24.119852",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles.supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker using supplyCollateralAndSellWithUnitsTarget trigger a scenario where consumableUnits returns 0 for all offers in takes[] (because consumed==maxAssets for all), causing the bundle to call take() with 0 units for each offer, accumulating filledUnits=0, and then reverting with OutOfOffers, while the user's collateral has already been supplied to Midnight and cannot be recovered in the same transaction? Proof idea: exhaust all offers before the bundle call and assert collateral is stuck after OutOfOffers revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59b49090-bd0c-45f7-8577-e14aaf20c1e3?mode=deep",
+    "timestamp": "2026-05-31 17:51:39.454873",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not account for the lossFactor of the market, such that in a market with significant bad debt (lossFactor > 0), the units computed by consumableUnits do not reflect the actual credit that will be received after slashing, causing the taker to receive fewer credit units than expected and suffer user loss? Proof idea: create a market with bad debt, call consumableUnits, execute take(), and assert credit received equals units taken minus slashing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cb1ffc76-b33f-495f-b963-0a962593cbcc?mode=deep",
+    "timestamp": "2026-05-31 17:51:54.168553",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / TakeAmountsLib] Can an unprivileged taker exploit the fact that TakeAmountsLib.buyerAssetsToUnits and sellerAssetsToUnits use UtilsLib.mulDivUp and mulDivDown respectively, which are simple (x*y+d-1)/d and (x*y)/d without overflow protection, such that for large values of targetAssets and WAD, the intermediate multiplication overflows uint256, causing a revert that propagates through consumableUnits and blocks the bundle? Proof idea: fuzz targetAssets near type(uint256).max/WAD and assert no overflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4c2b1868-db02-4220-9222-07e0fc81a344?mode=deep",
+    "timestamp": "2026-05-31 17:52:08.841088",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits uses offer.maxAssets as the cap for assets-based offers, but offer.maxAssets is defined as buyerAssets if offer.buy else sellerAssets, such that for a sell offer (offer.buy=false), consumableUnits correctly uses sellerAssets, but the taker expects buyerAssets to be capped, causing the taker to receive fewer loan tokens than expected (since sellerAssets < buyerAssets due to settlement fee) and suffer user loss? Proof idea: compare expected buyerAssets vs actual buyerAssets for a sell offer with maxAssets cap and assert user receives correct amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e50320b-b6b8-427f-a346-33cbeed24620?mode=deep",
+    "timestamp": "2026-05-31 17:52:24.066506",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker exploit the fact that MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral uses try/catch to skip failed takes, but consumableUnits reverts (not returns 0) for certain offer configurations (e.g., offerPrice < settlementFee, buyerPrice > WAD), causing the entire bundle to revert rather than skip the bad offer, violating the documented behavior that the bundler skips every reason why take can revert? Proof idea: include an offer that causes consumableUnits to revert and assert the bundle reverts instead of skipping.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6b7820d-fd98-4a3d-be5b-6f3f1fff02e8?mode=deep",
+    "timestamp": "2026-05-31 17:52:39.338332",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits is called inside the loop in MidnightBundles before the try/catch for take(), such that a revert in consumableUnits propagates outside the try/catch and causes the entire bundle to revert, while a revert in take() would be caught and the offer skipped, creating an asymmetry where certain offer states cause bundle-level revert instead of offer-level skip? Proof idea: compare bundle behavior when consumableUnits reverts vs when take() reverts for the same offer state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_64695809-61af-473b-9266-746a304801a8?mode=deep",
+    "timestamp": "2026-05-31 17:52:56.297894",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits reads consumed(offer.maker, offer.group) which is updated by take() in the same bundle transaction, such that after the first take() in the loop, the consumed value increases, and the next call to consumableUnits for a sibling offer in the same group returns a smaller remaining capacity than expected, causing the bundle to under-fill and revert with OutOfOffers? Proof idea: use two offers in the same group and assert consumableUnits for the second offer accounts for the first take's consumption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60ccd083-8c57-4b36-a927-943e03e0d724?mode=deep",
+    "timestamp": "2026-05-31 17:53:12.713883",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker exploit the fact that sellerAssetsToUnits for a buy offer (offer.buy=true) uses mulDivUp (rounding up units), such that for a buy offer with maxAssets>0 (where maxAssets is sellerAssets), consumableUnits returns ceil(remainingSellerAssets*WAD/sellerPrice) units, but take() computes sellerAssets=floor(units*sellerPrice/WAD) which may be less than remainingSellerAssets, leaving residual capacity and causing the bundle to under-fill? Proof idea: find (remainingSellerAssets, sellerPrice) where floor(ceil(x*WAD/sellerPrice)*sellerPrice/WAD) < x.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7139fa97-cb15-4de4-8a0f-f8dffec81ee0?mode=deep",
+    "timestamp": "2026-05-31 17:53:27.118100",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not validate that offer.maker != address(0), such that for an offer with maker=address(0), consumed(address(0), group) returns 0, causing consumableUnits to return maxUnits or convert maxAssets to units as if the offer is fully unconsumed, while take() would revert with SelfTake if taker==address(0) or proceed normally otherwise? Proof idea: use an offer with maker=address(0) and assert consumableUnits returns non-zero but take() behavior is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7eed18dc-6032-4501-a5d6-54a0595618eb?mode=deep",
+    "timestamp": "2026-05-31 17:53:41.859298",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker exploit the fact that MidnightBundles.supplyCollateralAndSellWithUnitsTarget supplies collateral before the take loop, such that if consumableUnits causes the bundle to revert (not just skip), the collateral is already transferred to Midnight but the debt is not created, leaving the taker's collateral locked in Midnight without corresponding debt, causing a fund freeze? Proof idea: trigger a consumableUnits revert after collateral supply and assert collateral is locked in Midnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0007668-5c8b-43fd-987c-5f7341ea177b?mode=deep",
+    "timestamp": "2026-05-31 17:53:58.720878",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits uses TickLib.tickToPrice(offer.tick) which reverts with TickOutOfRange if offer.tick > MAX_TICK (5820), causing a revert that propagates through consumableUnits and causes the entire bundle to revert rather than skip the offer with the invalid tick? Proof idea: include an offer with tick > 5820 and assert the bundle reverts instead of skipping.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d0b6487-3e69-4160-96cb-d888b05ddc7e?mode=deep",
+    "timestamp": "2026-05-31 17:54:15.476789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits is a library function that can be called by any contract (not just MidnightBundles), such that a malicious integrator calls consumableUnits with a crafted offer to get an inflated unit count, then uses that count to mislead a user about the available capacity of an offer, causing the user to submit a bundle that reverts with OutOfOffers? Proof idea: call consumableUnits with a crafted offer and assert the returned unit count matches what take() would accept.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f410c2f1-71ba-41e7-898e-30153522f831?mode=deep",
+    "timestamp": "2026-05-31 17:54:33.515262",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / TakeAmountsLib] Can an unprivileged taker exploit the fact that buyerAssetsToUnits and sellerAssetsToUnits both call IMidnight(midnight).settlementFee(id, ttm) as an external view call, such that if midnight is a malicious contract (e.g., in a test environment), it can return an arbitrary settlementFee, causing consumableUnits to return an arbitrary unit count that diverges from what the real Midnight contract would compute? Proof idea: deploy a mock midnight with manipulated settlementFee and assert consumableUnits returns incorrect units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63c0a0ea-ef15-4303-a4c6-635fb5241d40?mode=deep",
+    "timestamp": "2026-05-31 17:54:50.625990",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not account for the market's tickSpacing when computing units, such that for a market with tickSpacing > 1, the offer.tick may be valid (divisible by tickSpacing) but the price computed by tickToPrice(offer.tick) differs from the price at the nearest accessible tick, causing the units estimate to be slightly off and leading to ConsumedAssets revert or under-fill? Proof idea: fuzz tickSpacing and offer.tick and assert consumableUnits and take() agree on units for all valid tick/spacing combinations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_30599950-3d9f-4186-9445-9d6c7377812a?mode=deep",
+    "timestamp": "2026-05-31 17:55:06.885785",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: consumableUnits / MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker exploit the fact that buyWithAssetsTargetAndWithdrawCollateral computes referralFeeAssets = targetBuyerAssets.mulDivDown(referralFeePct, WAD) before the take loop, and then requires filledBuyerAssets == targetFilledBuyerAssets = targetBuyerAssets - referralFeeAssets, such that rounding in consumableUnits causes filledBuyerAssets to differ from targetFilledBuyerAssets by 1, causing OutOfOffers revert and the user losing the gas cost of the failed transaction? Proof idea: fuzz referralFeePct and targetBuyerAssets and assert filledBuyerAssets == targetFilledBuyerAssets after bundle execution.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73a37a26-5a92-4c46-9cd8-49e4a5fb030f?mode=deep",
+    "timestamp": "2026-05-31 17:55:23.500853",
+    "report_generated": false
+  }
+]
