@@ -1,0 +1,98 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that SetterRatifier.isRatified is a view function and does not update consumed state, call take() multiple times with the same ratified offer and valid proof, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: the consumed state is correctly updated in take() (not in isRatified), so the question is whether the consumed check in take() correctly prevents overfilling when the same root is ratified? Proof idea: ratify root with offer.maxUnits=N, fill N units in first take, attempt to fill 1 more unit in second take, assert revert with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea9d7413-3199-43b9-ab07-c993b2a84f96?mode=deep",
+    "timestamp": "2026-05-31 22:11:22.924022",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: setIsRootRatified / take] Can an unprivileged taker, under the precondition that SetterRatifier ratification is per-root and not per-offer, submit a proof for offer A at leafIndex 0 but with the proof path of offer B at leafIndex 1 in the same tree, violating the invariant that the Merkle proof must uniquely bind the offer hash to the root, causing scoped impact: if the proof verification in HashLib.isLeaf has a path confusion bug, a taker could fill an offer that was not included in the ratified tree? Proof idea: construct a 2-leaf tree with offers A and B, submit proof for A using B's proof path with wrong leafIndex, assert isLeaf returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a532e475-2b02-4977-83b0-bd049bc40b47?mode=deep",
+    "timestamp": "2026-05-31 22:11:34.938406",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate market.rcfThreshold and rcfThreshold is stored as part of the market struct used in health checks, create a market with rcfThreshold == 0 (RCF always active) vs rcfThreshold == type(uint256).max (RCF always inactive), then compare liquidation behavior for a barely-unhealthy position, violating the invariant that RCF must cap liquidation to restore health, causing scoped impact: with rcfThreshold=type(uint256).max), the RCF condition is always satisfied so full liquidation is always allowed, enabling griefing of borrowers with barely-unhealthy positions? Proof idea: fuzz rcfThreshold in [0, type(uint256).max], create position with debt = maxDebt + 1, call liquidate with seizedAssets = all collateral, assert RecoveryCloseFactorConditionsViolated is raised iff rcfThreshold is small.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b42ef875-9a83-48b5-9d3b-683db07ef61d?mode=deep",
+    "timestamp": "2026-05-31 22:11:47.401054",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take / multicall] Can an unprivileged market creator, under the precondition that touchMarket is called inside take() and market creation is idempotent after first creation, use multicall to atomically create a market with malformed params (past maturity) and immediately take an offer in that market, violating the invariant that market creation and first trade must be subject to the same parameter validation, causing scoped impact: the market is created and the first trade executes in the same transaction, bypassing any off-chain monitoring that might detect malformed market creation before trading begins? Proof idea: encode touchMarket(malformedMarket) and take(offer) in multicall, assert both succeed atomically.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac5d47ce-54a4-4226-aabf-41b6425a129c?mode=deep",
+    "timestamp": "2026-05-31 22:12:00.283224",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: setIsRootRatified] Can an unprivileged attacker, under the precondition that setIsRootRatified emits SetIsRootRatified event with caller, maker, root, and newIsRootRatified but does not emit the offer details, ratify a root that maps to a tree of malicious offers without any on-chain evidence of the offer contents, violating the invariant that ratification must be auditable, causing scoped impact: off-chain monitoring cannot detect malformed market params in ratified offers until a taker executes them, enabling stealth creation of malformed markets? Proof idea: ratify root=keccak256(abi.encode(malformedOffer)), assert no on-chain data reveals the offer contents, assert take creates malformed market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af313908-8e8d-44f6-ac76-45fb014c98c8?mode=deep",
+    "timestamp": "2026-05-31 22:12:13.351807",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket stores market params via IdLib.storeInCode using SSTORE2 and the market ID is derived from the market hash, create two markets with different collateral orderings that hash to the same ID (hash collision), violating the invariant that market ID must uniquely identify market params, causing scoped impact: a borrower in market A could have their collateral evaluated using market B's collateral params, enabling incorrect health checks and liquidations? Proof idea: fuzz market params to find two distinct Market structs with the same toId() output, assert this is computationally infeasible given keccak256 collision resistance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4734a6e9-9a42-489e-92cb-7ed244a1c1b1?mode=deep",
+    "timestamp": "2026-05-31 22:12:26.469130",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate that collateral token addresses are non-zero (the sort check requires collateralToken > previousCollateralToken where previousCollateralToken starts at address(0), so address(0) fails but address(1) passes), create a market with collateralParams[0].token == address(1), then a borrower supplies collateral, violating the invariant that collateral token must be a valid ERC20 contract, causing scoped impact: safeTransferFrom(address(1), ...) may succeed silently (no code at address(1) on most chains) recording collateral without actual token transfer, enabling free collateral? Proof idea: create market with token=address(1), call supplyCollateral with amount > 0, assert collateral[borrower][0] == amount but address(1).balanceOf(midnight) == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_503cff61-b1c0-4dc2-9da9-84209cad5d7c?mode=deep",
+    "timestamp": "2026-05-31 22:12:39.658585",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take / isHealthy] Can an unprivileged market creator, under the precondition that touchMarket allows up to 128 collaterals and isHealthy iterates over activated collaterals via bitmap, create a market with 128 collaterals where collateral[127] has oracle == address(0), then a borrower activates collateral[127] and borrows, violating the invariant that oracle.price() must return a meaningful value for all activated collaterals, causing scoped impact: isHealthy returns maxDebt == 0 for the oracle(address(0)) contribution, making the borrower immediately unhealthy regardless of other collateral values? Proof idea: create 128-collateral market with last oracle=address(0), activate last collateral, borrow, assert isHealthy returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3afc1d84-1961-4eb4-8bef-667bb4c5a98b?mode=deep",
+    "timestamp": "2026-05-31 22:12:54.411584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: setIsRootRatified / isRatified / take] Can an unprivileged taker, under the precondition that SetterRatifier.isRatified is a view function called inside take() after consumed state is updated, exploit a reentrancy path where the maker's callback calls setIsRootRatified(maker, root, false) to de-ratify the root mid-take, violating the invariant that ratification state must not change during a take execution, causing scoped impact: the de-ratification happens after isRatified is called (isRatified is called before callbacks in take()), so the de-ratification has no effect on the current take but affects future takes? Proof idea: trace take() call order: isRatified called at line 356 before callbacks at line 445+, assert de-ratification in callback does not affect current take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86f8350f-111c-41b8-aa4c-3d3b594906ce?mode=deep",
+    "timestamp": "2026-05-31 22:13:09.000003",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate that market.enterGate implements IEnterGate interface, create a market with enterGate set to an EOA address or a contract without canIncreaseCredit/canIncreaseDebt functions, then a taker calls take() with credit or debt increase, violating the invariant that gate calls must not revert for valid market operations, causing scoped impact: IEnterGate(enterGate).canIncreaseCredit(buyer) call to a non-implementing address reverts, permanently blocking all credit increases in the market? Proof idea: create market with enterGate=EOA, attempt take with buyerCreditIncrease > 0, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c249dcb-169e-48cb-8fe4-a7046e9dc05f?mode=deep",
+    "timestamp": "2026-05-31 22:13:23.745690",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator, under the precondition that touchMarket does not validate that market.liquidatorGate implements ILiquidatorGate interface, create a market with liquidatorGate set to an EOA or non-implementing contract, then a liquidator calls liquidate(), violating the invariant that liquidator gate must not permanently block liquidation, causing scoped impact: ILiquidatorGate(liquidatorGate).canLiquidate(liquidator) call to a non-implementing address reverts, permanently blocking all liquidations in the market, enabling bad debt accumulation? Proof idea: create market with liquidatorGate=EOA, create unhealthy position, call liquidate, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68a6b883-1bfe-4951-aebb-509ba50f72cc?mode=deep",
+    "timestamp": "2026-05-31 22:13:38.880174",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate that market.maturity is in the future and the settlement fee computation uses timeToMaturity = zeroFloorSub(market.maturity, block.timestamp), create a market with maturity == 0, then a taker calls take() where timeToMaturity == 0, violating the invariant that settlement fee must be computed correctly for all valid TTM values, causing scoped impact: settlementFee(id, 0) returns settlementFeeCbp0 * CBP (the 0-day fee), which is the post-maturity fee, so all trades in this market pay the post-maturity settlement fee regardless of when they occur? Proof idea: create market with maturity=0, call take, assert settlementFee == settlementFeeCbp0 * CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00ad1d40-702f-4b7c-b2ec-1ab02a80baf0?mode=deep",
+    "timestamp": "2026-05-31 22:13:53.399144",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate that collateral token is not a fee-on-transfer token, create a market with a fee-on-transfer collateral token, then a borrower calls supplyCollateral(market, 0, amount, borrower) which pulls amount tokens but only amount*(1-fee) arrive, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: collateral[borrower][0] is recorded as amount but actual balance is amount*(1-fee), enabling the borrower to borrow against phantom collateral and creating bad debt? Proof idea: deploy fee-on-transfer token, create market, supply collateral, assert collateral[borrower][0] > actual token balance in contract.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9571db42-c83d-4cea-949e-f069b52d3183?mode=deep",
+    "timestamp": "2026-05-31 22:14:09.473142",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: setIsRootRatified / take] Can an unprivileged maker, under the precondition that SetterRatifier.setIsRootRatified has no expiry parameter and ratification persists indefinitely, ratify a root containing an offer with offer.expiry == type(uint256).max and offer.maxUnits == type(uint256).max, then have the offer filled repeatedly over years, violating the invariant that offers must have bounded lifetime and capacity, causing scoped impact: the maker's offer is fillable indefinitely with no expiry and no capacity limit, enabling unlimited debt or credit creation for the maker without any time or amount bound? Proof idea: ratify root with offer.expiry=type(uint256).max and offer.maxUnits=type(uint256).max, fill repeatedly, assert consumed never exceeds maxUnits (it can't since maxUnits=type(uint256).max).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4eea9644-46a1-4911-9897-5e351dacea5c?mode=deep",
+    "timestamp": "2026-05-31 22:14:25.607529",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take / withdraw] Can an unprivileged market creator, under the precondition that touchMarket does not validate market.maturity has a minimum value, create a market with maturity == 1 (Unix timestamp January 1, 1970), then a lender creates credit via take (credit increase is allowed post-maturity), then tries to withdraw, violating the invariant that lender credit must be redeemable via withdraw when withdrawable > 0, causing scoped impact: in a market with maturity=1 and no debt, withdrawable remains 0 because no repayments occur, so lender credit is permanently frozen? Proof idea: create market with maturity=1, take buy offer to create credit, assert withdrawable==0, assert withdraw(market, credit, lender, lender) reverts or transfers 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_edfb6bb3-0738-44df-90e6-1ab0b4c81390?mode=deep",
+    "timestamp": "2026-05-31 22:14:43.440714",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator, under the precondition that touchMarket does not validate that collateral oracle returns a price within safe bounds, create a market with a collateral oracle that returns type(uint256).max, then a borrower supplies collateral and isHealthy is called, violating the invariant that mulDivDown(collateral, price, ORACLE_PRICE_SCALE) must not overflow, causing scoped impact: if collateral * price overflows uint256 in the mulDivDown computation, isHealthy reverts, permanently blocking health checks, withdrawals, and liquidations for any borrower with that collateral activated? Proof idea: deploy oracle returning type(uint256).max, create market, supply collateral, borrow, call isHealthy, assert overflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98107d74-85a1-4102-ac31-5d6d49c5b485?mode=deep",
+    "timestamp": "2026-05-31 22:15:01.712428",
+    "report_generated": false
+  }
+]
