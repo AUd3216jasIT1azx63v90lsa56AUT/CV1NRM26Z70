@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker deploy a malicious ERC20 loan token whose permit() implementation re-enters Midnight.setIsAuthorized(attacker, true, victim) during the try-catch permit call in pullToken(), given that the bundler holds isAuthorized[victim][bundler]=true at call time, violating the invariant that authorization changes require explicit user consent, causing scoped impact: unauthorized authorization setter — attacker gains full Midnight control over victim's position? Proof idea: deploy MaliciousToken with permit() that calls midnight.setIsAuthorized(attacker, true, victim); fuzz victim's prior bundler authorization state and assert isAuthorized[victim][attacker] remains false after any pullToken() call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04b1b31a-b3ab-4efa-b59b-6e4c650ea407?mode=deep",
+    "timestamp": "2026-05-31 20:09:52.132289",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker supply a malicious loan token whose permit() calls Midnight.claimSettlementFee(token, claimableSettlementFee[token], attacker) during the bundler's try-catch permit invocation, given feeClaimer == address(bundler) or feeClaimer == address(maliciousToken), violating the invariant that only the designated feeClaimer may drain claimableSettlementFee, causing scoped impact: fee claimer access-control bypass — attacker drains all accrued settlement fees? Proof idea: set feeClaimer to maliciousToken; call buyWithUnitsTargetAndWithdrawCollateral with maliciousToken as loanToken; assert claimableSettlementFee[token] == 0 and attacker balance increased.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2fa95439-4708-4735-9d04-59dcafd71e3e?mode=deep",
+    "timestamp": "2026-05-31 20:10:04.135594",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker use a malicious loan token whose permit() calls Midnight.setMarketSettlementFee(id, index, maxSettlementFee(index)) during pullToken(), given feeSetter == address(maliciousToken), violating the invariant that only the designated feeSetter may alter per-market settlement fee breakpoints, causing scoped impact: market parameter setter bypass — attacker sets settlement fees to maximum, implicitly canceling low-price offers and extracting spread? Proof idea: set feeSetter to maliciousToken; trigger pullToken(); assert all 7 settlementFeeCbp breakpoints are at max and existing low-tick offers revert on take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b82fdeba-d1db-4397-b2f1-17647e2f97f8?mode=deep",
+    "timestamp": "2026-05-31 20:10:16.644181",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker supply a malicious loan token whose permit() calls Midnight.setMarketTickSpacing(id, 1) during pullToken(), given tickSpacingSetter == address(maliciousToken), violating the invariant that only the designated tickSpacingSetter may reduce tick spacing, causing scoped impact: tick-spacing setter bypass — attacker unlocks all ticks, enabling offers at previously inaccessible price points and disrupting market price granularity? Proof idea: set tickSpacingSetter to maliciousToken; trigger pullToken(); assert marketState[id].tickSpacing == 1 without tickSpacingSetter authorization.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fafc6e61-f750-476d-8bd1-0aacc819d894?mode=deep",
+    "timestamp": "2026-05-31 20:10:29.518916",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker supply a malicious loan token whose permit() calls Midnight.setRoleSetter(attacker) during pullToken(), given roleSetter == address(maliciousToken), violating the invariant that only the current roleSetter may transfer the roleSetter role, causing scoped impact: role setter access-control failure — attacker becomes roleSetter and can subsequently set feeSetter, feeClaimer, and tickSpacingSetter to arbitrary addresses? Proof idea: set roleSetter to maliciousToken; trigger pullToken(); assert roleSetter == attacker and attacker can call setFeeSetter(attacker).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04d5afa7-1dd8-4a24-a7fa-0b7aea868d4c?mode=deep",
+    "timestamp": "2026-05-31 20:10:42.999706",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker front-run a victim's ERC2612 permit signature (owner=victim, spender=bundler, value=X) by calling IERC20Permit(token).permit(victim, bundler, X, deadline, v, r, s) directly before the bundler's pullToken(), causing the bundler's try-catch to silently swallow the revert, then the subsequent safeTransferFrom(token, victim, bundler, X) succeeds only if victim had a pre-existing allowance, violating the invariant that permit-based flows must not silently fall back to stale approvals, causing scoped impact: authorization setter confusion — victim's pre-approved allowance is consumed without their intent in the current transaction? Proof idea: fuzz front-run timing; assert that if permit nonce is consumed before pullToken(), the bundler's safeTransferFrom only succeeds when victim.allowance(bundler) >= X from a prior approval.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f08dce3d-9ee7-4ce0-9f81-c08d9e2deeb1?mode=deep",
+    "timestamp": "2026-05-31 20:10:56.936889",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverAuthorizer.setIsAuthorized / IERC20Permit.permit] Can an unprivileged attacker replay a previously valid EcrecoverAuthorizer authorization signature (authorizer=victim, authorized=attacker, isAuthorized=true, nonce=N) on a different chain after a hard fork, given that EcrecoverAuthorizer uses block.chainid in its domain separator but Midnight.INITIAL_CHAIN_ID is captured at construction and may differ post-fork, violating the invariant that authorization signatures must be chain-specific and non-replayable, causing scoped impact: authorization setter bypass — attacker gains full Midnight control over victim's account on the forked chain? Proof idea: simulate chain fork; replay authorization signature with old chainid; assert ecrecover produces valid signer on new chain and isAuthorized[victim][attacker] becomes true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4941c398-001d-4d1e-8312-d041005ef766?mode=deep",
+    "timestamp": "2026-05-31 20:11:09.625087",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setIsAuthorized / isAuthorized mapping] Can an unprivileged attacker who is already authorized by victim (isAuthorized[victim][attacker]=true) call Midnight.setIsAuthorized(attacker2, true, victim) to grant a second address full control, then call setIsAuthorized(attacker, false, victim) to remove their own trace, violating the invariant that authorization delegation must not create unrevocable chains of control, causing scoped impact: authorization setter abuse — attacker creates a persistent backdoor authorization that victim cannot easily detect or revoke? Proof idea: state-test the authorization chain; assert that after attacker self-removes, attacker2 retains isAuthorized[victim][attacker2]=true and can perform all victim actions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e202a725-17a4-4d55-93fb-39f71387fbe3?mode=deep",
+    "timestamp": "2026-05-31 20:11:23.387610",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setIsAuthorized / EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker submit an EcrecoverAuthorizer authorization with nonce=type(uint256).max-1 to increment nonce[victim] to type(uint256).max, permanently blocking all future EcrecoverAuthorizer-based authorization updates for victim, given that nonce[victim]++ would overflow to 0 on the next call (Solidity 0.8 reverts on overflow), violating the invariant that authorization nonce must not be exhaustible by an attacker, causing scoped impact: authorization setter DoS — victim can never use EcrecoverAuthorizer again? Proof idea: fuzz nonce values near type(uint256).max; assert that after nonce reaches max, all subsequent setIsAuthorized calls revert with InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cadc843-2f42-4e7e-ba91-fd1908d1fe19?mode=deep",
+    "timestamp": "2026-05-31 20:11:36.812299",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.multicall / setIsAuthorized] Can an unprivileged attacker who is authorized by victim use Midnight.multicall() to atomically call setIsAuthorized(attacker2, true, victim) and setIsAuthorized(attacker, false, victim) in a single transaction, violating the invariant that authorization changes must be individually auditable and revocable, causing scoped impact: authorization setter abuse — attacker transfers control to a new address and removes their own trace atomically, making the attack invisible in single-tx analysis? Proof idea: encode both calls in multicall bytes[]; assert post-state shows isAuthorized[victim][attacker2]=true and isAuthorized[victim][attacker]=false in one tx.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ed8df67b-90dd-4763-9a4f-67d24b44441f?mode=deep",
+    "timestamp": "2026-05-31 20:11:49.620646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit / forceApproveMax] Can an unprivileged attacker supply a malicious ERC20 token whose approve() function (called inside forceApproveMax) re-enters MidnightBundles to call a second bundler function with a different taker, given that forceApproveMax calls safeApprove(token, 0) then safeApprove(token, type(uint256).max), violating the invariant that token approval must not trigger state changes in the bundler, causing scoped impact: authorization setter confusion — attacker hijacks the bundler's authorization check for a different taker during the approval callback? Proof idea: deploy MaliciousToken with approve() that re-enters bundler; assert that the re-entrant call uses a different taker's authorization context.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1b01013-8dc5-4d9b-ad90-7bddf270489d?mode=deep",
+    "timestamp": "2026-05-31 20:12:03.424972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.claimSettlementFee / feeClaimer] Can an unprivileged attacker call Midnight.setFeeClaimer(address(0)) via the roleSetter role to permanently lock all accrued claimableSettlementFee[token] balances, given that claimSettlementFee requires msg.sender == feeClaimer and feeClaimer == address(0) means no address can satisfy this, violating the invariant that protocol fees must always be claimable by a designated address, causing scoped impact: fee claimer access-control failure — all settlement fees are permanently frozen in the contract? Proof idea: call setFeeClaimer(address(0)) as roleSetter; assert claimSettlementFee reverts for all callers and claimableSettlementFee[token] > 0 is unrecoverable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43699978-8e70-4d35-a16c-6ecf6fecc0ac?mode=deep",
+    "timestamp": "2026-05-31 20:12:16.889823",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.claimContinuousFee / feeClaimer] Can an unprivileged attacker call Midnight.claimContinuousFee(market, amount, attacker) as the feeClaimer where amount > marketState[id].continuousFeeCredit, causing an underflow revert in _marketState.continuousFeeCredit -= toUint128(amount), or alternatively, can the feeClaimer drain continuousFeeCredit to zero while totalUnits and withdrawable are decremented, violating the invariant that continuousFeeCredit <= totalUnits and withdrawable >= continuousFeeCredit, causing scoped impact: fee claimer accounting corruption — lender withdrawable balance is reduced below actual repaid assets? Proof idea: fuzz amount in [0, type(uint128).max]; assert continuousFeeCredit, totalUnits, withdrawable remain consistent after any valid claimContinuousFee call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb682607-6768-44a5-b6e8-b8c18bcdff77?mode=deep",
+    "timestamp": "2026-05-31 20:12:29.820352",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setFeeClaimer / roleSetter] Can an unprivileged attacker observe that when setFeeClaimer(newFeeClaimer) is called, the old feeClaimer immediately loses all unclaimed fees (as documented: 'When the claimer is set, the old claimer loses the unclaimed fees'), and exploit this by front-running a legitimate fee claim with a setFeeClaimer call (if attacker is roleSetter), violating the invariant that accrued fees must be claimable by the address that earned them, causing scoped impact: fee claimer access-control failure — old feeClaimer's accrued fees are permanently redirected to new feeClaimer? Proof idea: simulate roleSetter front-running a claimSettlementFee tx; assert old feeClaimer receives 0 and new feeClaimer can claim the full balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e569b59c-54b6-46dc-90fd-4e09355a90fb?mode=deep",
+    "timestamp": "2026-05-31 20:12:43.467563",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setMarketSettlementFee / feeSetter] Can an unprivileged attacker who is the feeSetter call setMarketSettlementFee(id, index, 0) to zero out a specific settlement fee breakpoint, then take offers at that TTM range with zero settlement fee, violating the invariant that settlement fees must be non-negative and consistent with the market's fee schedule, causing scoped impact: market parameter setter abuse — attacker extracts value by taking offers at zero fee when the market was designed with non-zero fees? Proof idea: set settlementFeeCbp[index]=0 for a specific breakpoint; take offers at that TTM; assert buyerAssets - sellerAssets == 0 and claimableSettlementFee[token] does not increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_857e8de1-a2e8-44f8-b3f5-2e9f5ea45d15?mode=deep",
+    "timestamp": "2026-05-31 20:12:56.378249",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setDefaultSettlementFee / feeSetter] Can an unprivileged attacker who is the feeSetter call setDefaultSettlementFee(loanToken, index, maxSettlementFee(index)) for all 7 indices before any market is created for that loanToken, causing all future markets to inherit maximum settlement fees at creation via touchMarket(), violating the invariant that default fees must not retroactively affect already-created markets but must not be weaponizable for future markets, causing scoped impact: market parameter setter abuse — all future markets for a loan token are created with maximum fees, implicitly canceling low-price offers at creation? Proof idea: set all 7 default breakpoints to max; create market; assert all 7 settlementFeeCbp values equal max and low-tick offers revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6da552ff-0aef-4076-a88b-41e2923468c6?mode=deep",
+    "timestamp": "2026-05-31 20:13:09.600258",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setMarketContinuousFee / feeSetter] Can an unprivileged attacker who is the feeSetter call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) after lenders have already established positions with pendingFee crystallized at a lower continuousFee, violating the invariant that existing lenders' pendingFee is fixed at the time of credit increase and must not be retroactively increased, causing scoped impact: market parameter setter abuse — new lenders entering after the fee change pay maximum continuous fee while existing lenders are unaffected, creating an unfair two-tier fee structure? Proof idea: record pendingFee for existing lender; change continuousFee to MAX_CONTINUOUS_FEE; assert existing lender's pendingFee accrual rate is unchanged but new lender's pendingFee accrues at max rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3335ee73-36a1-471d-ad88-6235edf415b9?mode=deep",
+    "timestamp": "2026-05-31 20:13:23.048892",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setMarketTickSpacing / tickSpacingSetter] Can an unprivileged attacker who is the tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) where newTickSpacing does not divide the current tickSpacing, and verify that the require(marketState[id].tickSpacing % newTickSpacing == 0) check correctly rejects this, or alternatively, can the attacker find a newTickSpacing that passes the divisibility check but is not a power-of-2 divisor of DEFAULT_TICK_SPACING=4, violating the invariant that tick spacing must only decrease to valid divisors, causing scoped impact: tick-spacing setter abuse — offers at non-multiple ticks become accessible, breaking price grid assumptions? Proof idea: fuzz newTickSpacing in [1, DEFAULT_TICK_SPACING]; assert only divisors of current spacing are accepted and all previously valid ticks remain valid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aaeaf034-47c2-4eff-add4-3b7f45972357?mode=deep",
+    "timestamp": "2026-05-31 20:13:36.178883",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setMarketTickSpacing / tickSpacingSetter] Can an unprivileged attacker who is the tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) to reduce spacing from 4 to 1, enabling offers at ticks that were previously inaccessible, then immediately take those offers before makers can cancel them, violating the invariant that tick spacing reduction must not enable retroactive exploitation of existing offers, causing scoped impact: tick-spacing setter abuse — attacker takes offers at newly unlocked ticks that makers never intended to be accessible? Proof idea: reduce tickSpacing to 1; attempt to take an offer at tick=1 (previously inaccessible at spacing=4); assert the take succeeds and maker's consumed state is updated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_54de489f-6f3d-4c6d-8a3d-0f95a168c240?mode=deep",
+    "timestamp": "2026-05-31 20:13:48.999303",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: Midnight.setRoleSetter / roleSetter] Can an unprivileged attacker call Midnight.setRoleSetter(address(0)) as the current roleSetter to permanently renounce the role, causing all subsequent calls to setFeeSetter, setFeeClaimer, setTickSpacingSetter, and setRoleSetter to revert with OnlyRoleSetter(), violating the invariant that protocol governance must always have a path to update fee and tick-spacing parameters, causing scoped impact: role setter access-control failure — protocol is permanently locked with current feeSetter, feeClaimer, and tickSpacingSetter, with no ability to update them? Proof idea: call setRoleSetter(address(0)); assert all four role-setting functions revert; assert no recovery path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49c47919-0704-4372-abb3-20df30884c9e?mode=deep",
+    "timestamp": "2026-05-31 20:14:02.742657",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged attacker replay a Permit2 signature (nonce=N, deadline=D, token=T, amount=A, spender=bundler) in a second bundler call within the same deadline window, given that Permit2's nonce is invalidated after first use but the bundler does not verify that the Permit2 transfer was for the correct amount or recipient, violating the invariant that each Permit2 signature must authorize exactly one transfer, causing scoped impact: authorization setter confusion — attacker replays victim's Permit2 signature to pull tokens for a different bundler operation? Proof idea: capture valid Permit2 signature; call pullToken twice with same signature; assert second call reverts at Permit2 level with InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d43f2ae-0fc0-4074-a6ae-c0565b9ce33a?mode=deep",
+    "timestamp": "2026-05-31 20:14:16.992829",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker supply a TokenPermit with kind=ERC2612 but data encoding a deadline=0 (already expired), causing the permit() call to revert (caught by try-catch), then the bundler falls back to safeTransferFrom which requires a pre-existing allowance, violating the invariant that expired permits must not silently fall back to stale approvals, causing scoped impact: authorization setter confusion — victim's stale unlimited approval to the bundler is consumed without their intent in the current transaction context? Proof idea: set victim allowance to type(uint256).max; call pullToken with expired permit; assert safeTransferFrom succeeds using stale allowance and victim loses tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b33be5ec-11de-480a-bb13-0855e3e056d1?mode=deep",
+    "timestamp": "2026-05-31 20:14:30.200227",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged attacker supply a TokenPermit with kind=ERC2612 and data encoding spender=address(attacker) instead of address(bundler), causing the permit() to approve the attacker (not the bundler) for the victim's tokens, while the bundler's try-catch silently ignores the wrong-spender permit and proceeds with safeTransferFrom using a pre-existing allowance, violating the invariant that permit spender must always be the bundler, causing scoped impact: authorization setter confusion — attacker gains an ERC20 approval for victim's tokens as a side effect of a bundler call? Proof idea: encode permit with spender=attacker; call pullToken; assert attacker.allowance(victim, attacker) > 0 after the call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d5cc1fe-673a-4e50-8c20-03cecc2b0c99?mode=deep",
+    "timestamp": "2026-05-31 20:14:43.012724",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverAuthorizer.setIsAuthorized / IERC20Permit.permit] Can an unprivileged attacker construct an EcrecoverAuthorizer authorization where authorization.authorizer is a contract that implements isAuthorized() to always return true (since EcrecoverAuthorizer checks IMidnight(MIDNIGHT).isAuthorized(authorization.authorizer, signer)), allowing any signer to authorize any address on behalf of the contract-authorizer, violating the invariant that only the actual authorizer or their explicitly authorized delegates may grant new authorizations, causing scoped impact: authorization setter bypass — attacker grants themselves authorization over a contract account without that contract's consent? Proof idea: deploy a contract with no Midnight authorization; call EcrecoverAuthorizer.setIsAuthorized with authorizer=contract; assert the check fails unless contract has explicitly authorized signer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_18566e47-e821-4a8b-815e-8ab751d09c54?mode=deep",
+    "timestamp": "2026-05-31 20:14:56.628046",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.cancelRoot / isAuthorized] Can an unprivileged attacker who is authorized by a maker (isAuthorized[maker][attacker]=true) call EcrecoverRatifier.cancelRoot(maker, root) to cancel all offers in the maker's Merkle tree, violating the invariant that offer cancellation must require explicit maker consent, causing scoped impact: authorization setter abuse — attacker uses coarse-grained authorization to cancel all of maker's outstanding offers, causing market disruption and potential loss of maker's intended liquidity provision? Proof idea: authorize attacker; call cancelRoot(maker, root); assert isRootCanceled[maker][root]=true and all offers in that tree revert on take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae189071-a631-42eb-8a42-2afc96a3e899?mode=deep",
+    "timestamp": "2026-05-31 20:15:10.614978",
+    "report_generated": false
+  }
+]
