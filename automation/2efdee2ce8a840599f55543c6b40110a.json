@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged ATTACKER who is already authorized for a victim maker call setIsAuthorized(maliciousRatifier, true, maker) under the precondition that isAuthorized[maker][attacker]==true, via the call sequence attacker calls setIsAuthorized(maliciousRatifier, true, maker) then taker calls take() with offer.ratifier=maliciousRatifier, violating the invariant that only the maker controls which ratifiers are authorized for their offers, causing scoped impact: attacker-controlled ratifier passes isRatified for any offer content, enabling unauthorized offer execution? Proof idea: unit test where authorized operator grants a malicious ratifier, then fills an offer with arbitrary terms and asserts take() succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b32c2e8e-1819-4334-86af-6a47c99fbbab?mode=deep",
+    "timestamp": "2026-05-31 22:51:03.515044",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + SetterRatifier.setIsRootRatified] Can an unprivileged ATTACKER who is authorized for a maker call SetterRatifier.setIsRootRatified(maker, arbitraryRoot, true) under the precondition that isAuthorized[maker][attacker]==true and offer.ratifier==SetterRatifier, via the call sequence attacker calls setIsRootRatified(maker, root, true) then constructs an offer tree with root and calls take(), violating the invariant that only the maker can ratify offer roots in SetterRatifier, causing scoped impact: attacker fills offers the maker never intended to authorize? Proof idea: fuzz arbitrary offer parameters, assert that an authorized-but-not-maker account can ratify and fill offers the maker did not sign.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_680b5480-de69-4d63-903d-5fb9cd036bc5?mode=deep",
+    "timestamp": "2026-05-31 22:51:15.809367",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + EcrecoverRatifier.cancelRoot] Can an unprivileged ATTACKER who is authorized for a maker call EcrecoverRatifier.cancelRoot(maker, validRoot) under the precondition that isAuthorized[maker][attacker]==true and the maker has active signed offers under validRoot, via the call sequence attacker calls cancelRoot(maker, validRoot), violating the invariant that only the maker can cancel their own offer roots, causing scoped impact: all of the maker's live offers under validRoot become permanently unfillable (fund freeze / DoS of maker liquidity)? Proof idea: unit test where authorized operator cancels maker's root and asserts subsequent take() reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_829224ed-6138-41da-96ca-4d153b1112f5?mode=deep",
+    "timestamp": "2026-05-31 22:51:29.351505",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged ATTACKER who is authorized for a victim call setIsAuthorized(attacker, true, victim) and then setIsAuthorized(secondaryAttacker, true, victim) under the precondition that isAuthorized[victim][attacker]==true, via the call sequence attacker calls setIsAuthorized(secondaryAttacker, true, victim), violating the invariant that authorization delegation should not be transitively exploitable to add arbitrary new principals, causing scoped impact: attacker permanently expands the set of accounts that can act on behalf of victim including authorizing new ratifiers? Proof idea: invariant test asserting that no account not explicitly authorized by victim can gain isAuthorized[victim][x]==true without victim's direct action.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f87069ab-92e6-40be-bdd9-aa7023ae6ff0?mode=deep",
+    "timestamp": "2026-05-31 22:51:41.778977",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: multicall + setIsAuthorized] Can an unprivileged ATTACKER who is authorized for a maker use multicall to atomically call setIsAuthorized(maliciousRatifier, true, maker) and then take() with offer.ratifier=maliciousRatifier in the same transaction under the precondition that isAuthorized[maker][attacker]==true, via the call sequence multicall([setIsAuthorized(...), take(...)]), violating the invariant that ratifier authorization and offer execution must be independently validated, causing scoped impact: attacker fills maker offers with a ratifier that approves any offer content in a single atomic transaction? Proof idea: PoC multicall encoding both calls and asserting take() succeeds with a ratifier that always returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9565d922-c509-41f0-8ebc-154cf7b90f54?mode=deep",
+    "timestamp": "2026-05-31 22:51:55.027458",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + setIsAuthorized via onBuy callback] Can an unprivileged ATTACKER embed a call to setIsAuthorized(maliciousRatifier, true, maker) inside an onBuy callback under the precondition that attacker controls the buyerCallback and is authorized for the maker, via the call sequence take() triggers onBuy callback which calls setIsAuthorized(maliciousRatifier, true, maker) then a second take() uses maliciousRatifier, violating the invariant that ratifier authorization state must not be mutated mid-take in a way that affects subsequent fills, causing scoped impact: attacker bootstraps unauthorized ratifier authorization during an in-flight take? Proof idea: stateful fuzz test where callback mutates isAuthorized and a second take in the same block uses the new ratifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_69ff2453-4a36-457e-b8da-e4c5cc41acbd?mode=deep",
+    "timestamp": "2026-05-31 22:52:07.788630",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can an unprivileged ATTACKER cause the roleSetter to be set to address(0) under the precondition that the current roleSetter calls setRoleSetter(address(0)) (e.g., by mistake or via a compromised multisig script), via the call sequence setRoleSetter(address(0)), violating the invariant that feeSetter, feeClaimer, and tickSpacingSetter must always be updatable, causing scoped impact: permanent freeze of all role management — feeSetter, feeClaimer, and tickSpacingSetter can never be changed again, locking fee and tick governance forever? Proof idea: unit test setting roleSetter to address(0) and asserting all subsequent setFeeSetter/setFeeClaimer/setTickSpacingSetter calls revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4bb45b2b-0fca-4905-9506-647086793a7f?mode=deep",
+    "timestamp": "2026-05-31 22:52:20.689964",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeClaimer + claimContinuousFee] Can an unprivileged ATTACKER cause the old feeClaimer to lose all unclaimed continuousFeeCredit under the precondition that roleSetter replaces feeClaimer with a new address, via the call sequence setFeeClaimer(newClaimer) then newClaimer calls claimContinuousFee draining all continuousFeeCredit, violating the invariant that accrued fees owed to the old claimer must not be silently forfeited, causing scoped impact: old feeClaimer permanently loses all unclaimed continuous fees with no recourse? Proof idea: unit test accruing continuousFeeCredit, replacing feeClaimer, and asserting old claimer cannot recover any fees.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c467c368-c390-4a28-a7a1-8d2e03880d1c?mode=deep",
+    "timestamp": "2026-05-31 22:52:34.207025",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged ATTACKER who is feeClaimer call claimContinuousFee with amount > continuousFeeCredit under the precondition that continuousFeeCredit < amount due to rounding or bad debt realization, via the call sequence feeClaimer calls claimContinuousFee(market, amount, receiver) with amount exceeding continuousFeeCredit, violating the invariant that withdrawable and totalUnits must not go below the sum of all lender credits, causing scoped impact: underflow in withdrawable or totalUnits makes lender withdrawals revert permanently (fund freeze)? Proof idea: fuzz amount parameter around continuousFeeCredit boundary and assert withdrawable >= sum of all position credits after claim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_97497b34-cfe8-4c93-8101-9e71c20af036?mode=deep",
+    "timestamp": "2026-05-31 22:52:47.875028",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can an unprivileged ATTACKER who is feeSetter set settlementFeeCbp at index 0 to MAX_SETTLEMENT_FEE_0_DAYS immediately before a taker executes a low-price buy offer under the precondition that a taker has a pending take() call with a buy offer at price < new settlementFee, via the call sequence feeSetter calls setMarketSettlementFee(id, 0, MAX_SETTLEMENT_FEE_0_DAYS) then taker's take() reverts because buyerPrice - settlementFee < 0, violating the invariant that fee changes must not retroactively cancel offers that were valid at signing time, causing scoped impact: feeSetter can front-run and silently cancel any low-price buy offer by raising the fee? Proof idea: unit test with a buy offer at tick near fee boundary, front-run with fee increase, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_45942f61-3c83-4ddd-9534-4ec49dbb3c21?mode=deep",
+    "timestamp": "2026-05-31 22:53:01.348921",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee] Can an unprivileged ATTACKER who is feeSetter set defaultSettlementFeeCbp for a loan token to maximum values before any market using that token is created under the precondition that no market for that loan token exists yet, via the call sequence feeSetter calls setDefaultSettlementFee(loanToken, i, maxSettlementFee(i)) for all i in [0,6], then a market is created and inherits maximum fees, violating the invariant that market creators should be able to rely on default fees being reasonable at creation time, causing scoped impact: all future markets for that loan token start with maximum settlement fees, making low-price offers immediately invalid? Proof idea: unit test setting all default fees to max, creating a market, and asserting inherited fees equal max values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31c93ce8-e41e-4f79-a8d5-4d558b02e7e9?mode=deep",
+    "timestamp": "2026-05-31 22:53:15.587843",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can an unprivileged ATTACKER who is feeSetter set continuousFee to MAX_CONTINUOUS_FEE for a market with existing lenders under the precondition that lenders have open credit positions with pendingFee already crystallized, via the call sequence feeSetter calls setMarketContinuousFee(id, MAX_CONTINUOUS_FEE), then new credit increases accrue at max rate while old credit retains old rate, violating the invariant that existing lenders' fee terms are fixed at credit creation time and must not be retroactively increased, causing scoped impact: new borrows in the same market accrue fees at a different rate than existing lenders, creating accounting inconsistency? Proof idea: invariant test asserting that pendingFee for existing positions does not change after setMarketContinuousFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cbdfaf7-d7de-49f2-a0a5-f2c0bc8c530a?mode=deep",
+    "timestamp": "2026-05-31 22:53:29.813914",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing + take] Can an unprivileged ATTACKER who is tickSpacingSetter decrease tickSpacing to 1 (if DEFAULT_TICK_SPACING=4 and 4%1==0) under the precondition that a market exists with tickSpacing=4, via the call sequence tickSpacingSetter calls setMarketTickSpacing(id, 1), then takers can fill offers at any tick including ticks that were previously inaccessible, violating the invariant that tick spacing changes must only unlock new ticks and must not invalidate existing offers at valid ticks, causing scoped impact: new ticks at spacing=1 allow price manipulation at granularity that existing makers did not anticipate when signing offers? Proof idea: fuzz tick values after spacing reduction and assert no existing offer at a multiple-of-4 tick is affected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3a0245c-1bd0-4824-9502-ded6d1a6b119?mode=deep",
+    "timestamp": "2026-05-31 22:53:43.833307",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can an unprivileged ATTACKER who is tickSpacingSetter call setMarketTickSpacing with newTickSpacing that is not a divisor of the current spacing under the precondition that the require check newTickSpacing > 0 && marketState[id].tickSpacing % newTickSpacing == 0 is satisfied by a value that is a divisor but not a power-of-2 reduction, via the call sequence tickSpacingSetter calls setMarketTickSpacing(id, newTickSpacing) where newTickSpacing is a non-trivial divisor, violating the invariant that tick spacing reductions must only unlock ticks that are consistent with the price grid, causing scoped impact: offers at newly unlocked non-standard ticks may produce unexpected prices due to TickLib.tickToPrice behavior at those ticks? Proof idea: differential test comparing prices at newly unlocked ticks vs. expected price grid values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3254ebb3-f5a7-404b-88e0-9db6bd85e3c5?mode=deep",
+    "timestamp": "2026-05-31 22:53:57.074751",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can an unprivileged ATTACKER who is feeClaimer call claimSettlementFee(token, amount, receiver) with amount > claimableSettlementFee[token] under the precondition that claimableSettlementFee[token] is less than amount due to rounding accumulation, via the call sequence feeClaimer calls claimSettlementFee(token, amount, receiver) causing an underflow revert in Solidity 0.8, violating the invariant that fee claims must not exceed accrued fees, causing scoped impact: if the subtraction underflows, the transaction reverts and feeClaimer is temporarily unable to claim any fees (DoS of fee collection)? Proof idea: fuzz amount parameter around claimableSettlementFee[token] and assert the subtraction never underflows for valid claim amounts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28477c17-dc07-41ec-9664-a1a1168d2d65?mode=deep",
+    "timestamp": "2026-05-31 22:54:10.054358",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + take] Can an unprivileged ATTACKER call setIsAuthorized(attacker, true, victim) on behalf of victim during a repay callback under the precondition that attacker is already authorized for victim and victim has an active repay with callback, via the call sequence repay() triggers onRepay callback which calls setIsAuthorized(attacker, true, victim) granting attacker permanent authorization, violating the invariant that authorization changes during callbacks must not create persistent privilege escalation, causing scoped impact: attacker gains permanent full control over victim's Midnight state including future offer ratification? Proof idea: PoC where onRepay callback calls setIsAuthorized and asserts attacker can subsequently drain victim's collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d27baf4d-8b23-4bf6-b098-ce3eb9102119?mode=deep",
+    "timestamp": "2026-05-31 22:54:23.550500",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + withdrawCollateral] Can an unprivileged ATTACKER who is authorized for a borrower call withdrawCollateral(market, index, assets, borrower, attacker) under the precondition that isAuthorized[borrower][attacker]==true and the borrower has collateral with no debt, via the call sequence attacker calls withdrawCollateral(market, index, assets, borrower, attacker), violating the invariant that collateral withdrawal must only benefit the account owner or explicitly designated receiver, causing scoped impact: attacker drains borrower's collateral to attacker's own address without borrower consent? Proof idea: unit test where authorized operator withdraws all collateral to their own address and asserts borrower's collateral balance is zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c830029c-2bd3-4b16-80f6-b6ee6cb70a31?mode=deep",
+    "timestamp": "2026-05-31 22:54:37.133334",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + setConsumed] Can an unprivileged ATTACKER who is authorized for a maker call setConsumed(group, type(uint256).max, maker) to cancel all of the maker's offers in a group under the precondition that isAuthorized[maker][attacker]==true and maker has active offers in the group, via the call sequence attacker calls setConsumed(group, type(uint256).max, maker), violating the invariant that only the maker should be able to cancel their own offers, causing scoped impact: attacker permanently cancels all of maker's offers in the group, causing DoS of maker's liquidity provision? Proof idea: unit test where authorized operator sets consumed to max and asserts subsequent take() reverts with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bbc8d961-9d8f-49b8-8ab6-99ea524aec2f?mode=deep",
+    "timestamp": "2026-05-31 22:54:50.682462",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + repay] Can an unprivileged ATTACKER who is authorized for a borrower call repay(market, units, borrower, address(0), '') to repay the borrower's debt using the attacker's own funds under the precondition that isAuthorized[borrower][attacker]==true and attacker has sufficient loan tokens, via the call sequence attacker calls repay(market, units, borrower, address(0), ''), violating the invariant that repayment on behalf of another must be explicitly consented to by the payer, causing scoped impact: attacker forces repayment of borrower's debt (griefing) or uses this to manipulate market state? Proof idea: unit test where authorized operator repays borrower's debt without borrower's explicit consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_63483d90-4372-426c-b621-c593346e9488?mode=deep",
+    "timestamp": "2026-05-31 22:55:03.327148",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + setIsAuthorized (self-revocation)] Can an unprivileged ATTACKER who is authorized for a victim call setIsAuthorized(victim, false, victim) to revoke the victim's self-authorization under the precondition that isAuthorized[victim][attacker]==true, via the call sequence attacker calls setIsAuthorized(victim, false, victim), violating the invariant that a user must always be able to act on their own behalf, causing scoped impact: victim can no longer call any authorized-only function on their own account until they re-authorize themselves? Proof idea: unit test where authorized operator sets isAuthorized[victim][victim]=false and asserts victim's subsequent calls revert with Unauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_650786d9-813c-4de4-a3e2-2b6dbeb125d1?mode=deep",
+    "timestamp": "2026-05-31 22:55:17.474997",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + setIsAuthorized (lock-out)] Can an unprivileged ATTACKER who is authorized for a victim call setIsAuthorized(attacker, false, victim) to revoke their own authorization and then setIsAuthorized(victim, false, victim) in the same multicall under the precondition that isAuthorized[victim][attacker]==true, via the call sequence multicall([setIsAuthorized(attacker, false, victim), setIsAuthorized(victim, false, victim)]), violating the invariant that a user must always retain the ability to manage their own authorizations, causing scoped impact: victim is permanently locked out of all authorized actions on their own account? Proof idea: PoC multicall encoding both revocations and asserting victim cannot call any function on their own behalf.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0672f95d-347f-4601-bffd-2a1fb68ba0a9?mode=deep",
+    "timestamp": "2026-05-31 22:55:31.107131",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + isAuthorized[offer.maker][offer.ratifier]] Can an unprivileged ATTACKER craft an offer with offer.ratifier set to a contract that is already authorized for the maker (e.g., a previously authorized operator contract) under the precondition that isAuthorized[maker][operatorContract]==true and operatorContract implements IRatifier returning CALLBACK_SUCCESS unconditionally, via the call sequence taker calls take() with offer.ratifier=operatorContract, violating the invariant that the ratifier must validate the specific offer terms and not just return success for any call, causing scoped impact: any offer attributed to the maker can be filled without the maker's actual per-offer consent? Proof idea: deploy a contract that is both an authorized operator and an IRatifier returning CALLBACK_SUCCESS, then fill an arbitrary offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0dac76c6-1dd3-4322-9335-94c2cfcbdf1a?mode=deep",
+    "timestamp": "2026-05-31 22:55:45.104128",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee + take (fee breakpoint boundary)] Can an unprivileged ATTACKER who is feeSetter manipulate the piecewise linear fee interpolation by setting adjacent breakpoints to create a non-monotonic fee curve under the precondition that feeSetter sets settlementFeeCbp at index i to a value higher than index i+1, via the call sequence feeSetter calls setMarketSettlementFee(id, i, highValue) and setMarketSettlementFee(id, i+1, lowValue), then a take() at a TTM in the interpolation range computes a fee lower than expected, violating the invariant that settlement fees must be monotonically increasing with TTM, causing scoped impact: takers pay less fee than intended, reducing protocol fee revenue and potentially making offers profitable to fill at unintended prices? Proof idea: fuzz breakpoint values and TTM, assert settlementFee(id, ttm) is monotonically non-decreasing as TTM increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e914928d-8c05-4690-bd87-7508b54dc611?mode=deep",
+    "timestamp": "2026-05-31 22:55:59.537877",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee + totalUnits/withdrawable accounting] Can an unprivileged ATTACKER who is feeClaimer call claimContinuousFee(market, amount, receiver) where amount equals the full continuousFeeCredit under the precondition that continuousFeeCredit == totalUnits (all units are fee credit, no lender credit), via the call sequence feeClaimer calls claimContinuousFee(market, continuousFeeCredit, receiver), violating the invariant that totalUnits and withdrawable must remain >= sum of all lender credits after fee claims, causing scoped impact: if lenders still have credit positions, their withdrawable backing is drained making withdraw() revert? Proof idea: invariant test asserting withdrawable >= sum of all position.credit values after any claimContinuousFee call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8b949b11-d4e2-4b52-baa6-63f8d4eea791?mode=deep",
+    "timestamp": "2026-05-31 22:56:12.199566",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + take (taker authorization)] Can an unprivileged ATTACKER call take() with taker=victim under the precondition that isAuthorized[victim][attacker]==true, via the call sequence attacker calls take(offer, ratifierData, units, victim, receiver, callback, callbackData) where offer.buy=false making victim the seller and increasing victim's debt, violating the invariant that debt increases must only occur with the account owner's consent, causing scoped impact: attacker forces victim into a debt position without victim's knowledge, potentially making victim's account unhealthy and liquidatable? Proof idea: unit test where authorized operator takes a sell offer on behalf of victim and asserts victim's debt increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_176df2e5-24b5-4787-bcb8-1724344dccd0?mode=deep",
+    "timestamp": "2026-05-31 22:56:26.109651",
+    "report_generated": false
+  }
+]
