@@ -1,0 +1,44 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isHealthy] Can an unprivileged borrower, given a market with a collateral token that is also the loan token (same address), trigger isHealthy() to compute maxDebt using the oracle price for the collateral, which may not reflect the 1:1 relationship between the collateral and loan token, causing the health check to be incorrect, violating the invariant that health checks must correctly reflect collateral value in loan token terms, causing scoped impact: valid borrower becomes liquidatable or invalid borrower stays healthy? Proof idea: create market where collateral token == loan token, set oracle to return ORACLE_PRICE_SCALE (1:1 price), assert isHealthy() is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e96c44c9-4efa-4bdb-87da-474a2ebbab68?mode=deep",
+    "timestamp": "2026-05-31 18:54:41.665404",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: liquidate] Can an unprivileged liquidator, given a borrower with multiple collaterals where the liquidated collateral is at a high index (e.g., 15) and the bitmap has bits set at lower indices, trigger the msb-first iteration to process lower-index collaterals first, and if one of those lower-index oracles returns a price causing the badDebt computation to reduce badDebt to 0 before reaching the liquidated collateral, cause the liquidation to proceed without bad debt socialization even though the liquidated collateral alone has bad debt, violating the invariant that bad debt must be correctly socialized, causing scoped impact: accounting corruption? Proof idea: fuzz collateral ordering and prices, assert bad debt is correctly computed regardless of bitmap iteration order.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c888264d-cbb2-48ff-bcfd-d8522769df9f?mode=deep",
+    "timestamp": "2026-05-31 18:54:53.696666",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isHealthy / take] Can an unprivileged seller (maker), given a take() call where the seller has debt and the liquidation lock is set (wasLocked = true) because the seller is already in a nested take callback, cause the `liquidationLocked(id, seller) || isHealthy(offer.market, id, seller)` check at line 476 to short-circuit to true (because liquidationLocked returns true) without calling isHealthy(), allowing the seller to take a sell offer that makes their position unhealthy, violating the invariant that sellers must be healthy after a take, causing scoped impact: bad debt creation / invalid borrower stays healthy? Proof idea: nested take via maker callback where outer take's seller is the inner take's seller, assert health is checked after all debt increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ed851d2c-8289-4150-821d-88963b5288b6?mode=deep",
+    "timestamp": "2026-05-31 18:55:06.191230",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: liquidate] Can an unprivileged liquidator, given a borrower with a single collateral and oracle returning price P, trigger a scenario where the post-maturity lif ramp computation `WAD + (maxLif - WAD) * (block.timestamp - market.maturity) / TIME_TO_MAX_LIF` overflows uint256 when block.timestamp - market.maturity is very large (e.g., years after maturity), causing liquidate() to revert with arithmetic overflow, blocking post-maturity liquidation, violating the invariant that overdue debt after maturity must be liquidatable, causing scoped impact: liquidation failure? Proof idea: warp to maturity + 1 year, call liquidate() with postMaturityMode = true, assert lif computation does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e0b74f4-2c35-4535-be60-e9ddef314398?mode=deep",
+    "timestamp": "2026-05-31 18:55:18.810495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isHealthy] Can an unprivileged borrower, given a market where the oracle returns a price of exactly 1 (minimum non-zero), trigger isHealthy() to compute collateral[i].mulDivDown(1, ORACLE_PRICE_SCALE) = 0 for any collateral[i] < ORACLE_PRICE_SCALE (i.e., any collateral amount less than 1e36 tokens), causing maxDebt = 0 and the position to appear unhealthy regardless of collateral amount, allowing liquidation of a position that has collateral but with a very low oracle price, violating the invariant that the health check must correctly reflect collateral value, causing scoped impact: valid borrower becomes liquidatable? Proof idea: set oracle price = 1, supply collateral[i] = ORACLE_PRICE_SCALE - 1, borrow 1 unit, assert isHealthy() returns false and liquidation succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c5370238-06aa-417f-8c57-e0b725564c0c?mode=deep",
+    "timestamp": "2026-05-31 18:55:32.620031",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: liquidate] Can an unprivileged liquidator, given a borrower with a single collateral and oracle returning price P, trigger a scenario where the RCF check uses `_position.collateral[collateralIndex]` (the post-seizure collateral balance, since seizure happens before the RCF check in the code flow) rather than the pre-seizure balance, causing the RCF dust check to use the wrong collateral amount and potentially allow or block liquidations incorrectly, violating the invariant that RCF must correctly limit liquidation, causing scoped impact: unauthorized over-liquidation or liquidation failure? Proof idea: trace the code flow in liquidate() and verify whether collateral is updated before or after the RCF check at line 662-667.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b8d9ac0-e5d7-4c8b-bb2e-146e8fed9735?mode=deep",
+    "timestamp": "2026-05-31 18:55:46.696041",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isHealthy / liquidate] Can an unprivileged liquidator, given a borrower with a single collateral at LLTV = 0.77e18 and maxLif with LIQUIDATION_CURSOR_HIGH = 0.5e18, trigger a scenario where isHealthy() returns false (debt > maxDebt) but the liquidate() bad debt computation shows badDebt = 0 (collateral value at maxLif >= debt), causing the liquidation to proceed without bad debt socialization but with the RCF check using maxDebt computed from the same oracle price, and assert that the post-liquidation position is correctly healthy, violating the invariant that a single liquidation must restore health, causing scoped impact: accounting corruption? Proof idea: fuzz price in the range where debt > maxDebt but collateral/maxLif >= debt, assert post-liquidation health.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ed89a99-8d58-4539-9e0d-64a793dd2477?mode=deep",
+    "timestamp": "2026-05-31 18:56:01.128387",
+    "report_generated": false
+  }
+]
