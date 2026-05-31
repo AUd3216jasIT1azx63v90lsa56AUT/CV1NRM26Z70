@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged taker acting as the `from` address supply a loan token with ERC777 send-hooks under the precondition that PermitKind.Permit2 is selected in buyWithUnitsTargetAndWithdrawCollateral, triggering a reentrant call to Midnight.take() inside the permitTransferFrom callback before forceApproveMax completes, violating the invariant that filledUnits and filledBuyerAssets must only reflect completed takes, causing scoped impact: accounting corruption where the bundler's internal counters desync from actual Midnight position state? Proof idea: deploy ERC777 loan token whose tokensReceived hook reenters take(); fuzz units and maxBuyerAssets; assert filledBuyerAssets == sum of actual buyerAssets returned by each take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d25844db-b0ef-49d1-8353-e7edfa27b61f?mode=deep",
+    "timestamp": "2026-05-31 23:02:13.102443",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged taker supply a Permit2 signature with a nonce that an attacker front-runs by calling permitTransferFrom directly on the canonical Permit2 contract under the precondition that the bundler call is pending in the mempool, causing the bundler's pullToken to revert after touchMarket has already been called and market state has been initialized, violating the invariant that bundler operations must be atomic with respect to token pulls, causing scoped impact: low-cost DoS that permanently blocks the taker's bundler flow for that nonce? Proof idea: simulate front-run of Permit2 nonce consumption; assert bundler reverts and taker must re-sign with new nonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a703e4b-4ce8-496b-abc2-58b18dcf87f6?mode=deep",
+    "timestamp": "2026-05-31 23:02:24.944207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged taker pass a Permit2 TokenPermissions.amount that is larger than the actual tokens the bundler will receive due to a fee-on-transfer loan token under the precondition that the bundler calls forceApproveMax(loanToken, MIDNIGHT) after pullToken and then calls take() expecting to pay maxBuyerAssets, violating the invariant that the bundler's loan token balance must cover all take payments plus refund, causing scoped impact: take reverts mid-loop or the refund transfer at the end underflows, freezing the taker's bundler call? Proof idea: deploy fee-on-transfer token with 1% fee; fuzz maxBuyerAssets; assert bundler balance after pullToken equals maxBuyerAssets minus fee and that take loop does not overdraw.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a26e287-7a2c-4725-a2bf-c0fc97b6a9d5?mode=deep",
+    "timestamp": "2026-05-31 23:02:37.337484",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged taker reuse the same Permit2 signature (nonce, deadline, token, amount) across two different bundler function calls in the same block under the precondition that the Permit2 nonce has not yet been consumed, violating the invariant that each Permit2 signature must authorize exactly one token pull, causing scoped impact: double-pull of loan tokens from the taker's wallet funding two separate bundler operations with a single signed authorization? Proof idea: call buyWithUnitsTargetAndWithdrawCollateral twice with identical loanTokenPermit; assert Permit2 nonce is consumed after first call and second call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85a0b15c-c364-4b98-8fb2-ce6aae68fd49?mode=deep",
+    "timestamp": "2026-05-31 23:02:50.060544",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.pullToken / IPermit2.permitTransferFrom] Can an unprivileged attacker supply a Permit2 signature where TokenPermissions.token differs from the actual loanToken of the market under the precondition that the bundler decodes permit.data without validating that the token in the Permit2 struct matches takes[0].offer.market.loanToken, violating the invariant that the token pulled must be the market's loan token, causing scoped impact: the bundler pulls the wrong token, approves it to Midnight, and the subsequent take fails or the bundler holds stranded tokens? Proof idea: craft Permit2 permit with token=USDC but market.loanToken=WETH; assert bundler reverts or holds wrong token balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81030328-914a-4608-bd11-944fd8edc6de?mode=deep",
+    "timestamp": "2026-05-31 23:03:03.194471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.repayAndWithdrawCollateral / IPermit2.permitTransferFrom] Can an unprivileged borrower supply a loan token with ERC777 hooks under the precondition that PermitKind.Permit2 is used in repayAndWithdrawCollateral, triggering a reentrant call to Midnight.withdrawCollateral() inside the permitTransferFrom callback before repay() has been called, violating the invariant that collateral withdrawal must only succeed after debt is reduced to a healthy level, causing scoped impact: unauthorized collateral withdrawal while full debt remains, leaving an undercollateralized position? Proof idea: ERC777 tokensReceived hook calls withdrawCollateral; assert isHealthy returns false after reentrant withdrawal and before repay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e80ea82-815a-414b-9525-145bd98fa57b?mode=deep",
+    "timestamp": "2026-05-31 23:03:17.327207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.repayAndWithdrawCollateral / IPermit2.permitTransferFrom] Can an unprivileged borrower supply a rebasing loan token under the precondition that PermitKind.Permit2 is used and the token rebases upward between pullToken and the repay call, causing the bundler to hold more tokens than maxBuyerAssets, violating the invariant that the refund amount must equal maxBuyerAssets minus filledBuyerAssets, causing scoped impact: the bundler retains excess rebased tokens that belong to the user, effectively stealing the rebase yield? Proof idea: deploy rebasing token; trigger rebase between pullToken and repay; assert bundler balance after repayAndWithdrawCollateral equals zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b05cf896-13da-4f42-9f93-dcccdf1393a4?mode=deep",
+    "timestamp": "2026-05-31 23:03:31.209270",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget / IPermit2.permitTransferFrom] Can an unprivileged taker supply a collateral token with ERC777 hooks under the precondition that PermitKind.Permit2 is used in CollateralSupply.permit, triggering a reentrant call to Midnight.take() inside the permitTransferFrom callback before supplyCollateral has been called, violating the invariant that a sell take must not increase debt beyond what the existing collateral supports, causing scoped impact: debt increase without corresponding collateral, creating an undercollateralized position? Proof idea: ERC777 collateral token hook reenters take() as seller; assert isHealthy is false after reentrant take and before supplyCollateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3eabbe3f-8119-45c6-93ed-eeea045f829c?mode=deep",
+    "timestamp": "2026-05-31 23:03:45.343008",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget / IPermit2.permitTransferFrom] Can an unprivileged taker supply a collateral token with ERC777 hooks under the precondition that PermitKind.Permit2 is used and the hook reenters setIsAuthorized to grant the attacker authorization over the taker's Midnight position, violating the invariant that authorization changes must not be possible during an in-progress bundler operation, causing scoped impact: attacker gains full control over taker's Midnight position including ability to withdraw collateral and cancel offers? Proof idea: ERC777 hook calls setIsAuthorized(attacker, true, taker); assert attacker can subsequently drain taker's collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06b4d45d-ce17-49bc-b2c1-2f2122730046?mode=deep",
+    "timestamp": "2026-05-31 23:03:58.753320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / IBuyCallback.onBuy] Can an unprivileged taker acting as buyer callback receiver reenter Midnight.take() with the same offer under the precondition that the offer's consumed amount has been updated but the payer's token transfer has not yet occurred, violating the invariant that consumed[maker][group] must reflect all fills before any external call, causing scoped impact: offer overfill where the maker's group budget is exceeded across two nested take calls? Proof idea: onBuy callback reenters take() with same offer; assert consumed[maker][group] <= offer.maxAssets after both calls complete.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fde1a0e1-6dee-46d4-97d9-440479fc7c66?mode=deep",
+    "timestamp": "2026-05-31 23:04:12.328122",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / IBuyCallback.onBuy] Can an unprivileged taker acting as buyer callback receiver reenter Midnight.withdraw() under the precondition that the buyer's credit has been increased in take() but the payer transfer has not yet occurred, violating the invariant that credit must not be withdrawable until the corresponding assets have been paid into the protocol, causing scoped impact: direct theft where the buyer withdraws credit-backed assets before paying for them? Proof idea: onBuy callback calls withdraw(market, buyerCreditIncrease, buyer, attacker); assert Midnight loan token balance decreases without corresponding inflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57ba475f-364e-4103-bddb-504e997de518?mode=deep",
+    "timestamp": "2026-05-31 23:04:26.959729",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / IBuyCallback.onBuy] Can an unprivileged taker acting as buyer callback receiver reenter Midnight.repay() for the buyer's own debt under the precondition that buyerPos.debt has already been reduced by take() but the payer transfer has not occurred, violating the invariant that repay must pull tokens from the payer before debt is reduced, causing scoped impact: double debt reduction where the buyer's debt is reduced twice (once by take, once by reentrant repay) with only one token payment? Proof idea: onBuy callback calls repay(market, units, buyer, address(0), ''); assert position.debt after both calls equals original debt minus 2*units but only one payment was made.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c046086d-9481-445f-a758-b81089abdc53?mode=deep",
+    "timestamp": "2026-05-31 23:04:41.934566",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / ISellCallback.onSell] Can an unprivileged maker acting as seller callback receiver attempt to reenter Midnight.liquidate() on the seller's own position under the precondition that the liquidation lock is set via tExchange before the onSell callback, violating the invariant that liquidationLocked must prevent liquidation during take callbacks, causing scoped impact: if the lock is bypassable through a nested call path, the seller could be liquidated mid-take while their health check is deferred? Proof idea: onSell callback calls liquidate(market, 0, 0, 0, seller, false, ...); assert NotLiquidatable() is thrown due to liquidationLocked(id, seller) == true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27e0c7ed-e15d-4780-b46a-9504597fd36e?mode=deep",
+    "timestamp": "2026-05-31 23:04:56.300973",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / ISellCallback.onSell] Can an unprivileged maker acting as seller callback receiver reenter Midnight.withdrawCollateral() for the seller's position under the precondition that sellerPos.debt has been increased but the health check at line 476 has not yet been reached, violating the invariant that collateral withdrawal must not leave debt unhealthy, causing scoped impact: seller withdraws collateral mid-take before the SellerIsLiquidatable check, leaving an undercollateralized debt position? Proof idea: onSell callback calls withdrawCollateral(market, 0, maxCollateral, seller, attacker); assert isHealthy returns false after callback and before line 476 check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60258ace-101f-4469-a0be-6a56830fb9f2?mode=deep",
+    "timestamp": "2026-05-31 23:05:11.089735",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / ISellCallback.onSell] Can an unprivileged maker acting as seller callback receiver reenter Midnight.setConsumed() to cancel the current offer's group mid-fill under the precondition that consumed[maker][group] has been incremented but the callback has not yet returned, violating the invariant that an offer's consumed state must be monotonically increasing and not reducible during an active fill, causing scoped impact: the maker cancels the group after partial fill, potentially allowing a subsequent replay of the same offer at a different price? Proof idea: onSell callback calls setConsumed(group, type(uint256).max, maker); assert subsequent take of same offer reverts with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb374a2d-07a1-46a6-a0c7-9605fe57366e?mode=deep",
+    "timestamp": "2026-05-31 23:05:26.204007",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.take / ISellCallback.onSell] Can an unprivileged maker acting as seller callback receiver reenter Midnight.take() with a different offer sharing the same consumption group under the precondition that the first take has incremented consumed[maker][group] but the callback is still executing, violating the invariant that the group budget must not be exceeded across all fills, causing scoped impact: group budget overfill where two nested takes together exceed offer.maxAssets or offer.maxUnits? Proof idea: onSell callback calls take() with second offer in same group; assert consumed[maker][group] after both calls <= maxAssets of either offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a1dbf39-f069-4097-8961-7ecc8e825f0a?mode=deep",
+    "timestamp": "2026-05-31 23:05:41.954567",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.repay / IRepayCallback.onRepay] Can an unprivileged borrower acting as repay callback receiver reenter Midnight.repay() for the same onBehalf address under the precondition that position[id][onBehalf].debt has been decremented and marketState[id].withdrawable has been incremented before the callback, violating the invariant that repay must pull tokens equal to the total debt reduction, causing scoped impact: double debt reduction with single token payment where the borrower repays twice the units but only transfers once? Proof idea: onRepay callback calls repay(market, units, onBehalf, address(0), ''); assert position.debt after both calls equals original minus 2*units but safeTransferFrom was called only once.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_392fda0f-1fa7-47a8-81ae-99a1e38864ed?mode=deep",
+    "timestamp": "2026-05-31 23:05:56.678574",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.repay / IRepayCallback.onRepay] Can an unprivileged borrower acting as repay callback receiver reenter Midnight.withdraw() under the precondition that marketState[id].withdrawable has been incremented by repay() before the callback but the repayment token transfer has not yet occurred, violating the invariant that withdrawable must only increase after the corresponding loan tokens have been received by the protocol, causing scoped impact: lender drains withdrawable assets before the repayment tokens arrive, creating a protocol insolvency? Proof idea: onRepay callback calls withdraw(market, units, lender, attacker); assert Midnight loan token balance after full sequence equals initial balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a936f30-6597-4d56-bee9-e2fd2eb0f0d5?mode=deep",
+    "timestamp": "2026-05-31 23:06:11.183888",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.repay / IRepayCallback.onRepay] Can an unprivileged borrower acting as repay callback receiver reenter Midnight.liquidate() on the same borrower under the precondition that position.debt has been partially reduced by repay() making the position appear healthy, violating the invariant that a position's liquidatability must be evaluated on its true pre-repay state, causing scoped impact: liquidation of a position that would have been healthy after repay completes, seizing collateral that should not have been available? Proof idea: onRepay callback calls liquidate() on borrower; assert NotLiquidatable() is thrown because debt was already reduced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a984ecfa-b0b8-4850-ac82-6b94792c7875?mode=deep",
+    "timestamp": "2026-05-31 23:06:25.432271",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.repay / IRepayCallback.onRepay] Can an unprivileged borrower acting as repay callback receiver reenter Midnight.take() as a seller to increase debt under the precondition that the borrower's debt has been reduced to zero by repay() before the callback, violating the invariant that debt must not increase after maturity, causing scoped impact: post-maturity debt increase via reentrant take during repay callback, bypassing the CannotIncreaseDebtPostMaturity check? Proof idea: warp to post-maturity; onRepay callback calls take() as seller; assert CannotIncreaseDebtPostMaturity is thrown.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_abb5247e-61e1-4de2-971f-bd64d682dc37?mode=deep",
+    "timestamp": "2026-05-31 23:06:41.722805",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.liquidate / ILiquidateCallback.onLiquidate] Can an unprivileged liquidator acting as liquidate callback receiver reenter Midnight.liquidate() on the same borrower under the precondition that the borrower's collateral has been seized and sent to the receiver before the callback but position.debt has not yet been reduced by repaidUnits, violating the invariant that a single liquidation must atomically seize collateral and reduce debt, causing scoped impact: double collateral seizure where the second liquidation seizes additional collateral before the first repayment is pulled? Proof idea: onLiquidate callback calls liquidate() on same borrower with same collateralIndex; assert total seizedAssets across both calls does not exceed original collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_faacbc38-107e-4fa7-8ae5-43b6dbaedcf5?mode=deep",
+    "timestamp": "2026-05-31 23:06:56.949174",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.liquidate / ILiquidateCallback.onLiquidate] Can an unprivileged liquidator acting as liquidate callback receiver reenter Midnight.withdraw() under the precondition that marketState[id].withdrawable has been incremented by repaidUnits before the callback but the repayment transfer has not yet occurred, violating the invariant that withdrawable must only increase after repayment tokens are received, causing scoped impact: lender drains withdrawable before liquidator pays, creating protocol insolvency? Proof idea: onLiquidate callback calls withdraw(market, repaidUnits, lender, attacker); assert Midnight loan token balance after full sequence equals initial balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ccc9cfa9-d834-4975-b63d-dce5189c3225?mode=deep",
+    "timestamp": "2026-05-31 23:07:13.563225",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.liquidate / ILiquidateCallback.onLiquidate] Can an unprivileged liquidator acting as liquidate callback receiver reenter Midnight.take() as a seller to increase the borrower's debt under the precondition that bad debt has been realized and lossFactor updated before the callback, violating the invariant that bad debt realization must be a one-time event per liquidation, causing scoped impact: the reentrant take increases debt after bad debt was already socialized, causing lenders to absorb losses twice? Proof idea: onLiquidate callback calls take() increasing borrower debt; assert lossFactor is not updated twice for the same bad debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86187a6e-cac5-4680-8dc0-b23decafdd22?mode=deep",
+    "timestamp": "2026-05-31 23:07:30.601404",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.liquidate / ILiquidateCallback.onLiquidate] Can an unprivileged liquidator acting as liquidate callback receiver reenter Midnight.claimContinuousFee() under the precondition that continuousFeeCredit has been updated during bad debt realization before the callback, violating the invariant that continuousFeeCredit must reflect the post-bad-debt state before any claim, causing scoped impact: fee claimer overclaims continuousFeeCredit that was already reduced by bad debt socialization, draining more loan tokens than entitled? Proof idea: onLiquidate callback calls claimContinuousFee(market, continuousFeeCredit, attacker); assert totalUnits and withdrawable remain consistent after claim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_baab5728-bbf8-478b-8a96-5d4c3a9372a1?mode=deep",
+    "timestamp": "2026-05-31 23:07:45.849611",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: Midnight.liquidate / ILiquidateCallback.onLiquidate] Can an unprivileged liquidator acting as liquidate callback receiver reenter Midnight.repay() for the borrower under the precondition that position.debt has been partially reduced by bad debt realization but repaidUnits has not yet been subtracted, violating the invariant that debt reduction must be atomic across bad debt and repaidUnits paths, causing scoped impact: double debt reduction where bad debt and reentrant repay both reduce the same debt units, leaving the protocol with excess withdrawable that has no backing tokens? Proof idea: onLiquidate callback calls repay(market, repaidUnits, borrower, address(0), ''); assert marketState.withdrawable <= actual loan token balance of Midnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5732fae1-4233-47d1-847e-b8ddd4518876?mode=deep",
+    "timestamp": "2026-05-31 23:08:01.077968",
+    "report_generated": false
+  }
+]
