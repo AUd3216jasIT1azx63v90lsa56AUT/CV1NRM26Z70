@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) solvency invariant across two takes] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over lender) → Midnight.multicall([take(buyOffer1, units1, lender, ...), take(buyOffer2, units2, lender, ...)]) where both takes increase withdrawable and claimableSettlementFee, violating the solvency invariant that loanToken.balanceOf(address(midnight)) >= marketState[id].withdrawable + claimableSettlementFee[loanToken] + sum(collateral * price), causing scoped impact: protocol insolvency after two takes in one tx? Proof idea: assert loanToken.balanceOf(address(midnight)) >= marketState[id].withdrawable + claimableSettlementFee[loanToken] after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e333ef14-2a10-4a6d-8318-9df52547b8c9?mode=deep",
+    "timestamp": "2026-05-31 21:28:38.558798",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) offer.maxAssets vs offer.maxUnits consumed tracking across two takes] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over maker) → Midnight.multicall([setConsumed(group, 0, maker), take(offer_maxAssets, units1, ...), take(offer_maxAssets, units2, ...)]) where the offer uses maxAssets-based consumption and both takes add buyerAssets to consumed, violating the invariant that consumed[maker][group] <= offer.maxAssets after all takes, causing scoped impact: offer overfill via maxAssets-based consumption reset and two takes in one tx? Proof idea: fuzz units1 and units2, assert consumed[maker][group] <= offer.maxAssets after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c95b2150-4991-4e39-85e7-458eb12a0a06?mode=deep",
+    "timestamp": "2026-05-31 21:28:50.787150",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) ERC20 fee-on-transfer token desync across two takes] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over borrower) → Midnight.multicall([take(sellOffer1, units1, borrower, ...), take(sellOffer2, units2, borrower, ...)]) where the loanToken charges a fee on transfer, violating the invariant that ERC20 transfer deltas must match accounting deltas (Midnight must send/receive exactly the requested amount), causing scoped impact: accounting desync between position.debt and actual token balance after two takes with fee-on-transfer token? Proof idea: assert loanToken.balanceOf(address(midnight)) == pre_balance + (buyerAssets1 - sellerAssets1) + (buyerAssets2 - sellerAssets2) after both takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_458d8a7b-341c-4a99-9339-98cdda37533e?mode=deep",
+    "timestamp": "2026-05-31 21:29:03.723107",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall([take(sell), take(sell)]) lastLossFactor stale across two takes] Can an attacker compose a transaction: EcrecoverAuthorizer.setIsAuthorized(grant self over lender) → Midnight.multicall([liquidate(market, 0, 0, 0, borrower, false, ...), take(buyOffer, units, lender, ...), withdraw(market, credit, lender, attacker)]) where the liquidation updates lossFactor, the take calls _updatePosition for lender (syncing lastLossFactor), and the withdraw uses the updated credit, violating the invariant that lastLossFactor must be synced before any credit computation, causing scoped impact: lender withdraws incorrect credit amount due to stale lastLossFactor between multicall entries? Proof idea: assert position[id][lender].lastLossFactor == marketState[id].lossFactor after _updatePosition is called in take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e665902-1ae6-4cb0-8b6c-08c8ef5dd20e?mode=deep",
+    "timestamp": "2026-05-31 21:29:17.638909",
+    "report_generated": false
+  }
+]
