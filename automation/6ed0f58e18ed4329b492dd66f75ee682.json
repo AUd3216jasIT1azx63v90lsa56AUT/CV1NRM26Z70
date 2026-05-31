@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take] Can an unprivileged taker, under the precondition that a victim contract has approved Midnight for the loan token and implements IBuyCallback returning CALLBACK_SUCCESS, call take(sellOffer, ratifierData, units, taker, receiverIfTakerIsSeller, victimContract, callbackData) on a sell offer (offer.buy=false), causing payer = buyerCallback = takerCallback = victimContract via the assignment `address payer = buyerCallback != address(0) ? buyerCallback : (offer.buy ? buyer : msg.sender)`, so that buyerAssets are pulled from victimContract instead of the taker, violating the invariant that user funds must not be stolen outside valid protocol rules, causing scoped impact: direct loss of loan tokens from victim? Proof idea: deploy a victim contract that approves Midnight and returns CALLBACK_SUCCESS from onBuy; fuzz (tick, units, victimBalance) and assert victim.balanceOf decreases while taker pays nothing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0e82ce0-7252-4b0c-b42f-9e9f3681eaf2?mode=deep",
+    "timestamp": "2026-05-31 19:11:50.195319",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take] Can an unprivileged maker, under the precondition that a victim contract has approved Midnight for the loan token and implements IBuyCallback returning CALLBACK_SUCCESS, create a buy offer (offer.buy=true) with offer.callback=victimContract, so that when any taker takes the offer, payer = buyerCallback = offer.callback = victimContract, causing buyerAssets to be pulled from victimContract instead of the maker (buyer), violating the invariant that the buyer must pay for credit received, causing scoped impact: maker gains credit without paying? Proof idea: unit test where maker sets offer.callback to a funded victim; assert maker.credit increases and victim.loanToken balance decreases while maker pays nothing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d24db2b-d06f-45b3-8937-fed34e526ec0?mode=deep",
+    "timestamp": "2026-05-31 19:12:02.476552",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.repay] Can an unprivileged caller, under the precondition that a victim contract has approved Midnight for the loan token and implements IRepayCallback returning CALLBACK_SUCCESS, call repay(market, units, onBehalf, victimContract, data) where onBehalf is the caller's own address, causing payer = callback = victimContract via `address payer = callback != address(0) ? callback : msg.sender`, so that repayment tokens are pulled from victimContract instead of the caller, violating the invariant that the repaying party must supply the loan tokens, causing scoped impact: caller's debt reduced at victim's expense? Proof idea: fuzz (units, victimBalance) and assert position[id][onBehalf].debt decreases while victim.loanToken balance decreases by units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27c4a2b5-96c0-4ccf-a79c-da433099a3a7?mode=deep",
+    "timestamp": "2026-05-31 19:12:15.711497",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.liquidate] Can an unprivileged liquidator, under the precondition that a victim contract has approved Midnight for the loan token and implements ILiquidateCallback returning CALLBACK_SUCCESS, call liquidate(market, collateralIndex, seizedAssets, 0, borrower, false, receiver, victimContract, data), causing payer = callback = victimContract via `address payer = callback != address(0) ? callback : msg.sender`, so that repaidUnits are pulled from victimContract while the liquidator receives seizedAssets collateral, violating the invariant that the liquidator must supply repayment tokens, causing scoped impact: liquidator profits from seized collateral at victim's expense? Proof idea: set up unhealthy borrower; fuzz (seizedAssets, victimBalance) and assert liquidator receives collateral while victim pays loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_645f36b1-a4dc-4246-b4e4-38da6bce4526?mode=deep",
+    "timestamp": "2026-05-31 19:12:28.805022",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget] Can an unprivileged maker, under the precondition that a victim contract has approved Midnight for the loan token and implements IBuyCallback returning CALLBACK_SUCCESS, create a buy offer with offer.callback=victimContract and list it in the takes[] array passed to supplyCollateralAndSellWithUnitsTarget, causing the bundler to call take(buyOffer, ..., taker, address(this), address(0), '') where buyerCallback=offer.callback=victimContract and payer=victimContract, so that buyerAssets are pulled from victimContract instead of the maker, violating the invariant that the bundler's msg.sender should not cause third-party token loss, causing scoped impact: victim's loan tokens drained via bundler? Proof idea: deploy victim with Midnight approval; assert victim balance decreases after bundler call while maker gains credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a2e2165-99a6-4707-ae74-a39ab2eefec2?mode=deep",
+    "timestamp": "2026-05-31 19:12:42.939066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.supplyCollateralAndSellWithAssetsTarget] Can an unprivileged maker, under the precondition that a victim contract has approved Midnight for the loan token and implements IBuyCallback returning CALLBACK_SUCCESS, create a buy offer with offer.callback=victimContract and include it in takes[] passed to supplyCollateralAndSellWithAssetsTarget, causing TakeAmountsLib.sellerAssetsToUnits to compute units and the bundler to call take() where payer=offer.callback=victimContract, so that buyerAssets are pulled from victimContract to fund the maker's credit, violating the invariant that token flows must match authorized parties, causing scoped impact: victim pays for maker's credit position? Proof idea: fuzz (targetSellerAssets, tick, victimBalance) and assert victim.loanToken decreases while maker.credit increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1058609-f0d7-44f1-b516-ad3e50fa6611?mode=deep",
+    "timestamp": "2026-05-31 19:12:56.887088",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker, under the precondition that the bundler has approved Midnight for type(uint256).max and the bundler holds residual loan tokens from a prior transaction, call buyWithUnitsTargetAndWithdrawCollateral with takes[] containing a sell offer where offer.callback is set to a contract that re-enters Midnight.take with takerCallback=bundler, causing payer=bundler for the inner take, draining the bundler's residual balance, violating the invariant that the bundler's token balance should only decrease by exactly maxBuyerAssets per call, causing scoped impact: bundler's residual tokens stolen via reentrancy? Proof idea: craft a reentrant onBuy callback; assert bundler.loanToken balance after call is less than expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87eeb93f-e136-4262-9d85-1836884bc3f8?mode=deep",
+    "timestamp": "2026-05-31 19:13:11.786185",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: TakeAmountsLib.buyerAssetsToUnits / Midnight.take] Can an unprivileged attacker, under the precondition that the settlement fee breakpoints are changed by the fee setter between the block where buyerAssetsToUnits is called as a view and the block where the actual take executes, cause the computed units to yield buyerAssets != targetBuyerAssets in the actual take, so that in buyWithAssetsTargetAndWithdrawCollateral the check `require(filledBuyerAssets == targetFilledBuyerAssets)` fails or the payer overpays, violating the invariant that the payer pays exactly targetBuyerAssets, causing scoped impact: payer overpays or transaction reverts unexpectedly? Proof idea: simulate fee change between view and execution; fuzz (settlementFee0, settlementFee1, tick, targetBuyerAssets) and assert buyerAssets from take equals targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1e49e83-868b-4f88-94f8-555d5a0448e9?mode=deep",
+    "timestamp": "2026-05-31 19:13:28.275935",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: TakeAmountsLib.sellerAssetsToUnits / Midnight.take] Can an unprivileged attacker, under the precondition that a buy offer has offerPrice close to settlementFee (sellerPrice near zero), cause TakeAmountsLib.sellerAssetsToUnits to compute a very large units value (since units = mulDivUp(targetSellerAssets, WAD, sellerPrice) with tiny sellerPrice), causing the bundler to attempt to take an enormous number of units, violating the invariant that units taken must not exceed offer.maxUnits or offer.maxAssets, causing scoped impact: accounting corruption or unexpected revert in supplyCollateralAndSellWithAssetsTarget? Proof idea: fuzz (tick near settlementFee boundary, targetSellerAssets) and assert units returned by sellerAssetsToUnits does not overflow or cause take to revert unexpectedly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd424a12-5234-4f92-a81f-0bddb2a6fae4?mode=deep",
+    "timestamp": "2026-05-31 19:13:45.171053",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged attacker, under the precondition that buyerPrice > WAD (tick at MAX_TICK with nonzero settlementFee), cause buyerAssetsToUnits to revert with PriceGreaterThanOne() while sellerAssetsToUnits does not revert for the same offer, creating an asymmetry where the bundler's buy-path reverts but the sell-path proceeds, violating the invariant that both asset-target functions should handle the same offer domain consistently, causing scoped impact: DoS of buyWithAssetsTargetAndWithdrawCollateral for high-tick offers? Proof idea: fuzz (tick, settlementFee) near the WAD boundary and assert both functions either revert or succeed consistently.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbbb5a1c-c53a-4e67-b6ac-16ca1dec0500?mode=deep",
+    "timestamp": "2026-05-31 19:14:02.405320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer logic] Can an unprivileged taker, under the precondition that taker != msg.sender (taker has authorized msg.sender on Midnight), call take(sellOffer, ..., taker, receiver, victimCallback, callbackData) where victimCallback has approved Midnight and implements IBuyCallback, causing payer=victimCallback while taker (not msg.sender) receives the credit benefit, violating the invariant that the authorized agent acting on behalf of taker must not redirect payment to a third party, causing scoped impact: taker gains credit while victim pays? Proof idea: set up authorization; fuzz (taker, msg.sender, victimCallback) and assert taker.credit increases while victimCallback.loanToken decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d96a75ca-9e67-48b1-acf5-2ad33ea5cec9?mode=deep",
+    "timestamp": "2026-05-31 19:14:17.568826",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer logic for buy offers] Can an unprivileged maker, under the precondition that offer.buy=true and offer.callback=victimContract, create an offer where the victim contract is a protocol contract (e.g., another Midnight instance or a vault) that has approved Midnight and implements IBuyCallback, causing payer=victimContract when any taker fills the offer, violating the invariant that only the maker (buyer) should pay buyerAssets when taking a buy offer with no taker callback, causing scoped impact: protocol contract's tokens drained? Proof idea: deploy a mock vault with Midnight approval; assert vault.loanToken balance decreases after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1f59d7c-da67-40d0-a0b4-5afb5ffb74ee?mode=deep",
+    "timestamp": "2026-05-31 19:14:35.478197",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.repayAndWithdrawCollateral] Can an unprivileged caller, under the precondition that onBehalf has authorized msg.sender on Midnight, call repayAndWithdrawCollateral with a crafted market where loanToken is a token the bundler has residual balance of, causing the bundler to pull `assets` from msg.sender but then call repay(market, units, onBehalf, address(0), '') where payer=address(0) is not set (callback=address(0) so payer=msg.sender=bundler), so the bundler pays from its own balance instead of msg.sender, violating the invariant that msg.sender should be the net payer, causing scoped impact: bundler's residual balance consumed for repayment? Proof idea: pre-fund bundler with loan tokens; assert bundler balance decreases beyond the pulled amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81370c7f-8db7-4f57-9442-dea28ae81b83?mode=deep",
+    "timestamp": "2026-05-31 19:14:52.168583",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / onBuy callback timing] Can an unprivileged taker, under the precondition that takerCallback is set and the onBuy callback calls Midnight.multicall to execute additional takes or repayments, cause the payer (takerCallback) to be drained of more tokens than expected for a single take, because the callback executes before the token pull and can manipulate state that affects subsequent pulls, violating the invariant that multicall/callback/reentrancy must not break invariants that hold for single calls, causing scoped impact: accounting corruption or excess token drain from callback contract? Proof idea: implement onBuy that calls multicall([take, repay]); assert total tokens pulled from callback equals sum of all individual pulls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f276dc3-891b-411f-8fcc-f2fa0ba4d3c4?mode=deep",
+    "timestamp": "2026-05-31 19:15:09.771911",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer vs receiver confusion] Can an unprivileged maker, under the precondition that offer.buy=true and offer.callback=victimContract, set offer.receiverIfMakerIsSeller to a different address, causing the payer (victimContract) to pay buyerAssets while sellerAssets are sent to offer.receiverIfMakerIsSeller (a third party), so that neither the maker nor the taker controls where the seller's proceeds go, violating the invariant that the seller must receive sellerAssets, causing scoped impact: seller's proceeds redirected while victim pays? Proof idea: set offer.receiverIfMakerIsSeller=attacker; assert attacker receives sellerAssets while victimContract pays buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1442de89-1381-457f-8a7b-5c0726f3feac?mode=deep",
+    "timestamp": "2026-05-31 19:15:25.578501",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: ConsumableUnitsLib.consumableUnits / TakeAmountsLib] Can an unprivileged attacker, under the precondition that an assets-based buy offer (offer.maxAssets > 0, offer.buy=true) has consumed close to maxAssets, cause ConsumableUnitsLib.consumableUnits to call TakeAmountsLib.buyerAssetsToUnits(midnight, id, offer, offer.maxAssets.zeroFloorSub(consumed)) with a near-zero remaining amount, returning units=0, causing the bundler's min(units, 0, ...) to be 0 and the take to be a no-op, but the loop still increments i, potentially skipping valid offers and causing OutOfOffers revert, violating the invariant that the bundler should fill targetUnits, causing scoped impact: DoS of bundler fill loop? Proof idea: fuzz (consumed near maxAssets, targetUnits) and assert bundler either fills or reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7231880-e706-4317-b627-e1afeea479b6?mode=deep",
+    "timestamp": "2026-05-31 19:15:43.404263",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral / referral fee] Can an unprivileged caller, under the precondition that referralFeePct is set close to WAD-1 and targetBuyerAssets is large, cause referralFeeAssets = targetBuyerAssets.mulDivDown(referralFeePct, WAD) to consume almost all of targetBuyerAssets, leaving targetFilledBuyerAssets near zero, so that the bundler fills 0 units (since buyerAssetsToUnits returns 0 for tiny remaining), the check require(filledBuyerAssets == targetFilledBuyerAssets) passes vacuously if both are 0, and the referral fee recipient receives nearly all of targetBuyerAssets while the taker receives nothing, violating the invariant that the taker must receive at least minUnits, causing scoped impact: referral fee recipient drains payer with zero fill? Proof idea: set referralFeePct=WAD-1; assert filledUnits >= minUnits or revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a3b5ccd8-9f8b-4cd8-b2fb-8338611175c9?mode=deep",
+    "timestamp": "2026-05-31 19:16:01.038245",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / refund accounting] Can an unprivileged caller, under the precondition that referralFeePct > 0 and filledBuyerAssets is large relative to maxBuyerAssets, cause the refund computation `maxBuyerAssets - filledBuyerAssets - referralFeeAssets` to underflow (revert in Solidity 0.8) when referralFeeAssets = filledBuyerAssets.mulDivDown(referralFeePct, WAD - referralFeePct) pushes the total above maxBuyerAssets, violating the invariant that the bundler must always return excess tokens to msg.sender, causing scoped impact: DoS of buyWithUnitsTargetAndWithdrawCollateral when referral fee causes underflow? Proof idea: fuzz (maxBuyerAssets, referralFeePct, filledBuyerAssets) and assert refund = maxBuyerAssets - filledBuyerAssets - referralFeeAssets >= 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d5a459a-0da5-43af-a214-1846595c56bf?mode=deep",
+    "timestamp": "2026-05-31 19:16:16.244551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.supplyCollateralAndSellWithAssetsTarget / fixed receiver amount] Can an unprivileged attacker, under the precondition that TakeAmountsLib.sellerAssetsToUnits rounds up units causing the actual sellerAssets from take to exceed targetFilledSellerAssets by 1 wei per iteration, cause filledSellerAssets > targetFilledSellerAssets after the loop, so that the check require(filledSellerAssets == targetFilledSellerAssets) reverts, preventing the taker from completing a valid sell, violating the invariant that the bundler should complete fills when sufficient offers exist, causing scoped impact: DoS of supplyCollateralAndSellWithAssetsTarget due to rounding? Proof idea: fuzz (targetSellerAssets, tick, settlementFee) and assert filledSellerAssets == targetFilledSellerAssets after loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b9d20d53-0bd5-4fa2-84ac-ba45a9b7b5a9?mode=deep",
+    "timestamp": "2026-05-31 19:16:31.932252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: MidnightBundles.supplyCollateralAndSellWithAssetsTarget / residual balance] Can an unprivileged attacker, under the precondition that filledSellerAssets > targetFilledSellerAssets (due to rounding in sellerAssetsToUnits), cause the bundler to receive more loan tokens than it sends to receiver (targetSellerAssets) and referralFeeRecipient (referralFeeAssets), leaving a residual balance in the bundler contract, which a subsequent caller can extract by calling the bundler with a crafted take that uses the bundler as payer, violating the invariant that the bundler should hold no residual user funds, causing scoped impact: residual loan tokens stranded or stolen from bundler? Proof idea: assert bundler.loanToken balance == 0 after each supplyCollateralAndSellWithAssetsTarget call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e23c51d-48aa-4854-978c-8487c3b20d80?mode=deep",
+    "timestamp": "2026-05-31 19:16:49.242283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer with units=0] Can an unprivileged taker, under the precondition that takerCallback is set to a victim contract and units=0, call take(sellOffer, ..., 0, taker, receiver, victimCallback, data) causing buyerAssets=0 and sellerAssets=0, so that the onBuy callback is called on victimContract with buyerAssets=0, and then safeTransferFrom(loanToken, victimContract, address(this), 0) is called (a no-op), but the callback itself may execute arbitrary logic, violating the invariant that a zero-unit take should have no side effects on third parties, causing scoped impact: victim contract's callback invoked without consent? Proof idea: assert that take with units=0 and takerCallback set does not call onBuy on victimCallback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7995ed51-01df-461c-a643-1d27a42c7239?mode=deep",
+    "timestamp": "2026-05-31 19:17:05.269000",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / explicit payer bypass via authorized agent] Can an unprivileged msg.sender, under the precondition that taker has authorized msg.sender on Midnight (isAuthorized[taker][msg.sender]=true), call take(sellOffer, ..., taker, receiver, victimCallback, data) where victimCallback has approved Midnight, causing payer=victimCallback instead of msg.sender or taker, so that the explicit payer (msg.sender, the authorized agent) is bypassed and tokens are pulled from victimCallback, violating the invariant that authorization grants the agent the right to act on behalf of taker but not to redirect payment to third parties, causing scoped impact: explicit payer bypassed, victim pays? Proof idea: unit test with authorized agent setting takerCallback to victim; assert victim.loanToken decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4df65448-8c28-4584-8922-96e574219b41?mode=deep",
+    "timestamp": "2026-05-31 19:17:21.272291",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / payer for buy offer with no callback] Can an unprivileged taker, under the precondition that offer.buy=true and offer.callback=address(0), verify that payer = buyer = offer.maker (not msg.sender), so that the maker must have pre-approved Midnight for buyerAssets, and if the maker's approval is insufficient, the take reverts, violating the invariant that a buy offer maker must always be able to pay when their offer is taken, causing scoped impact: DoS of buy offer fills if maker approval is stale? Proof idea: fuzz (maker.approval, buyerAssets) and assert take reverts iff maker.approval < buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4b460d1-d6b2-45f9-a39a-a0d8c9a6c911?mode=deep",
+    "timestamp": "2026-05-31 19:17:37.220115",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / dual safeTransferFrom with same payer] Can an unprivileged attacker, under the precondition that takerCallback is set to a victim contract and the offer is a sell offer, cause two safeTransferFrom calls to pull from victimContract: first `safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets)` (settlement fee portion) and then `safeTransferFrom(loanToken, payer, receiver, sellerAssets)` (seller proceeds), totaling buyerAssets pulled from victimContract, violating the invariant that the victim should not be the payer for both the fee and the seller proceeds, causing scoped impact: victim pays full buyerAssets (fee + seller proceeds) without consent? Proof idea: assert victim.loanToken decreases by exactly buyerAssets after take with takerCallback=victim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a1e74de-ac6b-4c56-ba0e-f97f442ca687?mode=deep",
+    "timestamp": "2026-05-31 19:17:54.557506",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: Midnight.take / onBuy callback before token pull] Can an unprivileged taker, under the precondition that takerCallback is set and the onBuy callback calls Midnight.setIsAuthorized to revoke the victim's authorization, cause the victim's approval to be manipulated during the callback window before the safeTransferFrom pulls tokens, violating the invariant that the payer's token state should not be manipulable between callback and pull, causing scoped impact: callback-induced state change causes unexpected revert or incorrect token accounting? Proof idea: implement onBuy that calls setIsAuthorized; assert take either completes correctly or reverts atomically.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aed676c6-c9c8-4892-8168-1c56b36a53ae?mode=deep",
+    "timestamp": "2026-05-31 19:18:11.146323",
+    "report_generated": false
+  }
+]
