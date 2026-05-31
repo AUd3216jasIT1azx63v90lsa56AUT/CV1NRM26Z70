@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can an unprivileged attacker who is the current roleSetter call setRoleSetter(address(0)) under the precondition that roleSetter == msg.sender, permanently bricking all future role assignments (setFeeSetter, setFeeClaimer, setTickSpacingSetter), violating the invariant that protocol roles must remain reassignable, causing scoped impact: permanent fund freeze on fee claims and tick spacing governance? Proof idea: unit test setRoleSetter(address(0)) then assert all subsequent setFeeSetter/setFeeClaimer/setTickSpacingSetter calls revert with OnlyRoleSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bbf20c0a-95d0-4bd4-9bcc-acb3e205d7ae?mode=deep",
+    "timestamp": "2026-05-31 20:41:48.536321",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter / setFeeClaimer / setTickSpacingSetter] Can an unprivileged attacker observe that feeSetter, feeClaimer, and tickSpacingSetter are initialized to address(0) at construction and that no call to setFeeSetter/setFeeClaimer/setTickSpacingSetter has been made, under the precondition that the deployer has not yet configured roles, call setMarketSettlementFee/claimSettlementFee/setMarketTickSpacing and have them revert because msg.sender != address(0), violating the invariant that protocol fee and tick governance must be operable post-deployment, causing scoped impact: DoS on all fee and tick-spacing administration until roleSetter acts? Proof idea: deploy fresh Midnight, assert feeSetter == address(0), call setMarketSettlementFee from any address and assert OnlyFeeSetter() revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0afdb74c-872a-4d2b-b2b5-a85988494daa?mode=deep",
+    "timestamp": "2026-05-31 20:42:00.505013",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter] Can an unprivileged attacker who controls the roleSetter address call setFeeSetter(attackerAddress) under the precondition that roleSetter == attacker, then call setMarketSettlementFee(id, 6, MAX_SETTLEMENT_FEE_360_DAYS) to set the maximum settlement fee on an existing market, violating the invariant that settlement fees must not be manipulable to cancel in-flight offers, causing scoped impact: all resting buy offers with tick price < new settlement fee become unfillable, effectively cancelling maker liquidity without maker consent? Proof idea: set feeSetter to attacker, call setMarketSettlementFee to max, attempt take() on a low-tick buy offer and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebf63b67-88ba-4adc-9501-7d9e8be4856d?mode=deep",
+    "timestamp": "2026-05-31 20:42:13.112204",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can an unprivileged attacker who controls feeSetter call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE) on an existing market after lenders have entered positions, under the precondition that lenders hold credit with pendingFee already crystallized at a lower rate, violating the invariant that a lender's continuous fee is fixed at the moment they enter a position (per the comment at Midnight.sol:52-54), causing scoped impact: new lenders entering after the fee change pay MAX_CONTINUOUS_FEE while existing lenders' pendingFee is unaffected, but the accounting desync between old and new pendingFee rates could be exploited to drain continuousFeeCredit? Proof idea: fuzz continuousFee changes between two lender entries and assert updatePositionView returns consistent credit for both lenders.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5148a2b6-2253-4f1e-8e7b-885f8835fd2e?mode=deep",
+    "timestamp": "2026-05-31 20:42:25.732814",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged attacker who controls feeClaimer call claimContinuousFee(market, amount, receiver) where amount == marketState[id].continuousFeeCredit under the precondition that continuousFeeCredit < withdrawable, violating the invariant that withdrawable must always cover lender credit redemptions, causing scoped impact: withdrawable is decremented below the amount needed for lenders to withdraw, freezing lender funds? Proof idea: set continuousFeeCredit to X, set withdrawable to X+1 (one unit of lender credit), claim X, assert withdrawable == 1 but lender credit == 1 and withdraw() succeeds; then claim X+1 and assert withdraw() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_12e7d60d-46cb-451a-bd11-162195576f1d?mode=deep",
+    "timestamp": "2026-05-31 20:42:39.318287",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged attacker who controls feeClaimer call claimContinuousFee(market, amount, receiver) where amount > continuousFeeCredit under the precondition that the Solidity 0.8 checked arithmetic on _marketState.continuousFeeCredit -= toUint128(amount) will revert, violating the invariant that fee claims must not exceed accrued fees, causing scoped impact: DoS on fee claiming if feeClaimer passes an inflated amount? Proof idea: unit test claimContinuousFee with amount = continuousFeeCredit + 1 and assert arithmetic revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de126b31-5e2f-48cf-8c70-f4a8939671ec?mode=deep",
+    "timestamp": "2026-05-31 20:42:52.372041",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged attacker who controls feeClaimer call claimContinuousFee(market, amount, receiver) repeatedly in a multicall under the precondition that continuousFeeCredit is nonzero, violating the invariant that totalUnits and withdrawable must remain consistent with outstanding credit and debt, causing scoped impact: totalUnits and withdrawable are decremented multiple times, desyncing from actual lender credit balances and causing subsequent withdraw() calls to underflow? Proof idea: multicall two claimContinuousFee calls summing to more than continuousFeeCredit and assert the second reverts; then assert totalUnits == sum(credit) + sum(debt) invariant holds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2469f932-cf26-448c-b89c-551a15029f8f?mode=deep",
+    "timestamp": "2026-05-31 20:43:06.532437",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeClaimer] Can an unprivileged attacker who controls roleSetter call setFeeClaimer(newClaimer) under the precondition that the old feeClaimer has accrued but not yet claimed continuousFeeCredit, violating the invariant that accrued fees must be claimable by the entity that earned them, causing scoped impact: old feeClaimer permanently loses access to unclaimed fees (documented at Midnight.sol:164) and new feeClaimer can claim them, constituting unauthorized fee redirection? Proof idea: accrue continuousFeeCredit, replace feeClaimer, assert old claimer's claimContinuousFee reverts with OnlyFeeClaimer() and new claimer can drain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1d55698c-2d62-4739-ac3b-8c4859de2ee5?mode=deep",
+    "timestamp": "2026-05-31 20:43:19.666647",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can an unprivileged attacker who controls feeClaimer call claimSettlementFee(token, amount, receiver) where amount > claimableSettlementFee[token] under the precondition that Solidity 0.8 checked arithmetic applies to claimableSettlementFee[token] -= amount, violating the invariant that settlement fee claims must not exceed accrued fees, causing scoped impact: revert-based DoS on fee claiming if feeClaimer passes inflated amount? Proof idea: unit test claimSettlementFee with amount = claimableSettlementFee[token] + 1 and assert underflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a123e188-62b7-49b8-b42f-303109030b43?mode=deep",
+    "timestamp": "2026-05-31 20:43:32.847075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can an unprivileged attacker who controls tickSpacingSetter call setMarketTickSpacing(id, 1) under the precondition that marketState[id].tickSpacing % 1 == 0 (always true), violating the invariant that tick spacing can only decrease to a divisor of the current spacing, causing scoped impact: all ticks become accessible, allowing offers at arbitrarily fine-grained prices that were previously inaccessible, potentially enabling price manipulation at sub-CBP granularity? Proof idea: set tickSpacing to 1, place offer at tick not divisible by original spacing, assert take() succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f56e44bc-4f0d-4678-907f-ce8628f491b4?mode=deep",
+    "timestamp": "2026-05-31 20:43:46.196676",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can an unprivileged attacker who controls tickSpacingSetter call setMarketTickSpacing(id, newSpacing) where newSpacing is not a divisor of marketState[id].tickSpacing under the precondition that the require check is newSpacing > 0 && marketState[id].tickSpacing % newSpacing == 0, violating the invariant that tick spacing must only decrease to valid divisors, causing scoped impact: InvalidTickSpacing() revert prevents legitimate spacing reduction? Proof idea: fuzz newSpacing values and assert only exact divisors pass the modulo check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6d44060-3778-4b15-850b-e5e13d02f55b?mode=deep",
+    "timestamp": "2026-05-31 20:44:00.851585",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee] Can an unprivileged attacker who controls feeSetter call setDefaultSettlementFee(loanToken, index, maxSettlementFee(index)) under the precondition that no market for loanToken has been created yet, violating the invariant that market creation should inherit neutral default fees, causing scoped impact: all future markets for loanToken inherit maximum settlement fees at creation, making low-tick offers immediately unfillable and front-running market creators? Proof idea: set default fee to max for a token, create market, assert settlementFeeCbp6 == MAX_SETTLEMENT_FEE_360_DAYS / CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_918cb4e0-9d64-42fb-90f5-1b679d63cd80?mode=deep",
+    "timestamp": "2026-05-31 20:44:13.269838",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultContinuousFee] Can an unprivileged attacker who controls feeSetter call setDefaultContinuousFee(loanToken, MAX_CONTINUOUS_FEE) under the precondition that no market for loanToken exists yet, violating the invariant that lenders entering new markets should not face undisclosed maximum fees, causing scoped impact: all future markets for loanToken inherit MAX_CONTINUOUS_FEE, maximally penalizing lenders who enter without checking defaultContinuousFee? Proof idea: set default continuous fee to MAX_CONTINUOUS_FEE, create market, assert marketState[id].continuousFee == MAX_CONTINUOUS_FEE.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4594b8d-e85a-4ce6-8fa5-64f36d43307a?mode=deep",
+    "timestamp": "2026-05-31 20:44:26.531494",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged attacker who has been authorized by victim call setIsAuthorized(attacker2, true, victim) under the precondition that isAuthorized[victim][attacker] == true, violating the invariant that authorization delegation must not be transitive without explicit victim consent, causing scoped impact: attacker2 gains full control over victim's positions, collateral, consumed state, and can further authorize additional addresses? Proof idea: victim authorizes attacker, attacker calls setIsAuthorized(attacker2, true, victim), assert isAuthorized[victim][attacker2] == true and attacker2 can withdrawCollateral on behalf of victim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5ee58a7-eb37-4561-a2fa-748ca5040287?mode=deep",
+    "timestamp": "2026-05-31 20:44:40.750892",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged attacker who has been authorized by victim call setIsAuthorized(victim, false, victim) under the precondition that isAuthorized[victim][attacker] == true, violating the invariant that only the account owner should be able to revoke their own authorizations, causing scoped impact: attacker revokes victim's self-authorization or other legitimate operator authorizations, disrupting victim's position management? Proof idea: victim authorizes attacker, attacker calls setIsAuthorized(legitimateOperator, false, victim), assert legitimateOperator can no longer act on behalf of victim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e54a3afd-b02b-4457-be27-60b56ad076ed?mode=deep",
+    "timestamp": "2026-05-31 20:44:52.963675",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an unprivileged attacker who has been authorized by victim call setIsAuthorized(attacker, false, victim) to revoke their own authorization and then setIsAuthorized(attacker, true, victim) again under the precondition that isAuthorized[victim][attacker] == true, violating the invariant that authorization state must be stable between the check and the action, causing scoped impact: attacker can toggle authorization state to confuse integrations that cache isAuthorized state? Proof idea: fuzz authorization toggle sequences and assert no state inconsistency in downstream position operations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_661bd40f-1f05-44b3-95af-17699de20794?mode=deep",
+    "timestamp": "2026-05-31 20:45:05.775817",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + multicall] Can an unprivileged attacker who has been authorized by victim use multicall to atomically call setIsAuthorized(attacker2, true, victim) followed by withdrawCollateral(market, index, assets, victim, attacker2) under the precondition that victim has collateral and isAuthorized[victim][attacker] == true, violating the invariant that collateral withdrawal must only benefit the account owner or explicitly designated receiver, causing scoped impact: attacker drains victim collateral to attacker2 in a single transaction? Proof idea: multicall [setIsAuthorized(attacker2, true, victim), withdrawCollateral(..., victim, attacker2)] and assert victim collateral decreases and attacker2 receives tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_980e0931-ecb8-43b5-a8f2-5af53e150f49?mode=deep",
+    "timestamp": "2026-05-31 20:45:18.935430",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + setConsumed] Can an unprivileged attacker who has been authorized by maker call setConsumed(group, type(uint256).max, maker) under the precondition that isAuthorized[maker][attacker] == true and maker has active offers in group, violating the invariant that offer cancellation must only be initiated by the maker or their explicit delegate, causing scoped impact: attacker cancels all of maker's offers in the group, denying maker liquidity provision and potentially front-running profitable fills? Proof idea: authorize attacker, attacker calls setConsumed(group, type(uint256).max, maker), assert subsequent take() on maker's offer reverts with ConsumedUnits() or ConsumedAssets().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ffb2d00e-327d-43d3-948e-aaaf17de89e5?mode=deep",
+    "timestamp": "2026-05-31 20:45:32.449077",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + repay] Can an unprivileged attacker who has been authorized by borrower call repay(market, units, borrower, address(0), '') under the precondition that isAuthorized[borrower][attacker] == true and borrower has debt, violating the invariant that repayment on behalf must not be usable to force-repay a borrower's debt without their consent, causing scoped impact: attacker forces repayment of borrower's debt, potentially disrupting the borrower's intended position management or triggering unintended tax/accounting events? Proof idea: authorize attacker, attacker calls repay on behalf of borrower, assert borrower.debt decreases and attacker pays loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d70bd67-13ad-4cd2-888d-acbb804a456b?mode=deep",
+    "timestamp": "2026-05-31 20:45:46.963275",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + withdraw] Can an unprivileged attacker who has been authorized by lender call withdraw(market, units, lender, attacker) under the precondition that isAuthorized[lender][attacker] == true and lender has credit, violating the invariant that credit withdrawal must only transfer assets to the account owner or explicitly authorized receiver, causing scoped impact: attacker drains lender's credit to attacker's own address? Proof idea: authorize attacker, attacker calls withdraw(market, lender.credit, lender, attacker), assert lender credit == 0 and attacker receives loan tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bc22d4f6-5ca2-4283-bab0-b3a490354c16?mode=deep",
+    "timestamp": "2026-05-31 20:46:01.859206",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + take (taker authorization)] Can an unprivileged attacker who has been authorized by taker call take(offer, ratifierData, units, taker, attacker, address(0), '') under the precondition that isAuthorized[taker][attacker] == true and offer.buy == false (taker is buyer), violating the invariant that taker authorization must not allow the authorized party to redirect buyer assets to themselves, causing scoped impact: attacker uses taker's credit to fill a sell offer, increasing taker's credit while attacker controls the transaction flow? Proof idea: authorize attacker, attacker calls take with taker=victim, assert victim credit increases and attacker controls callback/receiver.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bdd90dca-73df-4f37-87ae-666c69bc987e?mode=deep",
+    "timestamp": "2026-05-31 20:46:16.898844",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can an unprivileged attacker who controls feeSetter call setMarketSettlementFee(id, index, 0) under the precondition that the market has active offers with settlement fee baked into their pricing, violating the invariant that settlement fee changes must not retroactively alter the economics of signed offers, causing scoped impact: takers who take offers after fee is set to 0 receive sellerAssets == buyerAssets (no fee spread), effectively giving takers a better price than makers intended and reducing protocol fee revenue to zero? Proof idea: set settlement fee to 0, take a buy offer, assert claimableSettlementFee[loanToken] does not increase.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eeb0122e-fbef-4243-9fb9-e0e466e642e2?mode=deep",
+    "timestamp": "2026-05-31 20:46:31.197700",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can an unprivileged attacker who controls feeSetter call setMarketSettlementFee(id, 0, MAX_SETTLEMENT_FEE_0_DAYS) under the precondition that the market is post-maturity (timeToMaturity == 0), violating the invariant that post-maturity settlement fees must not be raised to block debt unwinding, causing scoped impact: all post-maturity take() calls that compute settlementFee at breakpoint 0 now pay maximum fee, making post-maturity unwinding economically unviable and freezing borrower debt? Proof idea: warp past maturity, set settlementFeeCbp0 to max, attempt take() and assert buyerAssets - sellerAssets == MAX_SETTLEMENT_FEE_0_DAYS * units / WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_871257c0-590d-4b7b-94d7-a464ec359319?mode=deep",
+    "timestamp": "2026-05-31 20:46:45.481134",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can an unprivileged attacker who controls feeSetter call setMarketContinuousFee(id, 0) under the precondition that continuousFeeCredit has already accrued in the market, violating the invariant that setting continuousFee to 0 must not affect already-accrued continuousFeeCredit, causing scoped impact: feeClaimer can no longer accrue new fees but existing continuousFeeCredit remains claimable, while new lenders entering pay zero continuous fee, creating an unfair two-tier fee structure? Proof idea: accrue continuousFeeCredit, set continuousFee to 0, assert new lender's pendingFee == 0 but existing continuousFeeCredit is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0788ae1-f9d0-4fbf-8d85-5792ff8161e5?mode=deep",
+    "timestamp": "2026-05-31 20:47:01.146108",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IMidnight.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can an unprivileged attacker who controls feeClaimer call claimContinuousFee(market, continuousFeeCredit, receiver) under the precondition that continuousFeeCredit == totalUnits (all units are fee credit, no lender credit), violating the invariant that totalUnits must remain >= sum of all lender credit positions, causing scoped impact: totalUnits and withdrawable are decremented to 0 while lender credit positions remain nonzero, making all subsequent withdraw() calls revert due to withdrawable underflow? Proof idea: create market where all units are continuousFeeCredit, claim all, assert withdrawable == 0 and lender withdraw() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9567ed81-b2c2-4888-a751-1a3c6ab2842e?mode=deep",
+    "timestamp": "2026-05-31 20:47:15.138245",
+    "report_generated": false
+  }
+]
