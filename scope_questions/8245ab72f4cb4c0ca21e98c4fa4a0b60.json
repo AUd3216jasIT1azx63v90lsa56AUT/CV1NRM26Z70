@@ -1,0 +1,42 @@
+[
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7e18dac2-c693-4657-8e77-f5b5a5012bca?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3320dcf0-60ff-4052-8754-04dca0d462e7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ffc3edad-b52d-4edc-8069-a1c2fa1d9d17?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_64fe3b63-31ef-4062-b322-171dcdf2084c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_95afa44f-4811-4ddc-9e09-0523620e1492?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_412d0639-9422-4ce1-8723-d8e43380dd07?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_62456197-d6da-4544-9290-2f103693f493?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6f434334-19ed-459e-90a6-08ac22ffe255?mode=deep",
+    "questions_generated": false
+  }
+]
