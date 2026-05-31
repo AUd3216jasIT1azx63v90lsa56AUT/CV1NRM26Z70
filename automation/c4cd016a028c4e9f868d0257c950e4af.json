@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker cause a nonce desync between the ERC20 token's nonces[owner] and the owner's expected nonce by front-running multiple permit calls in a single block, consuming nonces N, N+1, N+2 before the victim's intended transactions, forcing the victim to re-sign all pending permits with updated nonces, and if the victim has time-sensitive bundle operations (e.g., near maturity), the griefing causes them to miss the deadline, violating the invariant that a signed permit must be submittable within its deadline without interference? Proof idea: front-run N permits in sequence and assert victim's original signatures are all invalidated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7582bc63-5a45-44e0-8277-60259045f556?mode=deep",
+    "timestamp": "2026-05-31 23:24:55.766862",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization where authorization.authorized == authorization.authorizer (self-authorization), causing Midnight to set isAuthorized[authorizer][authorizer] = true, which is a no-op in terms of access control (since msg.sender == onBehalf already passes), but could cause unexpected behavior in downstream checks that rely on isAuthorized being false for self, violating the invariant that self-authorization must not create unexpected permission states? Proof idea: submit Authorization with authorized=authorizer and assert isAuthorized[A][A] state and its effect on downstream calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57609c4f-8774-41a4-85a2-fcd2f616be6e?mode=deep",
+    "timestamp": "2026-05-31 23:25:07.669596",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker exploit the fact that pullToken is called with from=msg.sender (not from=taker), meaning the ERC2612 permit must be signed by msg.sender, not the taker, and if an authorized operator calls the bundle on behalf of a taker, the permit must be signed by the operator (not the taker), so a permit signed by the taker is silently ignored, causing the safeTransferFrom to pull from the operator's allowance instead, violating the invariant that the permit signer must match the token source? Proof idea: operator calls bundle with taker's permit signature and assert whose allowance is consumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_902d652e-4996-4232-b3f7-3de334e0d90a?mode=deep",
+    "timestamp": "2026-05-31 23:25:19.947556",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization with a deadline of type(uint256).max, creating a permanent authorization that never expires, and then if the authorizer later wants to revoke it, they must submit a new Authorization with isAuthorized=false, but if the attacker front-runs the revocation with another isAuthorized=true Authorization (using the next nonce), the attacker can maintain persistent authorization, violating the invariant that an authorizer must be able to reliably revoke delegated authorization? Proof idea: race condition between revocation and re-grant using sequential nonces.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc11eba1-57d9-40ac-b1fa-e46b8b78b47e?mode=deep",
+    "timestamp": "2026-05-31 23:25:32.566520",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker supply a TokenPermit with PermitKind.ERC2612 where the token address is a contract that implements permit but reverts with a non-standard error (e.g., out-of-gas, assembly revert with no data), causing the try-catch to catch the revert and proceed to safeTransferFrom, which then also reverts because no allowance exists, but the gas consumption from the failed permit call could be used to grief the caller by forcing expensive failed calls, violating the invariant that permit failure must not cause disproportionate gas costs? Proof idea: deploy a gas-bomb permit token and measure gas consumption in the try-catch path.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9bb5aa44-51c8-481c-80dc-30f47b287931?mode=deep",
+    "timestamp": "2026-05-31 23:25:46.000352",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker exploit the fact that the AUTHORIZATION_TYPEHASH encodes 'bool isAuthorized' as a uint256 in abi.encode (since bool is padded to 32 bytes), and if a signing library incorrectly encodes the bool as a single byte, the resulting digest differs from what EcrecoverAuthorizer computes, causing the signature to be rejected, but more critically, if the typehash string does not match the actual struct encoding order, a signature could be valid for a different struct layout, violating the invariant that the typehash must exactly match the encoded struct? Proof idea: differential test between abi.encode(AUTHORIZATION_TYPEHASH, authorization) and manual field-by-field encoding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58d1f2db-d0d2-4a0c-8016-f78615acdee1?mode=deep",
+    "timestamp": "2026-05-31 23:25:59.167408",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.repayAndWithdrawCollateral / pullToken] Can an attacker who is authorized by the borrower call repayAndWithdrawCollateral with a TokenPermit containing a valid ERC2612 permit signed by the attacker (msg.sender) for the loan token, but with amount set to a value larger than the actual debt, causing the bundler to pull excess tokens from the attacker, repay the debt, and then the excess tokens remain in the bundler contract (since there is no refund logic in repayAndWithdrawCollateral), violating the invariant that all pulled tokens must be either used or returned to the sender? Proof idea: call repayAndWithdrawCollateral with assets > actual debt and assert token balance of bundler after call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f0fcd68-f6e0-4b85-ba43-c0ba1ae5cbe8?mode=deep",
+    "timestamp": "2026-05-31 23:26:12.935788",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker exploit the fact that EcrecoverAuthorizer.setIsAuthorized is permissionless (any caller can submit a valid signature) to submit a valid Authorization(authorizer=A, authorized=B, isAuthorized=true) signed by A, and then immediately in the same transaction (via multicall or a contract) submit Authorization(authorizer=A, authorized=C, isAuthorized=true) signed by B (now authorized), granting C authorization over A without A ever signing for C, violating the invariant that authorization grants must be traceable to the authorizer's direct signature? Proof idea: multicall two setIsAuthorized calls in sequence and assert C's authorization over A.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_233973eb-87b0-4bd0-b59c-c60c4c83f113?mode=deep",
+    "timestamp": "2026-05-31 23:26:25.571102",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker supply a TokenPermit with PermitKind.ERC2612 where the token implements permit but uses a different EIP-712 domain structure (e.g., missing 'version' field or using a different typehash), causing the bundler to call permit with a signature that the token rejects (silently caught), and then the safeTransferFrom proceeds using a pre-existing allowance, effectively allowing the bundler to drain pre-existing allowances without requiring a valid permit for that specific token's domain, violating the invariant that permit must be validated against the token's actual domain? Proof idea: deploy token with non-standard domain and assert bundler drains pre-existing allowance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bdc46479-0fba-412a-911d-8136ea48c03c?mode=deep",
+    "timestamp": "2026-05-31 23:26:38.880635",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker who observes that EcrecoverAuthorizer uses block.chainid dynamically (not cached) exploit a scenario where the chain undergoes a temporary chainid change (e.g., during a reorg or a specific EVM configuration), causing a signature signed with the original chainid to be rejected, and a signature signed with the new chainid to be accepted, creating a window where authorization state can be manipulated using signatures that were not intended for the current chain state, violating the invariant that chainid-bound signatures must be stable within a single chain? Proof idea: use vm.chainId to simulate chainid change mid-test and assert signature validity changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_320e77ac-6577-4948-9cc9-11e58708112d?mode=deep",
+    "timestamp": "2026-05-31 23:26:52.472654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker cause a griefing attack by repeatedly front-running a victim's ERC2612 permit submissions (consuming nonces N, N+1, ...) while the victim's bundle deadline approaches maturity, forcing the victim to continuously re-sign permits with updated nonces until the market matures and the bundle becomes economically unviable, violating the invariant that a valid signed permit must be submittable within its deadline without adversarial interference? Proof idea: simulate N front-runs and assert victim cannot submit bundle before market maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_df0388a1-082e-43e3-a046-3ebd1d0b8098?mode=deep",
+    "timestamp": "2026-05-31 23:27:06.171807",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an Authorization where authorization.authorized is the EcrecoverAuthorizer contract itself, causing Midnight to set isAuthorized[authorizer][EcrecoverAuthorizer] = true, and then the attacker can call EcrecoverAuthorizer.setIsAuthorized with a signature where the signer is any address that is authorized by the authorizer, because the check allows 'IMidnight(MIDNIGHT).isAuthorized(authorization.authorizer, signer)', creating a self-referential authorization loop that could be exploited to grant arbitrary authorizations, violating the invariant that the EcrecoverAuthorizer must not be able to authorize itself? Proof idea: set authorized=EcrecoverAuthorizer and assert the resulting authorization state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cd32ac8b-361f-4dc6-9559-01493549f3f4?mode=deep",
+    "timestamp": "2026-05-31 23:27:19.545501",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker exploit the Permit2 path in pullToken by supplying a PermitKind.Permit2 TokenPermit with a nonce that has already been used (bit already set in nonceBitmap), causing the Permit2.permitTransferFrom call to revert (not silently caught, unlike ERC2612), and since Permit2 reverts propagate (no try-catch), the entire bundle reverts, while the ERC2612 path would silently continue, creating an asymmetric DoS vector where Permit2 users are more vulnerable to griefing than ERC2612 users, violating the invariant that both permit paths must have equivalent griefing resistance? Proof idea: pre-consume Permit2 nonce and assert bundle reverts vs ERC2612 path continues.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_97e51e43-25f4-41c1-8032-e5ff0bbe0755?mode=deep",
+    "timestamp": "2026-05-31 23:27:33.234932",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker exploit the fact that the Authorization struct encodes 'bool isAuthorized' which in Solidity's abi.encode is padded to 32 bytes (0x00...01 or 0x00...00), but if a frontend or off-chain signer uses a non-standard encoding (e.g., encoding bool as a single byte 0x01), the keccak256 of the struct hash differs, causing the signature to be rejected by EcrecoverAuthorizer but potentially accepted by a different contract that uses single-byte bool encoding, creating a cross-contract signature confusion vulnerability, violating the invariant that EIP-712 struct encoding must be deterministic and consistent? Proof idea: differential fuzz test between abi.encode and manual byte-level encoding of Authorization struct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4aa97b30-3c75-46df-9669-af868d52901e?mode=deep",
+    "timestamp": "2026-05-31 23:27:46.506376",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget / pullToken] Can an attacker who is authorized by the taker call supplyCollateralAndSellWithUnitsTarget with a CollateralSupply containing a valid ERC2612 permit for the collateral token signed by the attacker (msg.sender), but with collateralSupplies[i].assets set to 0, causing the permit to be called with value=0 (which may succeed or fail depending on the token), and then supplyCollateral is called with 0 assets, effectively burning the permit nonce without supplying any collateral, violating the invariant that a consumed permit nonce must correspond to a meaningful token transfer? Proof idea: call bundle with assets=0 and ERC2612 permit and assert nonce is consumed without collateral transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_10829b66-f075-463e-a88a-c314f953a671?mode=deep",
+    "timestamp": "2026-05-31 23:28:00.395663",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker exploit the fact that EcrecoverAuthorizer.nonce is a public mapping (not a view function with access control) to monitor all authorizer nonces off-chain and predict the next valid nonce for any authorizer, enabling targeted front-running of specific authorization transactions by submitting a competing Authorization with the same nonce but different authorized/isAuthorized values, causing the victim's intended authorization to fail with InvalidNonce, violating the invariant that an authorizer's signed authorization must be submittable without adversarial nonce interference? Proof idea: monitor nonce, submit competing Authorization with same nonce, assert victim's tx reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac553768-23f9-4233-910c-b14c35e04a73?mode=deep",
+    "timestamp": "2026-05-31 23:28:13.716043",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker supply a TokenPermit with PermitKind.ERC2612 where the token is a rebasing token that changes balances between the permit call and the safeTransferFrom call, causing the permit to authorize amount=X but the actual transfer to pull a different amount (due to rebase), and the bundler then approves and uses the rebased amount for Midnight operations, creating an accounting discrepancy between the permit-authorized amount and the actual protocol impact, violating the invariant that the permit-authorized amount must equal the amount used in protocol operations? Proof idea: deploy rebasing token, trigger rebase between permit and transferFrom, assert accounting discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ce6d0e6-f6f0-4242-bfd1-b0c6d615acbd?mode=deep",
+    "timestamp": "2026-05-31 23:28:29.859573",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker who has obtained a valid Authorization signature (authorizer=A, authorized=B, isAuthorized=true, nonce=0, deadline=T) wait until after the deadline T has passed, then submit the signature, expecting it to be rejected with Expired(), but if the block.timestamp is manipulated by a validator (within the allowed drift) to be <= T, the signature could be accepted after the intended expiry, violating the invariant that expired signatures must never be accepted? Proof idea: set block.timestamp to exactly deadline and assert acceptance, then to deadline+1 and assert rejection.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ea95f01-b1e4-4725-83e0-8f4408da0369?mode=deep",
+    "timestamp": "2026-05-31 23:28:42.931471",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / pullToken] Can an attacker construct a bundle where the loanTokenPermit contains a valid ERC2612 permit for token A, but takes[0].offer.market.loanToken is token B, causing the bundler to call permit on token B with the signature intended for token A (which silently fails in try-catch), and then safeTransferFrom pulls token B from a pre-existing allowance, while the permit nonce for token A is not consumed (since the permit call was on token B), creating a mismatch between which token's permit was consumed and which token was transferred, violating the invariant that the permit must be for the same token as the transfer? Proof idea: supply permit for token A but bundle uses token B and assert nonce states of both tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0becf740-d279-4984-8cf8-f6ec4026838b?mode=deep",
+    "timestamp": "2026-05-31 23:28:55.664323",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker exploit the fact that the EIP712_DOMAIN_TYPEHASH used by EcrecoverAuthorizer (keccak256('EIP712Domain(uint256 chainId,address verifyingContract)')) differs from the standard EIP-712 domain typehash that includes name and version, meaning that hardware wallets or signing libraries that display the domain to users may show an incomplete or confusing domain, causing users to unknowingly sign authorizations for the wrong contract or chain, violating the invariant that users must be able to verify what they are signing? Proof idea: compare EcrecoverAuthorizer domain display against EIP-712 standard and assert missing fields.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_757b5c67-09b9-4a78-b1d4-f817405d350f?mode=deep",
+    "timestamp": "2026-05-31 23:29:09.840929",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker exploit the fact that the ERC2612 permit in pullToken is called with spender=address(this) (the bundler), but if the bundler is upgraded or redeployed at a different address, all previously signed permits become invalid (wrong spender), while Permit2 permits are not affected (since Permit2 is at a fixed address), creating an asymmetric migration risk where ERC2612 users lose their signed permits but Permit2 users do not, violating the invariant that permit-based authorization must be robust to contract address changes? Proof idea: redeploy bundler at new address and assert ERC2612 permits are invalid while Permit2 permits remain valid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b427df6-2e3f-4baf-8953-d1f3b67fbdb7?mode=deep",
+    "timestamp": "2026-05-31 23:29:22.645736",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.setIsAuthorized] Can an attacker exploit the two-step authorization flow (EcrecoverAuthorizer.setIsAuthorized -> Midnight.setIsAuthorized) to create a TOCTOU race condition where the authorizer's isAuthorized state on Midnight changes between the EcrecoverAuthorizer's check and the Midnight call, specifically if the authorizer revokes EcrecoverAuthorizer's own authorization on Midnight between the nonce check and the Midnight.setIsAuthorized call (via a reentrant callback or a separate transaction), causing the Midnight call to revert but the nonce to be consumed, violating the invariant that a consumed nonce must correspond to a successful authorization state change? Proof idea: simulate revocation of EcrecoverAuthorizer's Midnight authorization mid-call and assert nonce is consumed without state change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39914c25-c26b-4e50-92c9-598639205fa1?mode=deep",
+    "timestamp": "2026-05-31 23:29:35.827079",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker who controls a malicious ERC20 token implement a permit function that succeeds (does not revert) but sets the allowance to a value different from the requested amount (e.g., always sets allowance to type(uint256).max regardless of value parameter), causing the bundler to believe the permit authorized exactly amount tokens, but the actual allowance is unlimited, and subsequent safeTransferFrom calls could pull more tokens than intended if the bundler's approval logic is not reset, violating the invariant that permit must set allowance to exactly the authorized value? Proof idea: deploy token with manipulative permit and assert bundler's effective allowance after permit call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b1df208-d368-4861-ac7d-4691e3f54726?mode=deep",
+    "timestamp": "2026-05-31 23:29:49.305542",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit multiple Authorization transactions in the same block (same block.timestamp), each with sequential nonces (0, 1, 2, ...), all with deadline=block.timestamp, and since the deadline check is 'block.timestamp <= authorization.deadline' (inclusive), all submissions succeed in the same block, allowing the attacker to rapidly cycle through authorization states (true, false, true, false) in a single block, violating the invariant that authorization state changes should be observable and reversible by the authorizer between blocks? Proof idea: submit N authorization changes in one block and assert final state vs intermediate states.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a93a4f2-e7c3-467a-89b3-97500f2d5f94?mode=deep",
+    "timestamp": "2026-05-31 23:30:02.277867",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an attacker exploit the fact that the Permit2 path in pullToken does NOT use try-catch (unlike ERC2612), meaning a Permit2 revert propagates and reverts the entire bundle, while the ERC2612 path silently continues, to selectively grief Permit2 users by pre-consuming their nonce (via a direct Permit2.permitTransferFrom call) before the bundle executes, causing the bundle to revert entirely (including any collateral already supplied in earlier loop iterations), violating the invariant that partial bundle execution must not leave the protocol in an inconsistent state? Proof idea: pre-consume Permit2 nonce, call bundle with collateral supply + take, assert collateral is stuck in bundler.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_83bce308-757f-4bbf-8702-dc6bdec446f1?mode=deep",
+    "timestamp": "2026-05-31 23:30:16.368284",
+    "report_generated": false
+  }
+]
