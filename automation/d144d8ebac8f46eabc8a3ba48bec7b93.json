@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can an unprivileged caller (non-roleSetter) call setRoleSetter(address(0)) under the precondition that roleSetter is already address(0) (e.g., after a prior setRoleSetter(address(0)) call), triggering a permanent lock of all four role-management functions (setFeeSetter, setFeeClaimer, setTickSpacingSetter, setRoleSetter), violating the invariant that protocol roles must remain reassignable, causing scoped impact: permanent freeze of all fee and tick-spacing governance? Proof idea: fuzz initial roleSetter address, call setRoleSetter(address(0)) as roleSetter, then assert every subsequent setFeeSetter/setFeeClaimer/setTickSpacingSetter/setRoleSetter call reverts with OnlyRoleSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8621a727-cca0-4bf1-9fcd-d2401ff10e82?mode=deep",
+    "timestamp": "2026-05-31 22:16:09.709779",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter] Can the current roleSetter call setRoleSetter(newRoleSetter) twice within a single multicall batch under the precondition that multicall uses delegatecall and roleSetter is updated after the first inner call, triggering the second call to succeed with a different newRoleSetter than intended, violating the invariant that only the pre-call roleSetter can authorize role changes, causing scoped impact: unauthorized role reassignment within a single transaction? Proof idea: construct multicall([setRoleSetter(A), setRoleSetter(B)]) as original roleSetter and assert final roleSetter == B, not A.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ffd8f70-6b53-4b4a-b398-d614f5c9b88e?mode=deep",
+    "timestamp": "2026-05-31 22:16:21.761633",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeSetter] Can any address other than roleSetter call setFeeSetter(attacker) under the precondition that feeSetter != roleSetter, triggering a successful feeSetter reassignment, violating the invariant require(msg.sender == roleSetter, OnlyRoleSetter()), causing scoped impact: unauthorized control over all settlement and continuous fee parameters? Proof idea: unit test calling setFeeSetter from feeSetter, feeClaimer, tickSpacingSetter, and arbitrary EOA; assert all revert with OnlyRoleSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f34c9fbc-6902-4336-99fd-c42c1c0025fa?mode=deep",
+    "timestamp": "2026-05-31 22:16:34.094332",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeClaimer] Can any address other than roleSetter call setFeeClaimer(attacker) under the precondition that feeClaimer holds accumulated claimableSettlementFee > 0, triggering a feeClaimer reassignment that causes the old claimer to permanently lose access to unclaimed fees, violating the invariant that fee claimer transitions must not silently forfeit accrued protocol fees, causing scoped impact: permanent loss of claimable settlement fees for the displaced claimer? Proof idea: accrue settlement fees via take(), call setFeeClaimer(newClaimer) as roleSetter, assert old claimer's claimSettlementFee call reverts with OnlyFeeClaimer().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_925a5fd9-440c-49cb-a9c2-155097cdd357?mode=deep",
+    "timestamp": "2026-05-31 22:16:46.605752",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setTickSpacingSetter] Can any address other than roleSetter call setTickSpacingSetter(attacker) under the precondition that a market exists with tickSpacing == DEFAULT_TICK_SPACING (4), triggering unauthorized tick spacing setter assignment, violating the invariant require(msg.sender == roleSetter, OnlyRoleSetter()), causing scoped impact: unauthorized ability to decrease tick spacing and unlock new price ticks for all markets? Proof idea: call setTickSpacingSetter from feeSetter, feeClaimer, and arbitrary EOA; assert all revert with OnlyRoleSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1b0160e2-32d5-4e39-8f0b-cd572523d6b0?mode=deep",
+    "timestamp": "2026-05-31 22:16:58.765597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can any address other than feeSetter call setMarketSettlementFee(id, index, newSettlementFee) under the precondition that the market exists (tickSpacing > 0), triggering a settlement fee change, violating the invariant require(msg.sender == feeSetter, OnlyFeeSetter()), causing scoped impact: unauthorized modification of settlement fees affecting all future take() calls in the market? Proof idea: call setMarketSettlementFee from roleSetter, feeClaimer, tickSpacingSetter, and arbitrary EOA; assert all revert with OnlyFeeSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3c3b472-7c4b-43bb-99c3-e81b517ca056?mode=deep",
+    "timestamp": "2026-05-31 22:17:11.370399",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can feeSetter call setMarketSettlementFee(id, index, newSettlementFee) with newSettlementFee > maxSettlementFee(index) under the precondition that index is valid (0-6) and market exists, triggering a settlement fee above the ConstantsLib cap (e.g., MAX_SETTLEMENT_FEE_360_DAYS = 0.005e18), violating the invariant require(newSettlementFee <= maxSettlementFee(index), SettlementFeeTooHigh()), causing scoped impact: settlement fee exceeding protocol cap, implicitly cancelling all low-price offers? Proof idea: fuzz newSettlementFee in [maxSettlementFee(index)+1, type(uint256).max] and assert revert with SettlementFeeTooHigh().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_25da3b1a-4c59-42cd-a225-0a68f3e93f87?mode=deep",
+    "timestamp": "2026-05-31 22:17:23.795194",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can feeSetter call setMarketSettlementFee(id, index, newSettlementFee) with newSettlementFee % CBP != 0 (CBP = 1e12) under the precondition that newSettlementFee <= maxSettlementFee(index), triggering a fee value that is not a multiple of centi-basis-points, violating the invariant require(newSettlementFee % CBP == 0, FeeNotMultipleOfFeeCbp()), causing scoped impact: settlement fee stored as truncated cbp value, creating rounding discrepancy between stored and intended fee? Proof idea: fuzz newSettlementFee in [1, maxSettlementFee(index)] where value % CBP != 0 and assert revert with FeeNotMultipleOfFeeCbp().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_07771062-7a37-441c-ae32-a0a232da8772?mode=deep",
+    "timestamp": "2026-05-31 22:17:36.160954",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee] Can feeSetter call setMarketSettlementFee(id, index, newSettlementFee) with index == 7 under the precondition that the market exists, triggering an out-of-bounds array access in maxSettlementFee(index) which indexes a fixed-size 7-element array, violating the invariant require(index <= 6, InvalidFeeIndex()), causing scoped impact: revert or silent array OOB depending on Solidity version, potentially bypassing fee cap enforcement? Proof idea: call setMarketSettlementFee with index values [7, 255, type(uint256).max] and assert revert with InvalidFeeIndex().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a5f4fc8d-6cbc-4d6c-a518-7f7e9e8a5d5f?mode=deep",
+    "timestamp": "2026-05-31 22:17:49.041797",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee] Can feeSetter call setDefaultSettlementFee(loanToken, index, newSettlementFee) for a loanToken that already has active markets under the precondition that those markets were created with the old default fee, triggering a default fee change that affects only newly created markets (not existing ones), violating the invariant that market parameters are immutable after creation, causing scoped impact: new markets for the same loanToken silently receive different fee schedules than existing markets, creating fee arbitrage? Proof idea: create market M1 with default fee F1, call setDefaultSettlementFee to F2, create market M2, assert M1.settlementFee != M2.settlementFee for same TTM.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4e1c93c6-7f51-400d-82b6-f41b04c61a6d?mode=deep",
+    "timestamp": "2026-05-31 22:18:01.427170",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can feeSetter call setMarketContinuousFee(id, newContinuousFee) with newContinuousFee > MAX_CONTINUOUS_FEE (MAX_CONTINUOUS_FEE = uint32(0.01e18 / 365 days) = 317097919) under the precondition that the market exists, triggering a continuous fee above the 1% annualized cap, violating the invariant require(newContinuousFee <= MAX_CONTINUOUS_FEE, ContinuousFeeTooHigh()), causing scoped impact: new lenders entering after the fee change receive a higher-than-capped continuous fee crystallized into their pendingFee? Proof idea: fuzz newContinuousFee in [MAX_CONTINUOUS_FEE+1, type(uint32).max] and assert revert with ContinuousFeeTooHigh().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8af254cf-fe47-49f5-817a-118751520712?mode=deep",
+    "timestamp": "2026-05-31 22:18:14.489220",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee] Can feeSetter call setMarketContinuousFee(id, newContinuousFee) after lenders have already entered positions under the precondition that existing lenders have pendingFee crystallized at the old continuousFee rate, triggering a fee change that does NOT retroactively update existing lenders' pendingFee (per the comment 'their fee is fixed'), violating the invariant that fee changes must not silently alter existing lenders' crystallized obligations, causing scoped impact: new lenders entering after the change pay a different rate than existing lenders, creating accounting divergence in continuousFeeCredit? Proof idea: lender A enters at fee F1, feeSetter changes to F2, lender B enters, assert A.pendingFee accrues at F1 rate and B.pendingFee accrues at F2 rate via updatePositionView.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49b956fe-7951-4429-ac0c-ee61794e7563?mode=deep",
+    "timestamp": "2026-05-31 22:18:26.896394",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can any address other than tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) under the precondition that the market exists, triggering a tick spacing change, violating the invariant require(msg.sender == tickSpacingSetter, OnlyTickSpacingSetter()), causing scoped impact: unauthorized unlocking of new price ticks, allowing offers at previously inaccessible ticks? Proof idea: call setMarketTickSpacing from roleSetter, feeSetter, feeClaimer, and arbitrary EOA; assert all revert with OnlyTickSpacingSetter().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87c3a325-5e38-4eb6-a14e-5040353b9196?mode=deep",
+    "timestamp": "2026-05-31 22:18:39.829276",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) with newTickSpacing that is NOT a divisor of the current tickSpacing under the precondition that marketState[id].tickSpacing == 4 (DEFAULT_TICK_SPACING), triggering a tick spacing change to e.g. 3 (not a divisor of 4), violating the invariant require(marketState[id].tickSpacing % newTickSpacing == 0, InvalidTickSpacing()), causing scoped impact: invalid tick grid that could make previously valid offer ticks inaccessible? Proof idea: fuzz newTickSpacing in [1, DEFAULT_TICK_SPACING] and assert success only when DEFAULT_TICK_SPACING % newTickSpacing == 0 (i.e., 1, 2, 4).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_307a4235-7deb-4df5-9d36-a56134c6ecd2?mode=deep",
+    "timestamp": "2026-05-31 22:18:52.675060",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can tickSpacingSetter call setMarketTickSpacing(id, newTickSpacing) with newTickSpacing > current tickSpacing (e.g., newTickSpacing = 8 when current = 4) under the precondition that the market exists, triggering an increase in tick spacing that would make previously valid offer ticks inaccessible, violating the invariant that tick spacing can only decrease (require(marketState[id].tickSpacing % newTickSpacing == 0)), causing scoped impact: existing offers at ticks that are multiples of 4 but not 8 become unfillable? Proof idea: set tickSpacing to 4, call setMarketTickSpacing(id, 8), assert revert with InvalidTickSpacing().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5745643d-016f-4630-9af9-2246ffa74602?mode=deep",
+    "timestamp": "2026-05-31 22:19:05.687948",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can tickSpacingSetter call setMarketTickSpacing(id, 0) under the precondition that the market exists (tickSpacing > 0), triggering a tick spacing of 0 which would make the market appear uncreated (tickSpacing == 0 is the sentinel for 'not created'), violating the invariant require(newTickSpacing > 0, InvalidTickSpacing()), causing scoped impact: market appears destroyed, all subsequent touchMarket calls would re-initialize it with default fees? Proof idea: call setMarketTickSpacing(id, 0) and assert revert with InvalidTickSpacing().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c61142ed-fd39-48d1-a8ea-cc098d2ed0ea?mode=deep",
+    "timestamp": "2026-05-31 22:19:18.655546",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing] Can tickSpacingSetter decrease tick spacing from DEFAULT_TICK_SPACING (4) to 1 under the precondition that existing offers are signed at tick multiples of 4, triggering the unlocking of ticks 1, 2, 3, 5, 6, 7, etc., violating the invariant that offer ticks must be multiples of the market's spacing at fill time (not at signing time), causing scoped impact: takers can now fill offers at ticks that were inaccessible when the offer was signed, potentially at prices the maker did not intend to offer? Proof idea: sign offer at tick=2 (invalid at spacing=4), decrease spacing to 1, attempt take at tick=2, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_343083a8-268c-4fc2-b77b-2c0372225a04?mode=deep",
+    "timestamp": "2026-05-31 22:19:32.096905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can any address other than feeClaimer call claimSettlementFee(token, amount, receiver) under the precondition that claimableSettlementFee[token] > 0, triggering a settlement fee withdrawal, violating the invariant require(msg.sender == feeClaimer, OnlyFeeClaimer()), causing scoped impact: unauthorized extraction of accrued settlement fees from the protocol? Proof idea: call claimSettlementFee from roleSetter, feeSetter, tickSpacingSetter, and arbitrary EOA; assert all revert with OnlyFeeClaimer().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e0dbb8b6-e2d0-408d-aa43-a9bf4d104575?mode=deep",
+    "timestamp": "2026-05-31 22:19:44.076949",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimSettlementFee] Can feeClaimer call claimSettlementFee(token, amount, receiver) with amount > claimableSettlementFee[token] under the precondition that claimableSettlementFee[token] < type(uint256).max, triggering an arithmetic underflow in claimableSettlementFee[token] -= amount (Solidity 0.8 checked arithmetic), violating the invariant that claimable fees cannot go negative, causing scoped impact: revert preventing legitimate fee claims, or if somehow bypassed, protocol insolvency? Proof idea: fuzz amount in [claimableSettlementFee[token]+1, type(uint256).max] and assert revert with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e1636039-efab-49bb-b6a6-dac566736f45?mode=deep",
+    "timestamp": "2026-05-31 22:19:56.664942",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can any address other than feeClaimer call claimContinuousFee(market, amount, receiver) under the precondition that the market exists and continuousFeeCredit > 0, triggering a continuous fee withdrawal, violating the invariant require(msg.sender == feeClaimer, OnlyFeeClaimer()), causing scoped impact: unauthorized extraction of accrued continuous fees, reducing totalUnits and withdrawable for lenders? Proof idea: call claimContinuousFee from roleSetter, feeSetter, tickSpacingSetter, and arbitrary EOA; assert all revert with OnlyFeeClaimer().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_54c1bfec-0c0d-4d18-b48d-3bd5328107ee?mode=deep",
+    "timestamp": "2026-05-31 22:20:10.509860",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can feeClaimer call claimContinuousFee(market, amount, receiver) with amount > continuousFeeCredit under the precondition that continuousFeeCredit < withdrawable and continuousFeeCredit < totalUnits, triggering an underflow in _marketState.continuousFeeCredit -= toUint128(amount), violating the invariant that continuousFeeCredit cannot go below zero, causing scoped impact: revert or, if continuousFeeCredit wraps, protocol accounting corruption where withdrawable and totalUnits are decremented by more than the actual fee credit? Proof idea: fuzz amount in [continuousFeeCredit+1, min(withdrawable, totalUnits)] and assert revert with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f692f60-6273-4d03-a520-e21f8fd11bbe?mode=deep",
+    "timestamp": "2026-05-31 22:20:23.823988",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can feeClaimer call claimContinuousFee(market, amount, receiver) with amount == continuousFeeCredit but amount > withdrawable under the precondition that withdrawable < continuousFeeCredit (possible if bad debt reduced withdrawable), triggering an underflow in _marketState.withdrawable -= toUint128(amount), violating the invariant that withdrawable must remain non-negative and cover all outstanding lender credit, causing scoped impact: withdrawable underflows, making subsequent lender withdraw() calls revert? Proof idea: create bad debt scenario reducing withdrawable below continuousFeeCredit, then call claimContinuousFee(market, continuousFeeCredit, receiver) and assert underflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_668e100c-99d9-4f16-9dbe-8df59cc7e554?mode=deep",
+    "timestamp": "2026-05-31 22:20:36.528261",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can feeClaimer call claimContinuousFee(market, amount, receiver) with amount == continuousFeeCredit but amount > totalUnits under the precondition that totalUnits < continuousFeeCredit (possible after bad debt socialization reducing totalUnits), triggering an underflow in _marketState.totalUnits -= toUint128(amount), violating the invariant that totalUnits must equal sum of all lender credits, causing scoped impact: totalUnits underflows, corrupting lossFactor calculations in subsequent liquidations? Proof idea: realize bad debt to reduce totalUnits below continuousFeeCredit, call claimContinuousFee(market, continuousFeeCredit, receiver) and assert underflow revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9b942c2-43e9-4f7e-914f-4b7f10cac59f?mode=deep",
+    "timestamp": "2026-05-31 22:20:49.601662",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee] Can feeClaimer call claimContinuousFee(market, amount, receiver) where the claimed amount reduces totalUnits, then a subsequent liquidation uses the reduced totalUnits in the lossFactor update formula (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits), under the precondition that totalUnits is near zero after fee claims, triggering a division by zero or extreme lossFactor inflation, violating the invariant that lossFactor must accurately reflect proportional bad debt loss, causing scoped impact: lender credit slashed more than actual bad debt? Proof idea: claim continuous fees until totalUnits approaches badDebt, trigger liquidation, assert lossFactor == type(uint128).max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6b02eeb-76de-442f-ab9f-fbc3b16e32fd?mode=deep",
+    "timestamp": "2026-05-31 22:21:02.626617",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized] Can an authorized operator call setIsAuthorized(newOperator, true, user) on behalf of user under the precondition that isAuthorized[user][operator] == true, triggering a transitive authorization grant where the operator grants a third party full control over user's positions, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized third party gains full control over user's credit, debt, collateral, and authorization state? Proof idea: user authorizes operator, operator calls setIsAuthorized(attacker, true, user), attacker calls withdrawCollateral on user's position, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9247059c-cd42-43ba-b606-bd81580ee27e?mode=deep",
+    "timestamp": "2026-05-31 22:21:16.580581",
+    "report_generated": false
+  }
+]
