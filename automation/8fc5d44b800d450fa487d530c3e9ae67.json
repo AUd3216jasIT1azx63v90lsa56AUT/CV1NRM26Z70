@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an unprivileged ATTACKER acting as an authorized operator under PRECONDITIONS where the attacker has been granted coarse Midnight authorization (isAuthorized[maker][attacker]=true) call setIsRootRatified(maker, maliciousRoot, true) to ratify a Merkle root containing attacker-crafted offers, then trigger take() against those offers, violating INVARIANT that ratifier approval must bind correct maker intent and not be grantable by any authorized address without maker's per-root consent, causing scoped impact: direct loss of maker's credit or collateral through unauthorized offer fills? Proof idea: deploy SetterRatifier, authorize attacker on Midnight, have attacker call setIsRootRatified for a root containing an offer that drains maker's position, execute take(), assert maker's credit/debt/collateral changed without maker's direct approval.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ff719bd-8802-4d08-b7d5-93b2a8f2ca2a?mode=deep",
+    "timestamp": "2026-05-31 20:16:32.469481",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified / isRatified] Can an authorized address ATTACKER under PRECONDITIONS where isAuthorized[maker][attacker]=true ratify a root, then have the maker's Midnight authorization revoked (isAuthorized[maker][attacker]=false), while the root remains ratified in isRootRatified[maker][root]=true, allowing the attacker to continue filling offers from that root via take(), violating INVARIANT that authorization revocation must invalidate all downstream ratifier approvals, causing scoped impact: unauthorized credit/debt accounting changes after authorization is revoked? Proof idea: ratify root, revoke authorization, call take() with offer from that root, assert isRatified still returns CALLBACK_SUCCESS and accounting changes occur.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_abaa4839-7732-4ba7-a0c4-218393d73fe6?mode=deep",
+    "timestamp": "2026-05-31 20:16:44.391255",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified / HashLib.isLeaf] Can an ATTACKER under PRECONDITIONS where a valid root is ratified for maker supply a ratifierData with a manipulated leafIndex that causes HashLib.isLeaf to accept an internal Merkle tree node as a valid leaf (second-preimage attack), allowing a crafted offer with different tick/maxUnits/group to pass isRatified, violating INVARIANT that only offers explicitly included in the tree by the maker can be filled, causing scoped impact: direct loss through fills at unintended prices or volumes? Proof idea: construct a Merkle tree where an internal node hash collides with a crafted offer hash at a different leafIndex, call take() with the crafted offer, assert isRatified returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1b0bbc8d-ac5d-4ef2-a5d0-7e41ae881be1?mode=deep",
+    "timestamp": "2026-05-31 20:16:56.890693",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified / HashLib.hashOffer] Can an ATTACKER under PRECONDITIONS where a root is ratified for a legitimate offer supply a different Offer struct with the same hashOffer output (collision or incomplete field binding) by varying fields not included in hashOffer (e.g., callbackData, receiverIfMakerIsSeller, reduceOnly) to pass isRatified, violating INVARIANT that ratifier approval must bind all offer fields including callback, receiver, and reduceOnly, causing scoped impact: funds sent to attacker-controlled receiver or callback executes attacker logic? Proof idea: fuzz Offer fields not in hashOffer, find two offers with same hash, ratify root for one, fill the other via take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b44eb84-fa1a-4cba-bf69-1bf5b104b937?mode=deep",
+    "timestamp": "2026-05-31 20:17:09.809509",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified / HashLib.hashOffer] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer in market A supply the same Merkle proof with an Offer struct pointing to market B (different loanToken, collaterals, maturity, LLTV) if hashOffer does not fully bind the Market struct, to pass isRatified for market B, violating INVARIANT that ratifier approval must bind the exact market parameters, causing scoped impact: debt increase in wrong market, incorrect collateral accounting, or fee accounting corruption? Proof idea: create two markets, ratify root for offer in market A, attempt take() with offer.market=marketB but same proof, assert isRatified behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_613e3f32-bae2-4872-a9cf-61e09fe87478?mode=deep",
+    "timestamp": "2026-05-31 20:17:23.398936",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can a MAKER ATTACKER under PRECONDITIONS where a root is ratified and a taker has a pending take() transaction in the mempool call setIsRootRatified(maker, root, false) to deratify the root, causing the taker's take() to revert (NotRatified), while the maker has already received some benefit from a prior partial fill, violating INVARIANT that partial fills must not leave accounting in a state where the maker profits from a forced revert, causing scoped impact: taker loses gas and opportunity while maker retains partial credit/debt advantage? Proof idea: partial fill, deratify root, attempt second fill, assert revert and accounting state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80bdb570-3867-455c-ade8-266ce68d2c8e?mode=deep",
+    "timestamp": "2026-05-31 20:17:37.348290",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER acting as maker under PRECONDITIONS where maker has authorized SetterRatifier in Midnight (isAuthorized[maker][SetterRatifier]=true) ratify a root containing an offer with maxAssets=0 and maxUnits=0, then call take() with units=0 to trigger a no-op take with maker's callback executing arbitrary logic, violating INVARIANT that zero-unit takes must not allow callback execution that corrupts credit/debt/collateral/withdrawable accounting, causing scoped impact: callback drains withdrawable or manipulates position state? Proof idea: ratify root with zero-cap offer, take with units=0, assert callback executes and accounting invariants hold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49d8a1f5-5981-4316-8c43-9bed1bd8384b?mode=deep",
+    "timestamp": "2026-05-31 20:17:51.533844",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified supply ratifierData with an empty proof array (proof.length=0) and leafIndex=0 to pass HashLib.isLeaf when the root equals the single leaf hash (single-offer tree), then replay the same offer across multiple take() calls until consumed exceeds maxUnits/maxAssets, violating INVARIANT that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: overfill of maker's offer leading to excess credit/debt creation? Proof idea: create single-leaf tree, ratify root, call take() multiple times with same proof, assert consumed tracking prevents overfill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86fe9452-c410-48e5-b453-8d27cfc2cd94?mode=deep",
+    "timestamp": "2026-05-31 20:18:04.650953",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified / isRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized both SetterRatifier and attacker in Midnight call setIsRootRatified on behalf of maker to ratify a root, then immediately call take() as taker against an offer in that root, violating INVARIANT that the same entity should not be able to both ratify and fill an offer in a single atomic transaction (self-dealing), causing scoped impact: attacker extracts value by ratifying favorable offers and immediately filling them? Proof idea: multicall([setIsRootRatified(...), take(...)]) in one transaction, assert accounting changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ab686d2-00d8-46c8-add7-b7cddb7e5b71?mode=deep",
+    "timestamp": "2026-05-31 20:18:17.772668",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for a sell offer (offer.buy=false) supply a ratifierData proof for a buy offer (offer.buy=true) with the same hash if hashOffer does not bind the buy field, to pass isRatified and execute a take() that creates credit instead of debt for the maker, violating INVARIANT that offer direction must be immutably bound by the ratifier, causing scoped impact: maker's debt position converted to credit position without maker's consent, corrupting credit/debt accounting? Proof idea: ratify root for sell offer, attempt take() with buy=true offer using same proof, assert isRatified behavior and accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81d8d213-b3a0-44ae-b5c3-5f09860e5a4e?mode=deep",
+    "timestamp": "2026-05-31 20:18:31.487329",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized a malicious contract in Midnight call setIsRootRatified from within a take() callback (onBuy/onSell/onRepay) to ratify a new root mid-execution, then use that root in a reentrant take() call, violating INVARIANT that callbacks must not corrupt partial state through reentrancy, causing scoped impact: double-credit creation or debt erasure through reentrant ratification and fill? Proof idea: implement callback that calls setIsRootRatified then reenters take(), assert credit/debt/totalUnits invariants.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01b47786-6059-4df6-8bd3-740edc5e1c97?mode=deep",
+    "timestamp": "2026-05-31 20:18:45.156928",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified supply ratifierData with a valid proof but wrong leafIndex (off-by-one), causing HashLib.isLeaf to validate a sibling offer instead of the intended offer, allowing a different offer with different tick/maxUnits to be filled, violating INVARIANT that leafIndex must uniquely identify the offer within the tree, causing scoped impact: offer filled at wrong price or volume leading to incorrect credit/debt accounting? Proof idea: build 2-leaf tree, ratify root, supply proof for leaf 0 with leafIndex=1, assert which offer is validated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9c95f9c9-1221-4322-acd1-b939c7d3b15e?mode=deep",
+    "timestamp": "2026-05-31 20:18:59.677657",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified / isRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root containing an offer with a future expiry and past start, then warp time to post-maturity and fill the offer to increase debt (violating CannotIncreaseDebtPostMaturity), or alternatively fill a sell offer post-maturity that bypasses the maturity check through incorrect offer field binding, violating INVARIANT that debt must not increase after maturity, causing scoped impact: unauthorized debt creation post-maturity corrupting debt accounting? Proof idea: ratify root with sell offer, warp to post-maturity, call take(), assert CannotIncreaseDebtPostMaturity reverts correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70a0ad82-b7cb-45dd-bd1c-0613b92b9310?mode=deep",
+    "timestamp": "2026-05-31 20:19:13.344282",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer with group=bytes32(0) fill the offer multiple times across different take() calls, with each fill incrementing consumed[maker][bytes32(0)], while a separate legitimate offer also uses group=bytes32(0) and shares the same consumption budget, violating INVARIANT that consumption group budget cannot be exceeded across offers, causing scoped impact: legitimate offer overfilled beyond maxAssets/maxUnits due to shared group consumption? Proof idea: ratify root with two offers sharing group=bytes32(0), fill both, assert total consumed does not exceed either offer's cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b1d19b79-e9e3-47ef-ba41-3e5f173f685f?mode=deep",
+    "timestamp": "2026-05-31 20:19:27.954375",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized attacker in Midnight call setIsRootRatified to ratify a root, then call setConsumed(group, type(uint256).max, maker) to cancel all offers in the group, then deratify the root, leaving the maker's position in a state where credit was already transferred but consumed tracking is reset, violating INVARIANT that consumed state must monotonically increase and not be resettable to enable replay, causing scoped impact: offer replay after consumption reset? Proof idea: fill offer, setConsumed to max, deratify root, re-ratify root, attempt refill, assert consumed prevents replay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04d517e9-42e5-4782-8c10-4937885995e2?mode=deep",
+    "timestamp": "2026-05-31 20:19:42.315787",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer with a specific tick supply the same offer with a different tick (outside tickSpacing) if hashOffer does not bind the tick field, to pass isRatified and execute take() at an arbitrary price, violating INVARIANT that ratifier approval must bind the exact tick, causing scoped impact: credit/debt created at wrong price leading to direct loss for maker or taker? Proof idea: ratify root for offer at tick T, attempt take() with offer.tick=T+1, assert hashOffer binding and isRatified behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04b59e6e-bff4-406e-8491-dea481740006?mode=deep",
+    "timestamp": "2026-05-31 20:19:57.233629",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root containing an offer with callback=attacker_contract, then trigger take() where the callback receives sellerAssets and executes arbitrary logic including calling withdrawCollateral on behalf of the maker (since attacker is authorized), violating INVARIANT that callbacks must not enable unauthorized collateral withdrawal, causing scoped impact: maker's collateral drained through callback during take()? Proof idea: ratify root with callback=attacker, take() triggers onSell callback, callback calls withdrawCollateral(maker), assert collateral balance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01c23a9e-3df5-4780-927e-ed9ee6ef6b7e?mode=deep",
+    "timestamp": "2026-05-31 20:20:10.597010",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer with reduceOnly=false supply the same offer with reduceOnly=true if hashOffer does not bind the reduceOnly field, to pass isRatified and execute take() that reverts with MakerCreditOrDebtIncreased when the maker's credit/debt would increase, causing a DoS on legitimate fills, violating INVARIANT that reduceOnly must be immutably bound by the ratifier, causing scoped impact: fund freeze where maker's offers cannot be filled due to forced reduceOnly constraint? Proof idea: ratify root for non-reduceOnly offer, attempt take() with reduceOnly=true, assert revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_efb7f97c-eb31-480c-938c-4b27b25228ec?mode=deep",
+    "timestamp": "2026-05-31 20:20:24.762807",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified / isRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root containing an offer with maxAssets-based consumption (maxAssets>0, maxUnits=0), then fill the offer with units chosen to maximize rounding in buyerAssets/sellerAssets computation (mulDivDown/mulDivUp), causing consumed[maker][group] to increment by a rounded-down amount, allowing more fills than intended, violating INVARIANT that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: maker's offer overfilled by rounding leakage? Proof idea: fuzz units near maxAssets boundary, assert consumed never exceeds maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5cff296f-f42c-4c34-88d7-36fedc91e5d0?mode=deep",
+    "timestamp": "2026-05-31 20:20:38.894978",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer with expiry=type(uint256).max and start=0 fill the offer after the market's maturity in post-maturity mode, where the settlement fee is fixed at the 0d breakpoint, causing claimableSettlementFee to be computed incorrectly if the fee at 0d differs from expected, violating INVARIANT that settlement fee accounting must correctly reflect the fee at time of take, causing scoped impact: fee overclaim or underclaim corrupting claimableSettlementFee balance? Proof idea: ratify root, warp to post-maturity, take(), assert claimableSettlementFee delta equals buyerAssets-sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee3fe4bd-cc7e-4f49-96f1-9419fd78f4e0?mode=deep",
+    "timestamp": "2026-05-31 20:20:53.360905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root, then have a liquidator liquidate the maker's borrower position (realizing bad debt and updating lossFactor), then fill an offer from the ratified root where _updatePosition is called for the buyer, causing the buyer's credit to be slashed by the new lossFactor before the credit increase is applied, violating INVARIANT that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: buyer receives less credit than expected due to double-slash or incorrect ordering? Proof idea: create bad debt, update lossFactor, fill ratified offer, assert buyer credit equals expected post-slash value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36673617-9240-4e7e-a55c-319fed4b16f4?mode=deep",
+    "timestamp": "2026-05-31 20:21:08.012361",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for a buy offer (maker is buyer) fill the offer with units > buyerPos.debt, causing buyerCreditIncrease > 0, and if the market has an enterGate that blocks the maker from increasing credit, the take() reverts with BuyerGatedFromIncreasingCredit, while the consumed amount has already been incremented (before the gate check), violating INVARIANT that partial state updates must not persist on revert, causing scoped impact: consumed amount permanently incremented without a successful fill, freezing the offer? Proof idea: ratify root, set enterGate to block maker, call take(), assert consumed state after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6b7b5ac4-61de-490a-9937-9cf73166000c?mode=deep",
+    "timestamp": "2026-05-31 20:21:21.790619",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified / isRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root containing an offer with a specific market (loanToken=USDC), then create a new market with loanToken=WETH but identical other params, and if toId() produces the same marketId (hash collision or chain fork), fill the offer against the wrong market, violating INVARIANT that market identity must be unique and immutable, causing scoped impact: credit/debt accounting corrupted across markets with colliding IDs? Proof idea: attempt to find market param combinations that produce same toId(), ratify root for one, fill against other.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3f9705b-fdb3-43f2-b13c-78a89b23e3a3?mode=deep",
+    "timestamp": "2026-05-31 20:21:36.412955",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isRatified] Can an ATTACKER under PRECONDITIONS where a root is ratified for an offer with continuousFee>0 fill the offer at timeToMaturity=0 (post-maturity), causing buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * 0, WAD) = 0, meaning no pending fee is charged, while the same offer filled pre-maturity would charge a fee, violating INVARIANT that continuous fee accounting must correctly reflect time-to-maturity at fill time, causing scoped impact: fee underclaim allowing buyer to receive credit without paying continuous fee? Proof idea: ratify root, fill at maturity-1 vs maturity+1, compare pendingFee deltas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ceeff37-1f3c-4018-b776-f356f795e9dd?mode=deep",
+    "timestamp": "2026-05-31 20:21:50.652845",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsRootRatified] Can an ATTACKER under PRECONDITIONS where maker has authorized SetterRatifier in Midnight ratify a root containing an offer with receiverIfMakerIsSeller=attacker_address, then trigger take() where the maker is the seller, causing sellerAssets to be transferred to attacker_address instead of the maker, violating INVARIANT that funds must only move to addresses explicitly authorized by the maker, causing scoped impact: direct loss of maker's loan token assets sent to attacker-controlled receiver? Proof idea: ratify root with receiverIfMakerIsSeller=attacker, take() as taker with maker as seller, assert sellerAssets transferred to attacker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6886b5c1-0189-459e-8006-4525c78a3ece?mode=deep",
+    "timestamp": "2026-05-31 20:22:05.893701",
+    "report_generated": false
+  }
+]
