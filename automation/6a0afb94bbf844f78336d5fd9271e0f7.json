@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker take a sell offer (maker is seller) where the maker's callback (onSell) calls cancelRoot(maker, root) for a different root that the maker uses for buy offers, and then in the same transaction use a multicall to attempt a buy-offer take that now fails due to the canceled root, effectively using a sell-offer execution to atomically destroy the maker's buy-offer capacity? Proof idea: take sell offer with onSell callback that cancels buy-offer root; multicall([take_sell_offer, take_buy_offer_same_maker]); assert buy-offer take reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f56ec68a-35fc-4729-9945-598632797d7f?mode=deep",
+    "timestamp": "2026-05-31 19:50:08.343070",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / liquidate] Can an unprivileged liquidator supply a liquidate callback (onLiquidate) that calls take() on a maker's offer using EcrecoverRatifier, where the take's buyer callback then calls cancelRoot for the maker, creating a liquidate -> take -> cancelRoot chain that corrupts the maker's offer state as a side effect of liquidation, violating the invariant that liquidation must not corrupt offer authorization state for uninvolved parties? Proof idea: liquidate with callback that takes maker offer with nested callback that cancels root; assert maker's remaining offers under that root are permanently blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60e81508-fa7c-464b-9437-c526dde60b11?mode=deep",
+    "timestamp": "2026-05-31 19:50:20.232653",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a buy offer where offer.callback (maker callback) is set to a contract that calls EcrecoverRatifier.cancelRoot(maker, root) inside onBuy(), and simultaneously the takerCallback calls take() on a sibling leaf of the same root, creating a race between the root cancellation and the sibling take within the same transaction's callback chain, and determine which callback fires first and whether the sibling take can succeed or is blocked? Proof idea: trace callback execution order in take() (buyer callback at line 445, seller callback at line 458); assert sibling take in takerCallback fires after root is canceled and reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a825cbbb-e607-43e2-afb7-38f4d3d12d68?mode=deep",
+    "timestamp": "2026-05-31 19:50:33.168458",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply ratifierData with a proof array whose length exceeds 20 (the TreeTooHigh limit in offerTreeTypeHash), causing offerTreeTypeHash to revert inside isRatified(), which propagates as a revert through take(), and use this to DoS any take attempt against an offer that uses EcrecoverRatifier by supplying malformed ratifierData, even if the taker is legitimate? Proof idea: call take with proof.length=21; assert revert propagates as RatifierFail; verify legitimate takers with correct proof.length <= 20 are unaffected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5791ea77-e611-43c1-8872-393b2770259a?mode=deep",
+    "timestamp": "2026-05-31 19:50:45.944375",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker who controls a sell-offer taker callback (onSell) call claimSettlementFee() or claimContinuousFee() inside the callback (if the attacker is the feeClaimer), and verify whether the fee claim modifies marketState fields (continuousFeeCredit, totalUnits, withdrawable) in a way that corrupts the outer take's accounting, given that the outer take has already written buyerCreditIncrease and sellerCreditDecrease to marketState.totalUnits before the callback fires? Proof idea: feeClaimer as taker callback calls claimContinuousFee during onSell; assert marketState.totalUnits and withdrawable remain consistent with all credit/debt changes after the full take completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_42e07dfe-b4c0-4922-b7e6-056e562d2629?mode=deep",
+    "timestamp": "2026-05-31 19:50:59.630218",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a buy offer where the maker callback (onBuy) calls supplyCollateral() for the seller (if authorized), increasing the seller's collateral mid-take after the seller's position has been updated but before the health check, and then the seller callback (onSell) withdraws that same collateral, creating a transient collateral increase that passes the health check but leaves no net collateral change, potentially masking an unhealthy position? Proof idea: onBuy supplies collateral for seller; onSell withdraws same collateral; assert health check at line 476 uses post-callback collateral state and correctly identifies unhealthy positions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32797237-a088-427b-8b5e-0c9ae31358fc?mode=deep",
+    "timestamp": "2026-05-31 19:51:12.781277",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker construct two offers with different offer.ratifier addresses (one EcrecoverRatifier, one a custom ratifier) but the same offer.group, and use a callback during the first take to manipulate EcrecoverRatifier.isRootCanceled state, affecting the second take's ratifier check, creating cross-ratifier state interference through the shared group accounting? Proof idea: take offer with custom ratifier whose callback cancels EcrecoverRatifier root; assert second take using EcrecoverRatifier and same group reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d609af7-1108-4b01-bf1e-560b3477face?mode=deep",
+    "timestamp": "2026-05-31 19:51:26.650072",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: cancelRoot / isRatified] Can an unprivileged attacker call cancelRoot(maker, root) where maker != msg.sender and isAuthorized[maker][msg.sender] is false, and verify that the Unauthorized() revert is correctly triggered, or whether any edge case (e.g., maker == address(0), msg.sender == address(0), or authorization mapping returning stale values) allows unauthorized root cancellation? Proof idea: fuzz (maker, msg.sender, isAuthorized state) across boundary values; assert cancelRoot always reverts with Unauthorized when neither condition holds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86291171-e10f-4b40-bf26-779ee659143e?mode=deep",
+    "timestamp": "2026-05-31 19:51:41.299804",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a ratifierData where the abi.decode of (Signature, bytes32, uint256, bytes32[]) succeeds but the decoded root is bytes32(0), and verify whether a maker can legitimately sign a tree rooted at bytes32(0), or whether this creates an ambiguity where isRootCanceled[maker][bytes32(0)] could be set by a griefing attack (anyone calling cancelRoot with root=bytes32(0) if they are authorized), permanently blocking all zero-root offers? Proof idea: call cancelRoot(maker, bytes32(0)) as authorized operator; assert all offers with root=bytes32(0) are permanently blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81e54e84-e754-4d4a-905a-0427cecf50aa?mode=deep",
+    "timestamp": "2026-05-31 19:51:56.092014",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer where the seller is also the maker, and the maker callback (onSell) calls take() on a buy offer from a different maker using EcrecoverRatifier, where the inner take's buyer callback then calls cancelRoot on the outer take's maker, creating a nested take -> cancelRoot chain that corrupts the outer maker's offer state as a side effect of the inner take's callback? Proof idea: outer take onSell -> inner take -> inner onBuy cancels outer maker root; assert outer maker's remaining offers are blocked after the transaction.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fef4e2a0-ec4d-4d1f-b273-0c094233747b?mode=deep",
+    "timestamp": "2026-05-31 19:52:12.261615",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker exploit the fact that isRatified() checks isRootCanceled[offer.maker][root] (line 38) before checking the signature (lines 39-44), and supply a valid proof for a canceled root to observe the RootCanceled revert before any signature validation occurs, confirming that root cancellation is checked before signature validity and cannot be bypassed by providing an invalid signature to skip the cancellation check? Proof idea: cancel root, then call isRatified with invalid signature; assert RootCanceled is thrown before InvalidSignature, confirming check ordering.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c2755e2-87c6-4d8c-aa92-ccd6c2108fc1?mode=deep",
+    "timestamp": "2026-05-31 19:52:27.059991",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a ratifierData where the Merkle proof is valid for a different offer (offer B) but the offer struct passed to isRatified() is offer A, causing HashLib.isLeaf(root, hashOffer(offerA), leafIndex, proof) to return false and revert with InvalidProof, and verify that no combination of leafIndex manipulation or proof padding can cause a false positive where offer A is accepted using offer B's proof? Proof idea: fuzz (offerA, offerB, proof_for_B, leafIndex) where offerA != offerB; assert isLeaf always returns false when the leaf hash does not match.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f1e2df9-32e8-4d86-b3a6-d229b8c00cf8?mode=deep",
+    "timestamp": "2026-05-31 19:52:40.611472",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a buy offer with offer.callback set to a contract that, inside onBuy(), calls Midnight.setIsAuthorized(ecrecoverRatifier, true, attacker) to authorize the EcrecoverRatifier as an operator for the attacker, and then in a subsequent multicall step, use the attacker's position to call cancelRoot(attacker, someRoot) via the now-authorized ratifier address, creating an authorization chain that allows the ratifier contract itself to cancel roots on behalf of users? Proof idea: onBuy sets isAuthorized[attacker][ecrecoverRatifier]=true; subsequent cancelRoot(attacker, root) called by ecrecoverRatifier; assert this is possible and document the authorization abuse surface.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f43eddb0-3f0c-4981-a782-b559a237dc85?mode=deep",
+    "timestamp": "2026-05-31 19:52:53.163474",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer where the seller callback (onSell) calls liquidate() on a third-party borrower, and the liquidate callback (onLiquidate) calls cancelRoot for a maker whose offer is being taken in an outer multicall step, creating a take -> liquidate -> cancelRoot chain that uses liquidation as a vector to corrupt offer state, violating the invariant that liquidation must not affect offer ratification state for uninvolved makers? Proof idea: onSell -> liquidate(callback=cancelRootContract) -> onLiquidate cancels target root; assert target maker's offers are blocked after the chain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b86d070-3eb1-4435-899b-5612bf30a6ab?mode=deep",
+    "timestamp": "2026-05-31 19:53:06.795307",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified] Can an unprivileged attacker supply a ratifierData where the abi.decode succeeds but the bytes32[] proof array contains duplicate sibling hashes, and verify whether HashLib.isLeaf() correctly handles duplicate siblings or whether a crafted proof with repeated hashes can forge membership for an offer that was never included in the signed tree? Proof idea: construct proof with proof[i] == proof[j] for i != j; compute the resulting root; sign it; assert isRatified only accepts offers genuinely in the tree and not forged positions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82be0a67-5015-4ebd-b88d-1db3921b7e6f?mode=deep",
+    "timestamp": "2026-05-31 19:53:19.730721",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a take where the offer.ratifier is EcrecoverRatifier but offer.maker has not authorized EcrecoverRatifier (isAuthorized[maker][ecrecoverRatifier] == false), causing take() to revert at line 355 with RatifierUnauthorized before isRatified() is even called, and verify that this check cannot be bypassed by any callback or multicall sequence that sets the authorization after the check but before the ratifier call? Proof idea: attempt take without prior authorization; assert RatifierUnauthorized; then multicall([setIsAuthorized, take]) and assert take succeeds only when authorization is set before the take in the same call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce25208b-9226-4f5f-8e2c-1eaa0de2cc02?mode=deep",
+    "timestamp": "2026-05-31 19:53:33.590591",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a buy offer where the maker callback (onBuy) calls repay() with a repay callback (onRepay) that calls cancelRoot, creating a three-level callback chain (take -> onBuy -> repay -> onRepay -> cancelRoot) that corrupts EcrecoverRatifier state, and verify whether Midnight's callback depth has any limit or whether unbounded callback nesting is possible? Proof idea: implement three-level callback chain ending in cancelRoot; assert EcrecoverRatifier.isRootCanceled is set after the chain and that no stack overflow or gas exhaustion prevents the attack.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fbaf5a6f-6e7f-45b6-9ab9-7d29ba24e37f?mode=deep",
+    "timestamp": "2026-05-31 19:53:48.588211",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer where the seller is a smart contract that implements ISellCallback, and inside onSell() calls EcrecoverRatifier.cancelRoot() for its own maker root (the seller is also a maker), effectively self-canceling its own offer tree during the execution of a take against one of its offers, and verify whether this creates any accounting inconsistency between the consumed state (already updated) and the now-canceled root? Proof idea: seller-maker's onSell cancels its own root; assert consumed[maker][group] is updated but all future takes of sibling offers revert with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c6f5e17-ea76-4761-b76d-98820b12834a?mode=deep",
+    "timestamp": "2026-05-31 19:54:03.423639",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a ratifierData where the Signature.v field is 27 or 28 but r and s are both bytes32(0), causing ecrecover to return a specific non-zero address (the precompile behavior for (v, 0, 0) inputs), and if that address happens to match offer.maker or an authorized signer, allow an offer to be ratified with a trivially constructible signature, violating the invariant that only the maker or their authorized signer can ratify an offer? Proof idea: fuzz (v=27, r=0, s=0) and (v=28, r=0, s=0); record ecrecover output; assert isRatified rejects these unless the output genuinely matches a legitimate signer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae12dc40-db9b-4579-9be8-e54307fadd4b?mode=deep",
+    "timestamp": "2026-05-31 19:54:19.631629",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker use a multicall sequence [take_offer_with_callback_that_calls_setConsumed(group, type(uint256).max, maker), take_same_offer] to first exhaust the maker's group budget via setConsumed (which only increases consumed) and then verify that the second take correctly reverts with ConsumedUnits/ConsumedAssets, confirming that setConsumed cannot be used to bypass the offer cap even when called from within a callback? Proof idea: callback calls setConsumed(group, type(uint256).max, maker); assert second take reverts with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aabdd881-bbe4-4e79-9608-c27f5d25e508?mode=deep",
+    "timestamp": "2026-05-31 19:54:33.680934",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer at maturity boundary (block.timestamp == offer.market.maturity) where the seller callback (onSell) warps time (in a test environment) or exploits block.timestamp manipulation to push the timestamp past maturity, causing the post-callback health check at line 476 to use post-maturity oracle prices or LIF values that differ from those used during the take's price calculation, creating an inconsistency between the take's accounting and the health check's assessment? Proof idea: fuzz block.timestamp across [maturity-1, maturity, maturity+1] during take; assert health check uses consistent timestamp with the take's price calculations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_89808294-011c-4d1c-8fcd-9d720337c7d4?mode=deep",
+    "timestamp": "2026-05-31 19:54:48.465026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a buy offer where the maker callback (onBuy) calls withdrawCollateral() for the buyer (if the buyer has debt and the attacker is authorized), reducing the buyer's collateral after the buyer's credit has been increased by the take but before any health check on the buyer, and since take() only checks the seller's health at line 476 (not the buyer's), allow the buyer to end up with increased credit but reduced collateral without any health validation? Proof idea: onBuy withdraws buyer's collateral; assert buyer's health is not checked by take() and buyer can have increased credit with reduced collateral after the take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6212ad9-3284-463f-8986-ee9d81298da9?mode=deep",
+    "timestamp": "2026-05-31 19:55:01.849319",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer where the seller callback (onSell) calls take() on another sell offer from a different maker using EcrecoverRatifier, and the inner take's seller callback calls cancelRoot for the outer take's maker, creating a cross-offer callback chain where executing one offer corrupts the ratification state of another offer's maker, violating the invariant that offer execution must not affect the ratification state of uninvolved makers? Proof idea: outer onSell -> inner take -> inner onSell cancels outer maker root; assert outer maker's sibling offers are blocked after the transaction.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7051093-0908-4ea1-a877-c8e942e10880?mode=deep",
+    "timestamp": "2026-05-31 19:55:16.362259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified] Can an unprivileged attacker supply a ratifierData where the abi.decode produces a proof array with length exactly equal to 20 (maximum allowed by offerTreeTypeHash), and verify that HashLib.isLeaf() correctly traverses all 20 levels without integer overflow in the loop variable i or in the leafIndex bit-shift operations, given that leafIndex is uint256 and proof.length is uint256, ensuring no overflow allows a forged proof to pass? Proof idea: fuzz proof.length=20 with leafIndex near 2^20-1; assert no overflow in isLeaf loop and all invalid proofs revert with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e738852a-bdfa-43c2-b469-43ddb5b57231?mode=deep",
+    "timestamp": "2026-05-31 19:55:31.445723",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a take where the offer.callback is set to a contract that, inside onBuy() or onSell(), calls Midnight.multicall() with a nested array of calls including another take() that uses EcrecoverRatifier, creating a multicall-within-callback execution path, and verify whether the nested multicall correctly sees all state updates from the outer take (consumed, positions) and whether EcrecoverRatifier state (isRootCanceled) is consistent across all nesting levels? Proof idea: callback calls multicall([cancelRoot, take_sibling_offer]); assert sibling take reverts with RootCanceled and all state is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_837cb0c2-0ba3-46b9-902d-1c36c23c8123?mode=deep",
+    "timestamp": "2026-05-31 19:55:45.415926",
+    "report_generated": false
+  }
+]
