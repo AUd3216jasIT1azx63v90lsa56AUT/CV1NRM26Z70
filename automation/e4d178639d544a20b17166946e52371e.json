@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a maxAssets buy offer (offer.buy=false, taker buys) where block.timestamp advances between the consumableUnits view call and the take() execution, crossing a TTM breakpoint boundary in settlementFee(), trigger consumableUnits returning N units that when taken produce buyerAssets > offer.maxAssets - consumed_before, violating consumed[maker][group] <= offer.maxAssets and causing claimableSettlementFee[loanToken] to be overclaimed by the excess? Proof idea: fuzz TTM near each of the 6 breakpoint boundaries (0,1,7,30,90,180,360 days), call consumableUnits at T, warp 1 second past boundary, call take() with returned units, assert consumed[maker][group] <= offer.maxAssets and assert claimableSettlementFee delta == actual buyerAssets - sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f63f6ec7-77c2-4e71-823c-e5fac91cb9f1?mode=deep",
+    "timestamp": "2026-05-31 20:02:50.396793",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker under a maxAssets sell offer (offer.buy=true, taker sells) where the feeSetter calls setMarketSettlementFee to increase the settlement fee between the consumableUnits view call and the take() execution trigger consumableUnits returning units that when taken produce sellerAssets < offer.maxAssets - consumed_before, causing the offer to be underfilled and the settlement fee to be underclaimed relative to the maker's maxAssets intent? Proof idea: set low fee, call consumableUnits, increase fee via setMarketSettlementFee, call take() with returned units, assert claimableSettlementFee delta < expected fee on full fill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7caad49-d7e3-4fa5-88b8-1b1de8329c57?mode=deep",
+    "timestamp": "2026-05-31 20:03:02.317573",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a maxAssets buy offer where the feeSetter decreases the settlement fee between consumableUnits and take() trigger consumableUnits returning fewer units than the offer can absorb at the new lower fee, causing the offer to be permanently underfilled and the settlement fee to be underclaimed for the residual capacity? Proof idea: set high fee, call consumableUnits, decrease fee via setMarketSettlementFee, call take() with returned units, assert remaining consumable capacity > 0 and claimableSettlementFee delta < maximum achievable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b327d44-aa02-42b6-9dd7-eb6b0ae0d0cd?mode=deep",
+    "timestamp": "2026-05-31 20:03:15.110943",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker under a maxAssets sell offer cause consumableUnits to return units via sellerAssetsToUnits using mulDivDown(targetSellerAssets, WAD, sellerPrice) for buy offers, while take() computes sellerAssets = units.mulDivDown(sellerPrice, WAD), creating a round-trip rounding discrepancy where sellerAssets < targetSellerAssets, leaving residual capacity that generates no settlement fee and is unclaimable? Proof idea: fuzz targetSellerAssets and sellerPrice, assert take() sellerAssets >= targetSellerAssets - 1 and assert residual capacity < sellerPrice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53bd5b3c-f2ef-4c2f-bcfc-41a275e65d01?mode=deep",
+    "timestamp": "2026-05-31 20:03:28.008767",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a maxAssets buy offer cause consumableUnits to return units via buyerAssetsToUnits using mulDivUp(targetBuyerAssets, WAD, buyerPrice) for sell offers, while take() computes buyerAssets = units.mulDivUp(buyerPrice, WAD), creating a round-trip rounding discrepancy where buyerAssets > targetBuyerAssets, causing consumed[maker][group] to exceed offer.maxAssets and the settlement fee to be overclaimed? Proof idea: fuzz targetBuyerAssets and buyerPrice for sell offers (offer.buy=false), assert take() buyerAssets <= targetBuyerAssets + 1 and assert consumed[maker][group] <= offer.maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c877034-ed19-4779-bb51-c17b0735f148?mode=deep",
+    "timestamp": "2026-05-31 20:03:41.083745",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / settlementFee] Can an unprivileged taker exploit the integer division truncation in settlementFee() interpolation formula ((feeLower * (end - TTM) + feeUpper * (TTM - start)) / (end - start)) to cause a 1-wei discrepancy between the settlement fee used in consumableUnits and the fee used in take() when both are called in the same block, leading to buyerAssets - sellerAssets != expected fee and claimableSettlementFee being overclaimed or underclaimed? Proof idea: enumerate all TTM values within each breakpoint interval, compute settlementFee() output, assert it is monotone and that buyerAssets - sellerAssets == units * settlementFee / WAD within 1 wei.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ab62c78-897e-4b6d-816e-e672f83fd3d2?mode=deep",
+    "timestamp": "2026-05-31 20:03:54.967130",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits] Can an unprivileged taker under a maxAssets buy offer with a very small remaining capacity (offer.maxAssets - consumed = 1 wei) trigger buyerAssetsToUnits to return 0 units due to mulDivUp rounding (ceil(1 * WAD / buyerPrice) = 0 when buyerPrice > WAD, impossible, or = 1 when buyerPrice <= WAD), making the offer appear fully consumed while the 1-wei residual capacity generates no settlement fee and is permanently unclaimable? Proof idea: fuzz residual maxAssets from 1 to buyerPrice-1, assert consumableUnits == 0 iff residual < buyerPrice, assert no settlement fee is claimable from residual.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d3457ec8-6220-46f3-b85c-758561cfad93?mode=deep",
+    "timestamp": "2026-05-31 20:04:09.560301",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a maxAssets buy offer where offerPrice equals the current settlement fee (sellerPrice = offerPrice - settlementFee = 0) trigger buyerAssetsToUnits to compute buyerPrice = 0 + settlementFee = settlementFee and return units = ceil(targetBuyerAssets * WAD / settlementFee), causing take() to compute sellerAssets = 0 and claimableSettlementFee to be incremented by the full buyerAssets, overclaiming the settlement fee as the entire buyer payment? Proof idea: set offerPrice = settlementFee for buy offer, call consumableUnits, call take(), assert sellerAssets == 0 and claimableSettlementFee delta == buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0633549b-649d-4e70-b682-328956aba947?mode=deep",
+    "timestamp": "2026-05-31 20:04:25.157135",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a maxAssets buy offer where tickToPrice(offer.tick) + settlementFee > WAD trigger buyerAssetsToUnits to revert with PriceGreaterThanOne, making the consumableUnits call revert and the offer's remaining capacity permanently unclaimable as settlement fee in MidnightBundles (which reverts on ConsumableUnitsLib revert per NatSpec)? Proof idea: set tick such that tickToPrice(tick) + settlementFee > WAD, call consumableUnits, assert revert, verify MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral also reverts, verify offer has remaining maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77da9b1e-bc0c-4c03-a5d9-738d65a4872b?mode=deep",
+    "timestamp": "2026-05-31 20:04:40.845979",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker cause MidnightBundles to skip a take() via try/catch (when take() reverts for any reason) while consumableUnits already returned non-zero units, causing the bundler to proceed to the next offer without accumulating the expected settlement fee from the skipped offer, resulting in underclaimed settlement fees for the protocol? Proof idea: construct a take that passes consumableUnits but fails in take() (e.g., gate revert), assert filledBuyerAssets does not include the skipped offer's settlement fee and claimableSettlementFee is not incremented.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09a42307-8ddc-463f-9317-e92b3b7e7f52?mode=deep",
+    "timestamp": "2026-05-31 20:04:58.637390",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker cause MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral to compute unitsToTake = min(buyerAssetsToUnits(remaining), takes[i].units, consumableUnits(offer)) where all three use the same settlement fee in the same block, but a settlement fee change between the touchMarket call and the take() call causes the actual buyerAssets to differ from targetFilledBuyerAssets, causing the require(filledBuyerAssets == targetFilledBuyerAssets) to revert and the settlement fee to be unclaimable for that bundle? Proof idea: change settlement fee between touchMarket and take() in same tx via multicall, assert bundler reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce757723-1967-466d-a07c-06f8eef78787?mode=deep",
+    "timestamp": "2026-05-31 20:05:14.646924",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits] Can an unprivileged taker under a maxAssets buy offer in a group shared with a sell offer cause consumableUnits to read consumed[maker][group] that was incremented by a previous sell take in seller assets, and subtract it from offer.maxAssets (buyer assets), causing buyerAssetsToUnits to receive a target that mixes buyer-asset and seller-asset denominations, leading to incorrect unit computation and settlement fee mis-accounting? Proof idea: fill sell offer in group by sellerAssets X, call consumableUnits for buy offer in same group with maxAssets Y, assert returned units == buyerAssetsToUnits(Y - X) and verify this is the correct remaining capacity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5d59d38-b1d7-400d-872a-12dadc836001?mode=deep",
+    "timestamp": "2026-05-31 20:05:29.943986",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer (offer.buy=false) cause consumableUnits to return units based on buyerAssetsToUnits, while take() computes buyerAssets = units.mulDivUp(buyerPrice, WAD) for sell offers (offer.buy=false), causing buyerAssets to be rounded up and consumed[maker][group] to be incremented by a value that may exceed offer.maxAssets by 1 wei, triggering ConsumedAssets revert and making the settlement fee from this fill permanently unclaimable? Proof idea: fuzz units near maxAssets boundary for sell offers, assert take() does not revert with ConsumedAssets when consumableUnits returns those units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8530e673-c668-40c4-b111-7b177b558b60?mode=deep",
+    "timestamp": "2026-05-31 20:05:44.705376",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets sell offer (offer.buy=true) cause consumableUnits to return units based on sellerAssetsToUnits using mulDivUp(targetSellerAssets, WAD, sellerPrice) for buy offers, while take() computes sellerAssets = units.mulDivDown(sellerPrice, WAD) for buy offers, causing sellerAssets < targetSellerAssets and consumed[maker][group] to be incremented by a value less than the remaining capacity, leaving residual capacity that generates no settlement fee? Proof idea: fuzz units and sellerPrice for buy offers, assert take() sellerAssets + 1 >= consumableUnits targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_344e681a-d5e8-407d-999f-f76f075a6cb4?mode=deep",
+    "timestamp": "2026-05-31 20:05:59.430464",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer (offer.buy=false) cause consumableUnits to return units based on buyerAssetsToUnits using mulDivDown(targetBuyerAssets, WAD, buyerPrice) for buy offers (offer.buy=true), while take() computes buyerAssets = units.mulDivDown(buyerPrice, WAD) for buy offers, creating a consistent rounding direction that leaves at most 1 wei of residual capacity unclaimable as settlement fee per fill? Proof idea: fuzz all combinations of offer.buy, units, and prices, assert residual capacity after consumableUnits fill < 1 unit worth of assets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2dd0b130-ee13-45a2-b4f2-5f21d6a3a488?mode=deep",
+    "timestamp": "2026-05-31 20:06:14.508196",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer where TTM crosses from >360d to <=360d between consumableUnits and take() cause consumableUnits to use the 360d breakpoint fee (settlementFeeCbp6 * CBP) while take() uses the interpolated fee for TTM just below 360d, causing a fee discrepancy that results in buyerAssets computed by consumableUnits being different from actual buyerAssets in take(), leading to settlement fee overclaim or underclaim? Proof idea: set maturity = block.timestamp + 360 days + 1, call consumableUnits, warp 2 seconds, call take(), assert claimableSettlementFee delta uses interpolated fee not 360d fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5cbb92e9-3688-4921-8fd0-5680f9ec037b?mode=deep",
+    "timestamp": "2026-05-31 20:06:30.298554",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer where TTM crosses from >=1d to <1d between consumableUnits and take() cause consumableUnits to use the interpolated fee between 1d and 7d breakpoints while take() uses the interpolated fee between 0d and 1d breakpoints, causing a fee discrepancy that results in settlement fee overclaim or underclaim depending on whether the 0d fee is higher or lower than the 1d fee? Proof idea: set maturity = block.timestamp + 1 day, call consumableUnits, warp 1 second, call take(), assert claimableSettlementFee delta uses 0d-1d interpolation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_451c2e13-4554-4acd-914e-5096bf33bba9?mode=deep",
+    "timestamp": "2026-05-31 20:06:47.777483",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer where block.timestamp > offer.market.maturity (post-maturity) cause consumableUnits to use zeroFloorSub(maturity, block.timestamp) = 0 and the 0d settlement fee breakpoint, while take() also uses TTM=0 and the 0d breakpoint, and verify that the settlement fee is correctly accounted for in this edge case with no discrepancy? Proof idea: warp past maturity, call consumableUnits, call take(), assert claimableSettlementFee delta == units * settlementFeeCbp0 * CBP / WAD within rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9db1f7e6-b6a4-410a-af0b-156576d9209e?mode=deep",
+    "timestamp": "2026-05-31 20:07:03.540097",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxUnits offer (offer.maxUnits > 0, offer.maxAssets == 0) cause consumableUnits to return offer.maxUnits - consumed units without any settlement fee computation, while take() computes buyerAssets - sellerAssets as the settlement fee, and verify that the settlement fee is correctly accumulated in claimableSettlementFee with no rounding leakage from the units-based cap? Proof idea: fuzz units and tick for maxUnits offers, assert claimableSettlementFee delta == buyerAssets - sellerAssets after take().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00323927-8d69-4b6f-aa22-5831949e0c1f?mode=deep",
+    "timestamp": "2026-05-31 20:07:18.514942",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer where all settlement fee breakpoints are 0 (settlementFeeCbp0 through settlementFeeCbp6 = 0) cause consumableUnits to return units via buyerAssetsToUnits with buyerPrice = offerPrice (no fee), while take() computes buyerAssets - sellerAssets = 0, and verify that claimableSettlementFee[loanToken] is not incremented, correctly preventing settlement fee overclaim? Proof idea: create market with all-zero settlement fees, call consumableUnits, call take(), assert claimableSettlementFee[loanToken] unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a89c3b47-1201-4b4d-842e-50b8abb77032?mode=deep",
+    "timestamp": "2026-05-31 20:07:34.717235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer cause consumableUnits to return 0 units when offer.maxAssets - consumed = 0 (via zeroFloorSub), and verify that take() with 0 units is a no-op that does not increment claimableSettlementFee, correctly preventing settlement fee overclaim from fully consumed offers? Proof idea: fill offer to maxAssets, call consumableUnits, assert return == 0, call take() with 0 units, assert claimableSettlementFee unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f3f2cf3-8c62-444b-b159-268aabd7616c?mode=deep",
+    "timestamp": "2026-05-31 20:07:52.766815",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take] Can an unprivileged taker under a maxAssets buy offer cause consumableUnits to return units that, when taken in MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral with a non-zero referralFeePct, cause the referral fee (filledBuyerAssets * referralFeePct / (WAD - referralFeePct)) to be deducted from the buyer's payment while the settlement fee (buyerAssets - sellerAssets) is still fully accumulated in claimableSettlementFee, causing the protocol to overclaim settlement fees relative to the net buyer payment? Proof idea: set referralFeePct > 0, call bundler, assert claimableSettlementFee delta == sum(buyerAssets - sellerAssets) and referral fee is separate from settlement fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d8d9466-c972-4844-ad19-7d0da4050bda?mode=deep",
+    "timestamp": "2026-05-31 20:08:10.495092",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / _updatePosition / continuousFeeCredit] Can an unprivileged lender cause continuousFeeCredit to be underclaimed by repeatedly triggering _updatePosition with small time increments (dt), accumulating rounding losses from mulDivDown(postSlashPendingFee, accrualEnd - lastAccrual, maturity - lastAccrual) per call, such that the sum of accruedFee across N calls is less than a single call over the full period, making continuous fees permanently unclaimable? Proof idea: compare continuousFeeCredit after N updatePosition calls with dt=1s vs 1 call with dt=N*s over same period, assert difference <= N wei.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9db4a018-29a7-4636-b4d2-b61d243a7aee?mode=deep",
+    "timestamp": "2026-05-31 20:08:26.128923",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / updatePositionView] Can an unprivileged lender cause the continuous fee accrual to produce 0 when lastAccrual == market.maturity (the condition _lastAccrual < market.maturity is false), even if pendingFee > 0, making the continuous fee for the final accrual period permanently unclaimable because continuousFeeCredit is never incremented for that period? Proof idea: advance time to maturity, call updatePosition (sets lastAccrual = maturity), advance time past maturity, call updatePosition again, assert accruedFee == 0 and continuousFeeCredit unchanged for second call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87a4a9f3-ea27-4043-b429-7ddd7b8dcd0c?mode=deep",
+    "timestamp": "2026-05-31 20:08:43.352776",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: consumableUnits / take / buyerPendingFeeIncrease] Can an unprivileged taker cause buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) to be 0 when continuousFee * timeToMaturity < WAD (e.g., very short TTM or very low continuousFee), causing the buyer to pay no continuous fee on new credit, resulting in underclaimed continuous fees for the protocol? Proof idea: fuzz continuousFee and timeToMaturity near WAD boundary, assert buyerPendingFeeIncrease > 0 iff continuousFee * timeToMaturity >= WAD / buyerCreditIncrease.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28d0e6a7-7735-491e-bd48-d6b03f4c8cec?mode=deep",
+    "timestamp": "2026-05-31 20:08:57.175759",
+    "report_generated": false
+  }
+]
