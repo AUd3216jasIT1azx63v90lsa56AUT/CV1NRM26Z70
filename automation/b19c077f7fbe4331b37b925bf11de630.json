@@ -1,0 +1,26 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: setIsRootRatified / event caller field] Can an unprivileged operator under the precondition that operator calls setIsRootRatified(maker, root, true) on behalf of maker trigger the event SetIsRootRatified(operator, maker, root, true) where caller != maker, violating the invariant that off-chain indexers correctly attribute the ratification to the maker (not the caller), causing scoped impact: no test verifies the event fields when caller != maker and the comment does not document that the caller field in the event may differ from the maker field, creating a documentation gap for off-chain consumers? Proof idea: unit test setIsRootRatified called by an authorized operator and assert the emitted event has caller == operator and maker == maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87eeaae7-2dc8-421d-9932-e35da1fede31?mode=deep",
+    "timestamp": "2026-05-31 19:45:13.444277",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: isRatified / multi-collateral market] Can an unprivileged taker under the precondition that the offer's market has multiple collateral params trigger hashOffer to correctly hash all collateral params via hashMarket, violating the invariant that multi-collateral markets produce distinct hashes from single-collateral markets with the same first collateral, causing scoped impact: no test in SetterRatifierTest covers offers with multi-collateral markets and the comment does not document that hashMarket iterates all collateral params? Proof idea: unit test isRatified with an offer whose market has two collateral params and assert the Merkle proof correctly commits to both collateral params.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3dac2274-1e0e-4a19-9cff-567d63d4f06b?mode=deep",
+    "timestamp": "2026-05-31 19:45:25.756264",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: isRatified / gas exhaustion] Can an unprivileged taker under the precondition that ratifierData encodes a proof of length 20 with a large callbackData in the offer trigger isRatified to consume excessive gas due to hashOffer iterating over large callbackData, violating the invariant that isRatified completes within a reasonable gas budget for any valid input, causing scoped impact: no test measures gas consumption of isRatified with maximum-size inputs and the comment does not document gas complexity of the Merkle verification or offer hashing? Proof idea: gas benchmark test with proof.length == 20 and offer.callbackData of maximum practical size and assert gas usage is within acceptable bounds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ba73eb5a-055d-464a-8880-6d50e6d06deb?mode=deep",
+    "timestamp": "2026-05-31 19:45:38.481006",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Low Invariant documentation mismatch, misleading comments, unsafe assumptions in Certora specs, or missing edge-case test coverage'] [Function: certora/specs/Ratification.spec / takeRequiresMakerConsent pre-state] Can an unprivileged taker under the precondition that the Certora spec's takeRequiresMakerConsent rule reads isAuthorized before the take call but Midnight reads isAuthorized during the take call trigger a scenario where the spec's pre-state snapshot differs from the actual runtime check, violating the invariant that the spec correctly models the authorization check timing, causing scoped impact: if Midnight's take reads isAuthorized at a different point than the spec's pre-state snapshot (e.g., after a callback modifies it), the spec's assertion may not reflect the actual security property? Proof idea: review Midnight.take source to identify exactly when isAuthorized(offer.maker, offer.ratifier) is checked and assert the spec's pre-state snapshot is at the correct point.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c05792fe-2302-40d2-ab56-1fa4d9b9b1dd?mode=deep",
+    "timestamp": "2026-05-31 19:45:52.046704",
+    "report_generated": false
+  }
+]
