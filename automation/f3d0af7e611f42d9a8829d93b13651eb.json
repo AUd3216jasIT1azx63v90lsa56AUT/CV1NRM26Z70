@@ -1,0 +1,32 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.liquidate (while-loop, collateralIndex > 127)] Can an unprivileged liquidator under preconditions where collateralIndex is passed as a value >= 128 trigger liquidate, causing market.collateralParams[collateralIndex] at line 609 of Midnight.sol to access an out-of-bounds array index, violating the invariant that collateralIndex is validated against the market's collateral list length, causing scoped impact: transaction reverts with array out-of-bounds panic, but if the market has exactly 128 collaterals and collateralIndex=128, the revert is unexpected and could be used to grief liquidators who pass wrong indices? Proof idea: call liquidate with collateralIndex=128 on a 128-collateral market; assert revert type.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57332520-4b9c-4f85-9be3-18a77951cfb5?mode=deep",
+    "timestamp": "2026-05-31 21:53:01.811052",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.multicall (gasless authorization enabling multicall griefing)] Can an unprivileged attacker under preconditions where the attacker obtains a signed Authorization granting themselves operator rights trigger setIsAuthorized to become authorized, then immediately call Midnight.multicall on behalf of the victim (since multicall uses msg.sender not onBehalf), observing that multicall does not check authorization and uses delegatecall so msg.sender is the attacker, violating the invariant that multicall is only callable by the intended user, causing scoped impact: attacker can compose any sequence of authorized actions (withdraw, repay, setConsumed) on behalf of themselves but not the victim via multicall? Proof idea: verify multicall msg.sender semantics with delegatecall; assert attacker cannot multicall victim's functions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_33a3460d-c551-4b8f-8fce-3e06ec772e13?mode=deep",
+    "timestamp": "2026-05-31 21:53:14.113033",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.touchMarket (collateralParams for-loop, gas cost passed to taker)] Can an unprivileged market creator under preconditions where a market with 128 collaterals has not yet been touched trigger take against an offer in that market, causing touchMarket to be called at line 347 of Midnight.sol and executing the full 128-iteration for-loop plus SSTORE2 deployment as part of the take transaction, violating the invariant that takers do not pay market creation costs, causing scoped impact: the first taker in a 128-collateral market pays the full market creation gas cost in addition to the take cost? Proof idea: create offer for untouched 128-collateral market; measure take gas vs take on already-touched market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e449baea-6be0-4ef4-8c7f-2d76b915eafc?mode=deep",
+    "timestamp": "2026-05-31 21:53:27.426765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall (delegatecall, memory expansion)] Can an unprivileged attacker under preconditions where each call in the multicall array contains large calldata (e.g., a Market struct with 128 collaterals) trigger multicall with N calls each containing 128-collateral Market structs, causing memory expansion costs to grow quadratically with total calldata size across all delegatecalls, violating the invariant that multicall memory cost is bounded, causing scoped impact: gas cost of multicall with large per-call data grows super-linearly, enabling gas griefing with fewer calls than expected? Proof idea: fuzz calls.length and per-call data size; assert total gas vs sum of individual call gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b2cedd5c-a8b7-427e-8cc0-795a45bad3d9?mode=deep",
+    "timestamp": "2026-05-31 21:53:39.748278",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: EcrecoverAuthorizer.setIsAuthorized (Midnight.setIsAuthorized onBehalf parameter)] Can an unprivileged attacker under preconditions where the attacker has a valid signed Authorization with authorization.authorizer=victim trigger setIsAuthorized, causing EcrecoverAuthorizer to call IMidnight(MIDNIGHT).setIsAuthorized(authorization.authorized, authorization.isAuthorized, authorization.authorizer) where authorization.authorizer is passed as onBehalf, and Midnight.setIsAuthorized checks onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender] where msg.sender is EcrecoverAuthorizer, violating the invariant that EcrecoverAuthorizer must itself be authorized by the authorizer on Midnight to act on their behalf, causing scoped impact: if EcrecoverAuthorizer is not pre-authorized on Midnight by the victim, the call reverts, meaning the gasless authorization flow requires a prior on-chain authorization step? Proof idea: call setIsAuthorized without pre-authorizing EcrecoverAuthorizer on Midnight; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6e10325-37a2-4957-ba65-af965e3a0e42?mode=deep",
+    "timestamp": "2026-05-31 21:53:53.542760",
+    "report_generated": false
+  }
+]
