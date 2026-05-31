@@ -1,0 +1,14 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can an unprivileged taker use a token that implements permit where calling permit with an already-used nonce does not revert but instead silently succeeds (no-op), causing the try/catch to treat it as a success, but the allowance is not updated (since the nonce was already used), then safeTransferFrom uses the existing allowance which may be 0, causing safeTransferFrom to revert, violating the invariant that permit failure is always tolerated and safeTransferFrom always proceeds, causing scoped impact: unexpected revert in pullToken after market has been touched and state partially initialized? Proof idea: deploy token with no-op permit on used nonce, call pullToken twice with same nonce, assert second call behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ca17bd5e-6b94-4475-a495-2e474cf35963?mode=deep",
+    "timestamp": "2026-05-31 22:53:22.978861",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / IERC20Permit.permit] Can an unprivileged taker exploit the interaction between the ERC2612 permit path and the collateralWithdrawals loop where withdrawCollateral calls isHealthy which calls oracle.price(), and if the oracle reverts during the withdrawal loop (after the take loop has already updated credit/debt state), the entire transaction reverts, but the permit nonce has already been consumed and the take loop's consumed[maker][group] state has been updated, violating the invariant that permit consumption and offer consumption are only finalized when the full bundle succeeds, causing scoped impact: offer consumption state corrupted and permit nonce consumed without credit being received? Proof idea: set oracle to revert after take, assert consumed state and permit nonce after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de152b64-52a3-434d-9306-e9a193c32a4a?mode=deep",
+    "timestamp": "2026-05-31 22:53:35.038358",
+    "report_generated": false
+  }
+]
