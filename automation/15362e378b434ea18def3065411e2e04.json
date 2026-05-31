@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / RCF / WAD / LLTV] Can an unprivileged liquidator under preconditions where lltv is near WAD (e.g., LLTV_7 = 0.98e18) and lif = maxLif trigger liquidate() computing maxRepaid = (_position.debt - maxDebt).mulDivUp(WAD * WAD, WAD * WAD - lif * lltv) where WAD * WAD - lif * lltv is very small, violating the invariant that maxRepaid must cap repayment to restore health without over-liquidating, causing scoped impact: maxRepaid is astronomically large due to near-zero denominator, effectively disabling the RCF and allowing full liquidation of a marginally unhealthy position? Proof idea: fuzz lltv near WAD and lif near 1/lltv, assert maxRepaid is finite and the post-liquidation position is not over-healthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_873f7d76-5921-406d-910b-4e72c66029b3?mode=deep",
+    "timestamp": "2026-05-31 23:29:14.345710",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: updatePositionView / WAD / postSlashPendingFee] Can an unprivileged user under preconditions where credit > 0 and postSlashCredit = 0 (full slash) trigger updatePositionView() computing postSlashPendingFee = pendingFee - pendingFee.mulDivUp(credit - 0, credit) = pendingFee - pendingFee = 0, violating the invariant that when credit is fully slashed to zero, pendingFee must also be zeroed, causing scoped impact: if the rounding in mulDivUp causes pendingFee.mulDivUp(credit, credit) > pendingFee, the subtraction underflows, corrupting the lender's pending fee state? Proof idea: fuzz credit and pendingFee, assert postSlashPendingFee >= 0 and <= pendingFee always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b42d47b4-c98d-4f89-ace4-d5cc4eada2e6?mode=deep",
+    "timestamp": "2026-05-31 23:29:26.636489",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / LIQUIDATION_LOCK_SLOT / tExchange] Can an unprivileged taker under preconditions where a nested take is triggered via a seller callback that itself calls take() on the same market with the same seller trigger tExchange(LIQUIDATION_LOCK_SLOT, id, seller, true) returning wasLocked=true, violating the invariant that the liquidation lock must prevent liquidation of the seller during the outer take's callbacks, causing scoped impact: if wasLocked is true from a prior nested take, the outer take does not unlock the seller after its callbacks, leaving the seller permanently locked in transient storage for the transaction? Proof idea: construct nested take via callback, assert seller's liquidation lock is false after the outermost take completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1b35978a-dda6-48bf-b511-0b6acf537d76?mode=deep",
+    "timestamp": "2026-05-31 23:29:39.306656",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / CBP / settlementFee / offerPrice] Can an unprivileged taker under preconditions where offerPrice (from tickToPrice) is less than _settlementFee trigger take() computing sellerPrice = offerPrice - _settlementFee underflowing (since both are uint256), violating the invariant that sellerPrice must be non-negative and the settlement fee must not exceed the offer price, causing scoped impact: arithmetic underflow in sellerPrice corrupts buyerAssets and sellerAssets, leading to incorrect credit/debt accounting and potential fund loss? Proof idea: find tick and timeToMaturity where tickToPrice(tick) < settlementFee(id, timeToMaturity), assert take() reverts with a meaningful error rather than silently computing wrong values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_936caaa2-6f56-4ef6-8383-618706c69d2f?mode=deep",
+    "timestamp": "2026-05-31 23:29:52.390200",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / ORACLE_PRICE_SCALE / maxDebt accumulation] Can an unprivileged liquidator under preconditions where a borrower has 16 collaterals each with price = ORACLE_PRICE_SCALE trigger liquidate() accumulating maxDebt via 16 additions of mulDivDown(collateral, ORACLE_PRICE_SCALE, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD) = collateral * lltv / WAD, violating the invariant that maxDebt must equal the sum of all collateral values times their LLTVs, causing scoped impact: if any intermediate addition overflows uint256, maxDebt wraps around and the position appears healthy when it is not, blocking liquidation? Proof idea: fuzz 16-collateral positions with large collateral amounts, assert maxDebt accumulation does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e5d5af0-2de5-4141-8a62-6fa98a97f5b4?mode=deep",
+    "timestamp": "2026-05-31 23:30:06.404904",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / consumed / maxAssets] Can an unprivileged taker under preconditions where offer.maxAssets > 0 and offer.buy = true trigger take() computing newConsumed += buyerAssets where buyerAssets = units.mulDivDown(buyerPrice, WAD), violating the invariant that consumed must track the exact asset amount filled and never allow the offer to be overfilled, causing scoped impact: rounding-down in buyerAssets means the consumed counter advances by less than the true asset amount, allowing the offer to be filled slightly beyond maxAssets in aggregate? Proof idea: fill an offer in many small increments, assert sum of all buyerAssets equals the final consumed value and does not exceed maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_287de47d-d4a5-4f16-b214-a1aea96524ae?mode=deep",
+    "timestamp": "2026-05-31 23:30:20.611812",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: claimContinuousFee / totalUnits / withdrawable] Can an unprivileged fee claimer under preconditions where amount > continuousFeeCredit trigger claimContinuousFee() decrementing continuousFeeCredit by amount (underflowing to a large value), violating the invariant that continuousFeeCredit must never be negative and must not exceed totalUnits, causing scoped impact: continuousFeeCredit wraps to near type(uint128).max, corrupting all future lossFactor and credit accounting that depends on it? Proof idea: call claimContinuousFee with amount > continuousFeeCredit, assert it reverts due to underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_243c5afa-c1da-4faa-8e8a-2a57cc550f3e?mode=deep",
+    "timestamp": "2026-05-31 23:30:33.661516",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / sellerDebtIncrease / post-maturity] Can an unprivileged taker under preconditions where block.timestamp == market.maturity exactly trigger take() checking block.timestamp <= offer.market.maturity (true at equality) and allowing sellerDebtIncrease > 0, violating the invariant that debt must not increase after maturity, causing scoped impact: a borrower can increase their debt at exactly the maturity timestamp, creating new debt obligations that cannot be repaid in the normal pre-maturity flow? Proof idea: warp to exactly market.maturity, take a sell offer, assert sellerDebtIncrease == 0 or the check correctly prevents it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c4f8ced-6329-46c9-a700-f077b5b16802?mode=deep",
+    "timestamp": "2026-05-31 23:30:47.436700",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / WAD / lif / post-maturity ramp] Can an unprivileged liquidator under preconditions where block.timestamp = market.maturity (exactly) trigger liquidate() in postMaturityMode computing lif = min(maxLif, WAD + (maxLif - WAD) * 0 / TIME_TO_MAX_LIF) = WAD, violating the invariant that at maturity the LIF starts at 1 (WAD) and ramps up, causing scoped impact: liquidator seizes collateral at exactly face value (lif=1) with no incentive, making liquidation economically unviable and leaving bad debt unresolved? Proof idea: assert lif == WAD at block.timestamp == maturity and lif == maxLif at block.timestamp == maturity + TIME_TO_MAX_LIF.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b84a9546-e8a2-4db5-8b4c-751b2f6cb1c7?mode=deep",
+    "timestamp": "2026-05-31 23:31:01.897562",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / continuousFee / timeToMaturity] Can an unprivileged taker under preconditions where market.maturity < block.timestamp (post-maturity) trigger take() computing timeToMaturity = zeroFloorSub(market.maturity, block.timestamp) = 0 and buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * 0, WAD) = 0, violating the invariant that post-maturity credit increases must still accrue the correct pending fee (zero is correct since no time remains), causing scoped impact: if post-maturity credit increases are allowed and pendingFee is zero, lenders receive credit without any fee obligation, undercollecting protocol fees? Proof idea: take post-maturity, assert buyerPendingFeeIncrease == 0 and verify this is the intended behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_07bf97a7-73d6-423e-b2c6-623a6f93e54a?mode=deep",
+    "timestamp": "2026-05-31 23:31:15.098397",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: updatePositionView / WAD / fee accrual] Can an unprivileged user under preconditions where _lastAccrual == market.maturity trigger updatePositionView() computing fee = 0 (because _lastAccrual < market.maturity is false), violating the invariant that a lender who last accrued exactly at maturity should have zero additional fee, causing scoped impact: if the boundary condition is off-by-one, lenders either pay an extra fee period or miss a fee period, corrupting pendingFee and continuousFeeCredit accounting? Proof idea: set lastAccrual = maturity, call updatePositionView at block.timestamp > maturity, assert fee == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa997047-906c-417e-819c-23f9f4e44f78?mode=deep",
+    "timestamp": "2026-05-31 23:31:29.301921",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / sellerCreditDecrease / min] Can an unprivileged taker under preconditions where units > sellerPos.credit trigger take() computing sellerCreditDecrease = min(units, sellerPos.credit) = sellerPos.credit and sellerDebtIncrease = units - sellerPos.credit, violating the invariant that selling units must first reduce credit to zero before increasing debt, causing scoped impact: if min() is computed incorrectly (e.g., assembly bug in UtilsLib.min), sellerCreditDecrease could be wrong, leading to incorrect credit/debt accounting? Proof idea: fuzz units and sellerPos.credit, assert sellerCreditDecrease + sellerDebtIncrease == units always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ed94bc04-5962-401f-a931-5e9fbf3973c8?mode=deep",
+    "timestamp": "2026-05-31 23:31:43.983741",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / ORACLE_PRICE_SCALE / badDebt / zeroFloorSub] Can an unprivileged liquidator under preconditions where a borrower has collateral worth more than their debt (in loan token terms) trigger liquidate() computing badDebt = zeroFloorSub(debt, sum(collateral_i * price_i / ORACLE_PRICE_SCALE * WAD / maxLif_i)) = 0, violating the invariant that no bad debt should be realized for a fully collateralized position, causing scoped impact: if zeroFloorSub is computed incorrectly or the sum overflows, badDebt > 0 is realized for a healthy position, incorrectly slashing lender credit? Proof idea: liquidate a fully collateralized position, assert badDebt == 0 and lender credits are unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9d5a4a74-da17-494d-b9b2-d78a925fae8c?mode=deep",
+    "timestamp": "2026-05-31 23:31:57.741738",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / buyerAssets / sellerAssets / payer transfer] Can an unprivileged taker under preconditions where offer.buy = true and buyerCallback = address(0) trigger take() computing payer = msg.sender and transferring buyerAssets - sellerAssets to address(this) and sellerAssets to receiver, violating the invariant that the total loan tokens pulled from payer must equal buyerAssets, causing scoped impact: if buyerAssets - sellerAssets + sellerAssets != buyerAssets due to rounding, the contract receives fewer tokens than expected, creating a solvency gap? Proof idea: assert (buyerAssets - sellerAssets) + sellerAssets == buyerAssets for all fuzzed units and tick values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2adbef7f-c877-4ea4-ad22-c9d68ccaac30?mode=deep",
+    "timestamp": "2026-05-31 23:32:12.475385",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / WAD / maxRepaid / RCF overflow] Can an unprivileged liquidator under preconditions where _position.debt - maxDebt is large and WAD * WAD - lif * lltv is small trigger liquidate() computing maxRepaid = (_position.debt - maxDebt).mulDivUp(WAD * WAD, WAD * WAD - lif * lltv) where WAD * WAD = 1e36 and the numerator product overflows uint256, violating the invariant that maxRepaid must be a finite valid uint256, causing scoped impact: overflow in maxRepaid computation causes the RCF check to pass with an incorrect cap, allowing over-liquidation? Proof idea: fuzz _position.debt - maxDebt near type(uint128).max and lif * lltv near WAD * WAD, assert no overflow in maxRepaid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa4212b8-2f39-4f07-91e0-418d9edf16be?mode=deep",
+    "timestamp": "2026-05-31 23:32:26.850330",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / CBP / settlementFee / sellerPrice underflow] Can an unprivileged taker under preconditions where the market's settlement fee at index 0 is set to MAX_SETTLEMENT_FEE_0_DAYS = 0.000014e18 and the offer tick corresponds to a price below this fee trigger take() computing sellerPrice = offerPrice - _settlementFee with uint256 underflow, violating the invariant that sellerPrice must be non-negative, causing scoped impact: sellerPrice wraps to a huge value, making sellerAssets astronomically large, and the payer is required to transfer an impossible amount, causing the take to revert or drain the payer? Proof idea: find the minimum tick price and maximum settlement fee, assert take() reverts with a meaningful error when offerPrice < settlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a96381d5-0b54-43d2-bcee-3378487347d2?mode=deep",
+    "timestamp": "2026-05-31 23:32:41.649864",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / ORACLE_PRICE_SCALE / seizedAssets / collateral underflow] Can an unprivileged liquidator under preconditions where seizedAssets > _position.collateral[collateralIndex] trigger liquidate() computing newCollateral = _position.collateral[collateralIndex] - seizedAssets with uint128 underflow, violating the invariant that seized assets must not exceed available collateral, causing scoped impact: collateral underflows to a large value, the borrower's collateral balance is corrupted, and the liquidator receives more collateral than exists? Proof idea: attempt liquidation with seizedAssets > position collateral, assert it reverts due to underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fdf84866-c594-41dc-8ba3-3d81036e2aa9?mode=deep",
+    "timestamp": "2026-05-31 23:32:55.269986",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / totalUnits / continuousFeeCredit interaction] Can an unprivileged taker under preconditions where a take increases buyerCreditIncrease and the market has non-zero continuousFeeCredit trigger take() updating totalUnits += buyerCreditIncrease - sellerCreditDecrease without adjusting continuousFeeCredit, violating the invariant that the ratio continuousFeeCredit / totalUnits must remain consistent for correct lossFactor propagation, causing scoped impact: the fee claimer can claim more continuousFeeCredit than the proportional share of totalUnits, draining withdrawable below lender credit? Proof idea: invariant test asserting continuousFeeCredit <= totalUnits after every take and claimContinuousFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_273afd1b-d040-4e88-86d9-0ae517808895?mode=deep",
+    "timestamp": "2026-05-31 23:33:10.506947",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: updatePositionView / WAD / accrualEnd / min] Can an unprivileged user under preconditions where block.timestamp > market.maturity trigger updatePositionView() computing accrualEnd = min(block.timestamp, market.maturity) = market.maturity and fee = postSlashPendingFee.mulDivDown(maturity - _lastAccrual, maturity - _lastAccrual) = postSlashPendingFee, violating the invariant that at maturity all pending fee must be fully accrued, causing scoped impact: if _lastAccrual == maturity, the denominator is zero causing a division-by-zero revert, permanently freezing the lender's position? Proof idea: set lastAccrual = maturity - 1, warp past maturity, call updatePositionView, assert fee == postSlashPendingFee and no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a0b549f-bd0e-43dc-b0d0-8b8635ca275e?mode=deep",
+    "timestamp": "2026-05-31 23:33:24.327836",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / offer.maxAssets / consumed tracking] Can an unprivileged taker under preconditions where offer.buy = false (sell offer) and offer.maxAssets > 0 trigger take() computing newConsumed += sellerAssets where sellerAssets = units.mulDivUp(buyerPrice, WAD), violating the invariant that consumed must track seller assets for sell offers and must not allow the offer to be overfilled, causing scoped impact: rounding-up in sellerAssets means consumed advances faster than the true asset amount, causing the offer to be underfilled relative to maxAssets? Proof idea: fill a sell offer with maxAssets in many increments, assert total sellerAssets received equals maxAssets within rounding tolerance.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c429e9f5-18fb-4da4-8000-9bec2235b243?mode=deep",
+    "timestamp": "2026-05-31 23:33:38.260646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / WAD / badDebt / totalUnits zero] Can an unprivileged liquidator under preconditions where _marketState.totalUnits == badDebt (all units are bad debt) trigger liquidate() computing the new lossFactor as type(uint128).max - (type(uint128).max - _lossFactor).mulDivDown(0, totalUnits) = type(uint128).max, violating the invariant that when all units are lost the lossFactor must be maxed out and all lender credits must be zeroed, causing scoped impact: if totalUnits becomes 0 after the subtraction but before the lossFactor update, a division-by-zero occurs in the mulDivDown, reverting the liquidation and leaving bad debt unresolved? Proof idea: create market with totalUnits == 1, realize badDebt == 1, assert liquidation succeeds and lossFactor == type(uint128).max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74e07cda-a803-404d-b36b-7f6aebc7925e?mode=deep",
+    "timestamp": "2026-05-31 23:33:52.780988",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / pendingFee / continuousFee zero] Can an unprivileged taker under preconditions where _marketState.continuousFee == 0 trigger take() computing buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(0 * timeToMaturity, WAD) = 0, violating the invariant that a zero continuous fee market must never accrue any pending fee, causing scoped impact: if continuousFee is later set to non-zero, existing lenders with pendingFee=0 from the zero-fee period will have their fee crystallized at the new rate from their lastAccrual timestamp, potentially overcharging them? Proof idea: lend at continuousFee=0, change fee, call updatePositionView, assert accrued fee uses only the crystallized pendingFee not the new rate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59ae1912-a313-409a-af28-15e1c4200bb6?mode=deep",
+    "timestamp": "2026-05-31 23:34:07.071387",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isHealthy / ORACLE_PRICE_SCALE / WAD / LLTV_0] Can an unprivileged borrower under preconditions where lltv = LLTV_0 = 0.385e18 and collateral price is near ORACLE_PRICE_SCALE trigger isHealthy() computing maxDebt = collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(0.385e18, WAD) with two rounding-down operations, violating the invariant that the health check must be conservative (round maxDebt down) to protect lenders, causing scoped impact: a position that is truly unhealthy (debt > true maxDebt) appears healthy due to rounding-up in the oracle price, allowing the borrower to withdraw collateral and leave lenders undercollateralized? Proof idea: construct position where rational maxDebt < debt but computed maxDebt >= debt, assert isHealthy returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_265691d2-0ff5-4abd-88d7-91f353a50b88?mode=deep",
+    "timestamp": "2026-05-31 23:34:22.450495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / buyerPrice / sellerPrice / settlement fee direction] Can an unprivileged taker under preconditions where offer.buy = false (taker is buyer) trigger take() computing buyerPrice = sellerPrice + _settlementFee where sellerPrice = offerPrice and buyerAssets = units.mulDivUp(buyerPrice, WAD), violating the invariant that the taker (buyer) must pay at least the settlement fee on top of the offer price, causing scoped impact: if the rounding direction for buyerAssets is down instead of up for sell offers, the taker pays less than required, undercollecting settlement fees? Proof idea: assert for sell offers buyerAssets = mulDivUp(units, buyerPrice, WAD) and for buy offers buyerAssets = mulDivDown(units, buyerPrice, WAD), verify the rounding direction matches the documented intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a749866b-8017-42c3-89dc-2139e4f31fab?mode=deep",
+    "timestamp": "2026-05-31 23:34:37.905163",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: liquidate / WAD / lif / seizedAssets / repaidUnits consistency] Can an unprivileged liquidator under preconditions where both seizedAssets and repaidUnits are zero trigger liquidate() realizing bad debt without any collateral seizure or debt repayment, violating the invariant that a zero-input liquidation must only realize bad debt and must not change withdrawable or collateral balances, causing scoped impact: if bad debt realization incorrectly modifies withdrawable or collateral state, lenders gain phantom withdrawable units or borrowers lose collateral without debt reduction? Proof idea: call liquidate with seizedAssets=0 and repaidUnits=0, assert only lossFactor, totalUnits, and borrower.debt change, and withdrawable is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6e806d4b-bff6-4554-b279-0904b13c6fa6?mode=deep",
+    "timestamp": "2026-05-31 23:34:55.025937",
+    "report_generated": false
+  }
+]
