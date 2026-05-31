@@ -1,0 +1,68 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter take() with a buy offer where the maker is the same as the outer call's maker, causing the inner take() to increment consumed[maker][group] again (on top of the outer call's increment), and if the inner call's newConsumed exceeds maxAssets, the inner take() reverts, but the outer take() has already incremented consumed and continues, leaving consumed at the outer call's incremented value without the inner call's additional increment, which is the expected behavior but should be verified that no partial state from the failed inner call persists? Proof idea: gate reenters take() causing inner revert on ConsumedAssets; assert consumed[maker][group] after outer take() equals only the outer call's increment.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_21fb2836-ee99-4f06-8680-0d633ee0ebef?mode=deep",
+    "timestamp": "2026-05-31 18:23:01.193546",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter flashLoan() during canIncreaseCredit, obtaining a flash loan of the loan token and using it inside onFlashLoan to call take() with a different offer (paying buyerAssets from the flash loan), and then repay the flash loan, effectively using the protocol's own liquidity to fill offers without the attacker providing any capital, violating the invariant that every credit increase must correspond to a valid external asset transfer? Proof idea: gate reenters flashLoan() on canIncreaseCredit; assert net loan token flow from attacker to Midnight is positive after all calls.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9892e2e8-aaf3-44aa-9c15-90ebe658860a?mode=deep",
+    "timestamp": "2026-05-31 18:23:13.054372",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseDebt] Can a malicious IEnterGate reenter take() with a sell offer for the seller during canIncreaseDebt, where the inner take() also calls canIncreaseDebt on the same gate, and the gate uses the current value of position[id][seller].debt (which has not yet been updated by either call) to decide whether to allow the debt increase, causing the gate to approve both calls based on the same pre-mutation debt value, when it should have rejected the second call based on the post-first-call debt? Proof idea: gate checks position[id][seller].debt < threshold on canIncreaseDebt; gate reenters take() on first canIncreaseDebt call; assert gate's approval logic is not bypassable by reentrancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f96df296-f950-4257-9fc2-b8de0f725fae?mode=deep",
+    "timestamp": "2026-05-31 18:23:25.632239",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate / ILiquidatorGate.canLiquidate] Can a malicious ILiquidatorGate reenter take() with a sell offer for the borrower during canLiquidate (post-maturity), where the inner take() reverts with CannotIncreaseDebtPostMaturity() if sellerDebtIncrease > 0, but if the borrower has existing credit, the inner take() succeeds (sellerCreditDecrease path, no debt increase), reducing the borrower's credit before the outer liquidate() reads originalDebt, causing the outer liquidate() to compute a different badDebt than expected and potentially under-realizing bad debt? Proof idea: gate reenters sell take() for borrower with credit on canLiquidate post-maturity; assert badDebt realization is correct relative to pre-reentry state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_243a5a6c-ba83-43fd-bf1f-3fb91cd25e48?mode=deep",
+    "timestamp": "2026-05-31 18:23:38.020318",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter take() with a buy offer where the buyer is the same as the outer call's buyer, and the inner take() completes successfully (including the health check at line 476 for the inner seller), but the outer take() then writes buyerPos.credit += buyerCreditIncrease using the storage reference obtained before the inner call, overwriting the inner call's credit update with a value that does not account for the inner call's credit increase, causing the buyer to lose the inner call's credit? Proof idea: gate reenters buy take() for same buyer on canIncreaseCredit; assert position[id][buyer].credit == initialCredit + outerBuyerCreditIncrease + innerBuyerCreditIncrease.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01bdfa38-a0c2-4d3d-93c6-ec0fb71b9bab?mode=deep",
+    "timestamp": "2026-05-31 18:23:51.057067",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseDebt] Can a malicious IEnterGate reenter take() with a buy offer for the seller (reducing seller's debt) during canIncreaseDebt, where the inner take() reduces seller's debt to zero (buyerCreditIncrease path), and then the outer take() writes sellerDebtIncrease = units - sellerCreditDecrease (computed before inner call) to the seller's position, but sellerCreditDecrease was computed as min(units, sellerPos.credit) before the inner call reduced credit, so the outer take() writes a sellerDebtIncrease that is inconsistent with the seller's post-inner-call state? Proof idea: gate reenters buy take() for seller on canIncreaseDebt; assert position[id][seller].debt + position[id][seller].credit is consistent with all unit flows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ecfbcebb-8a70-4d1d-816f-ec3ec0cdd05b?mode=deep",
+    "timestamp": "2026-05-31 18:24:04.354729",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter take() with a sell offer where the maker is the buyer of the outer call, causing the inner take() to call canIncreaseDebt on the same gate for the outer buyer (now seller in inner call), and the gate returns false for canIncreaseDebt, causing the inner take() to revert with SellerGatedFromIncreasingDebt(), and the outer take() continues normally, but the gate has now observed the outer buyer's identity and can selectively block or allow based on this information, potentially creating a front-running or MEV extraction vector? Proof idea: gate selectively returns false for canIncreaseDebt based on observed state; assert gate cannot extract value by selectively blocking/allowing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5d0fc9b-b7af-4939-9e38-399b516725b9?mode=deep",
+    "timestamp": "2026-05-31 18:24:17.771552",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter take() with a buy offer where the taker is the maker of the outer call, causing the inner take() to revert with SelfTake() (line 354: require(offer.maker != taker)), and the outer take() continues normally, but the gate has used the revert to observe that the outer call's maker is a specific address, and can use this information to selectively gate access based on maker identity, creating an information leak that allows the gate to discriminate against specific makers? Proof idea: gate attempts self-take reentry on canIncreaseCredit; assert revert does not corrupt outer call state and no information leak enables gate bypass.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd4973ee-bb71-4f8b-9633-63c3a3284b29?mode=deep",
+    "timestamp": "2026-05-31 18:24:30.916380",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseDebt] Can a malicious IEnterGate reenter take() with a sell offer for the seller during canIncreaseDebt, where the inner take() calls canIncreaseDebt on the same gate again (recursive), and the gate tracks recursion depth to allow the first N calls and block the (N+1)th, causing the outer take() to succeed with N levels of debt increase applied to the seller's position, while the health check at line 476 only validates the final state after all N+1 mutations, potentially allowing the seller to accumulate debt that would have been rejected if each level were checked independently? Proof idea: gate allows 2 recursive canIncreaseDebt calls; assert isHealthy(market, id, seller) after all calls with combined debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f7b7eea-52bb-4874-8678-50d35bce53d7?mode=deep",
+    "timestamp": "2026-05-31 18:24:44.829034",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate / ILiquidatorGate.canLiquidate] Can a malicious ILiquidatorGate reenter take() with a buy offer for the borrower during canLiquidate, where the inner take() increases the borrower's credit (reducing their debt via buyerCreditIncrease), and the inner take() calls canIncreaseCredit on the same enterGate (if the market has both gates as the same contract), allowing the gate to chain reentries across both gate interfaces, ultimately manipulating the borrower's position to avoid liquidation while the outer liquidate() proceeds with stale state? Proof idea: single contract implements both IEnterGate and ILiquidatorGate; gate chains canLiquidate -> take() -> canIncreaseCredit -> liquidate() reentry; assert no state corruption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcf0c2e8-61b9-4035-969f-9ff4a964e62d?mode=deep",
+    "timestamp": "2026-05-31 18:24:59.333866",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IGate.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / IEnterGate.canIncreaseCredit] Can a malicious IEnterGate reenter take() with a buy offer where the buyer is the same as the outer call's buyer, and the inner take() increases the buyer's credit, and then the outer take() writes buyerPos.pendingFee += buyerPendingFeeIncrease (line 409) using the pendingFee value computed before the inner call, overwriting the inner call's pendingFee update, causing the buyer's pendingFee to be set to a value that does not account for the inner call's fee accrual, potentially allowing the buyer to avoid paying continuous fees on the inner call's credit? Proof idea: gate reenters buy take() for same buyer on canIncreaseCredit; assert position[id][buyer].pendingFee == sum of both buyerPendingFeeIncreases plus any pre-existing pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e36cea59-fccd-43b7-af81-098a1b412dc5?mode=deep",
+    "timestamp": "2026-05-31 18:25:15.204551",
+    "report_generated": false
+  }
+]
