@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: hashOffer / take] Can an unprivileged taker, given an offer O with offer.receiverIfMakerIsSeller=R1, submit the offer to take() with a modified offer struct where receiverIfMakerIsSeller=R2 (different receiver), under the precondition that the ratifier verifies hashOffer(offer) against the signed root and hashOffer includes receiverIfMakerIsSeller, triggering take() with the modified offer, violating the invariant that the offer hash binds the exact receiver, causing scoped impact: offer forgery — seller's assets are sent to a different receiver than the maker intended? Proof idea: unit test take with modified receiverIfMakerIsSeller, assert InvalidProof revert from ratifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ec5439d-6880-4745-92e2-af5655ce41d3?mode=deep",
+    "timestamp": "2026-05-31 17:44:32.926013",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units across two transactions (50 + 50), where between the two transactions the maker calls setConsumed(group, 100, maker) to cancel the offer, under the precondition that setConsumed is non-decreasing and setting to 100 == maxUnits exhausts the offer, triggering setConsumed(group, 100, maker) then take(O, ..., 50) which reverts with ConsumedUnits, violating the invariant that setConsumed correctly cancels partially-filled offers, causing scoped impact: verify setConsumed(group, maxUnits, maker) correctly blocks further fills? Proof idea: unit test partial fill, setConsumed to maxUnits, assert second fill reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_662a4f8e-87fa-4bdd-b158-7cefe52bc4e4?mode=deep",
+    "timestamp": "2026-05-31 17:44:45.001821",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxAssets=X (assets mode, buy=true) and consumed[maker][group]=X-1, fill the offer with units chosen such that buyerAssets = units.mulDivDown(buyerPrice, WAD) = 1 (the last asset unit), then attempt to fill again with units chosen such that buyerAssets = 0 (rounds down to zero), under the precondition that consumed[maker][group]=X after the first fill and the second fill adds 0 to consumed (X <= X passes), triggering take(O, ..., units_for_0_assets) after full consumption, violating the invariant that a fully-consumed assets-mode offer only allows no-op takes, causing scoped impact: verify zero-asset takes on fully consumed assets-mode offers are correctly handled per the comment 'It is possible to give units to a fully consumed assets-based buy offer with price < 1'? Proof idea: unit test zero-asset take on fully consumed assets-mode offer, assert behavior matches documented intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53fe17d8-15b1-4a8b-bd28-2b9b4436c1ab?mode=deep",
+    "timestamp": "2026-05-31 17:44:57.264613",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units, then call setConsumed(group, 50, maker) (attempting to decrease consumed), under the precondition that setConsumed is non-decreasing and the Certora spec proves consumed never decreases, triggering setConsumed(group, 50, maker) after consumed=100, violating the invariant that consumed is non-decreasing, causing scoped impact: verify setConsumed cannot decrease consumed to re-enable a fully-consumed offer? Proof idea: unit test setConsumed(group, 50, maker) after consumed=100, assert consumed remains 100 (setConsumed only increases).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_20316d26-92d0-416f-88d1-f09ab76a752e?mode=deep",
+    "timestamp": "2026-05-31 17:45:10.077281",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units in a market that has reached lossFactor == type(uint128).max, under the precondition that take() checks require(_marketState.lossFactor < type(uint128).max, MarketLossFactorMaxedOut()) before updating consumed, triggering take() in a maxed-out market, violating the invariant that consumed is only updated for valid takes, causing scoped impact: verify MarketLossFactorMaxedOut correctly blocks all takes including consumed updates? Proof idea: unit test take in maxed-out market, assert MarketLossFactorMaxedOut revert and consumed unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a62f19bd-4c98-46b6-b230-fc51354cfa81?mode=deep",
+    "timestamp": "2026-05-31 17:45:22.506960",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: hashOffer / take] Can an unprivileged taker, given an offer O with offer.callback=C (maker callback) and offer.callbackData=D, submit the offer to take() with a modified callbackData D' != D, under the precondition that the ratifier verifies hashOffer(offer) which includes keccak256(offer.callbackData), triggering take() with modified callbackData, violating the invariant that the offer hash binds the exact callbackData, causing scoped impact: callback data substitution — maker's callback receives different data than intended, potentially causing incorrect fund sourcing? Proof idea: unit test take with modified callbackData, assert InvalidProof revert from ratifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bc21d9a0-fa2d-4330-b723-b82b99d37164?mode=deep",
+    "timestamp": "2026-05-31 17:45:35.479960",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units where the take reverts in the callback (callback returns wrong value), under the precondition that the consumed update happens BEFORE the callback and Solidity reverts the entire transaction on callback failure, triggering take(O, ..., 100) where callback reverts, violating the invariant that consumed is only updated for successful takes (revert undoes the storage update), causing scoped impact: verify that a reverted take correctly undoes the consumed update — consumed remains 0 after revert? Proof idea: unit test take with reverting callback, assert consumed unchanged after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_faa85c8e-f81b-412e-98a0-a625462a005a?mode=deep",
+    "timestamp": "2026-05-31 17:45:48.106610",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units where the ERC20 transferFrom reverts (e.g., insufficient allowance), under the precondition that the consumed update happens BEFORE the token transfer and Solidity reverts the entire transaction on transfer failure, triggering take(O, ..., 100) where transferFrom reverts, violating the invariant that consumed is only updated for successful takes, causing scoped impact: verify that a reverted take due to token transfer failure correctly undoes the consumed update? Proof idea: unit test take with insufficient allowance, assert consumed unchanged after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b6b3d8b9-4557-4a1b-850f-696d34e6da57?mode=deep",
+    "timestamp": "2026-05-31 17:46:01.195930",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units using a fee-on-transfer loan token where the actual amount received by the contract is less than buyerAssets, under the precondition that the consumed update tracks buyerAssets (not actual received amount) in assets mode, triggering take(O, ..., units) with a fee-on-transfer token, violating the invariant that consumed accurately tracks actual asset transfers, causing scoped impact: accounting corruption — consumed reflects nominal assets but contract receives fewer tokens, creating a solvency gap? Proof idea: unit test with fee-on-transfer token, assert contract balance increase == consumed delta in assets mode.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1999dc22-c98d-4c7a-9d6e-293d3375d2bf?mode=deep",
+    "timestamp": "2026-05-31 17:46:14.262689",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given an offer O with maxUnits=100 and consumed[maker][group]=0, fill the offer for 100 units in a market where the seller has exactly 0 debt and 0 credit (empty position), under the precondition that sellerDebtIncrease = units - sellerCreditDecrease = units - 0 = units and the health check fires after callbacks, triggering take(O, ..., 100) where the seller's debt increases by 100 units and the health check passes (sufficient collateral), violating the invariant that consumed correctly tracks units even for first-time borrowers, causing scoped impact: verify consumed delta == units for a fresh seller position? Proof idea: unit test first-time borrow via take, assert consumed[maker][group] == units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b0f60bd-f9f5-4397-8695-5d38dfd597c4?mode=deep",
+    "timestamp": "2026-05-31 17:46:27.624000",
+    "report_generated": false
+  }
+]
