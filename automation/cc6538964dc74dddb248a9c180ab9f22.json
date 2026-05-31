@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with offer.ratifier != address(ecrecoverRatifier) cause isRatified to succeed (returning CALLBACK_SUCCESS) because the ratifier field is not included in the signature verification path within isRatified itself (it is included in hashOffer but the proof check uses the passed offer struct), violating the invariant that the ratifier address must be bound by the signature? Proof idea: sign offer with ratifier=ecrecoverRatifier; submit take with offer.ratifier=maliciousRatifier; assert InvalidProof because hashOffer includes ratifier field.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9ece0f38-799b-4ad1-9334-000e377273a5?mode=deep",
+    "timestamp": "2026-05-31 18:10:34.177105",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with maturity M cause isRatified to revert with InvalidProof if the offer.market.maturity field is mutated to M+1 in the passed Offer struct, because hashMarket includes maturity, violating the invariant that market parameter mutations must be caught at the proof level? Proof idea: sign offer with market.maturity=T; submit take with market.maturity=T+1; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ee31893-fb15-492e-800d-db5438137e8e?mode=deep",
+    "timestamp": "2026-05-31 18:10:46.053611",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with a specific consumption group cause isRatified to succeed even if the offer.group field is mutated by the taker, because the group field is included in hashOffer and thus the proof check would fail with InvalidProof, confirming that group mutation is caught but that the error is InvalidProof not a dedicated GroupMismatch error? Proof idea: sign offer with group=G; submit take with group=G'; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68e782b9-f86f-40a8-b3c7-31d2cd2bed60?mode=deep",
+    "timestamp": "2026-05-31 18:10:58.864033",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for a sell offer (offer.buy == false) cause isRatified to revert with InvalidProof if the taker flips offer.buy to true, because hashOffer includes the buy field, violating the invariant that buy/sell direction must be bound by the signature and caught at the proof level? Proof idea: sign sell offer; submit take with offer.buy=true; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f46be89-8410-4ecd-a136-6ebfb324c166?mode=deep",
+    "timestamp": "2026-05-31 18:11:11.813819",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with maxUnits=X cause isRatified to revert with InvalidProof if the taker inflates offer.maxUnits to type(uint256).max, because hashOffer includes maxUnits, violating the invariant that capacity limits must be bound by the signature? Proof idea: sign offer with maxUnits=1000; submit take with maxUnits=type(uint256).max; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0d0d7ef-dc19-4e40-a824-8748a492af31?mode=deep",
+    "timestamp": "2026-05-31 18:11:24.259537",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with a specific tick cause isRatified to revert with InvalidProof if the taker changes offer.tick to a more favorable price, because hashOffer includes tick, violating the invariant that price must be bound by the signature? Proof idea: sign offer with tick=T; submit take with tick=T+1; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_089024fe-ee19-4f84-968c-41c02af6870e?mode=deep",
+    "timestamp": "2026-05-31 18:11:37.091125",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with expiry=E cause isRatified to revert with InvalidProof if the taker extends offer.expiry to type(uint256).max, because hashOffer includes expiry, violating the invariant that offer lifetime must be bound by the signature? Proof idea: sign offer with expiry=E; submit take with expiry=type(uint256).max; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0a17e34-f855-4060-9eb3-adcab369ff71?mode=deep",
+    "timestamp": "2026-05-31 18:11:49.719900",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with callback=address(0) cause isRatified to revert with InvalidProof if the taker sets offer.callback to a malicious callback address, because hashOffer includes callback and callbackData, violating the invariant that callback configuration must be bound by the signature? Proof idea: sign offer with callback=address(0); submit take with callback=maliciousCallback; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebebe819-a945-4706-a486-972ffc34e8ac?mode=deep",
+    "timestamp": "2026-05-31 18:12:02.342391",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with reduceOnly=false cause isRatified to revert with InvalidProof if the taker sets offer.reduceOnly=true, because hashOffer includes reduceOnly, violating the invariant that reduce-only mode must be bound by the signature? Proof idea: sign offer with reduceOnly=false; submit take with reduceOnly=true; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_36fcb384-8a01-496b-89aa-027cbfc0d162?mode=deep",
+    "timestamp": "2026-05-31 18:12:15.386769",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with receiverIfMakerIsSeller=address(X) cause isRatified to revert with InvalidProof if the taker changes the receiver to address(Y), because hashOffer includes receiverIfMakerIsSeller, violating the invariant that the seller's asset receiver must be bound by the signature? Proof idea: sign offer with receiverIfMakerIsSeller=X; submit take with receiverIfMakerIsSeller=Y; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a9c6a5a0-80cd-4462-95c6-6aea55d76b89?mode=deep",
+    "timestamp": "2026-05-31 18:12:28.504990",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with start=S cause isRatified to revert with InvalidProof if the taker sets offer.start=0 (removing the start restriction), because hashOffer includes start, violating the invariant that offer activation time must be bound by the signature? Proof idea: sign offer with start=S; submit take with start=0; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b36417b5-95ea-45ae-8c05-cbed261cfa6a?mode=deep",
+    "timestamp": "2026-05-31 18:12:41.962614",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with enterGate=address(G) cause isRatified to revert with InvalidProof if the taker removes the gate (enterGate=address(0)), because hashMarket includes enterGate, violating the invariant that gate configuration must be bound by the signature? Proof idea: sign offer with market.enterGate=G; submit take with market.enterGate=address(0); assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d4fc23f-256e-4a45-bb5e-a8c617bcf540?mode=deep",
+    "timestamp": "2026-05-31 18:12:57.077984",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with liquidatorGate=address(G) cause isRatified to revert with InvalidProof if the taker removes the liquidator gate, because hashMarket includes liquidatorGate, violating the invariant that liquidator gate configuration must be bound by the signature? Proof idea: sign offer with market.liquidatorGate=G; submit take with market.liquidatorGate=address(0); assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_641d7b16-fc3a-4b2e-a66a-cea618e27e4a?mode=deep",
+    "timestamp": "2026-05-31 18:13:09.721667",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with rcfThreshold=T cause isRatified to revert with InvalidProof if the taker changes rcfThreshold, because hashMarket includes rcfThreshold, violating the invariant that recovery close factor threshold must be bound by the signature? Proof idea: sign offer with market.rcfThreshold=T; submit take with market.rcfThreshold=0; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85d1d093-f44c-4319-87b7-6ed1fd912218?mode=deep",
+    "timestamp": "2026-05-31 18:13:22.678793",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with a specific oracle address cause isRatified to revert with InvalidProof if the taker substitutes a different oracle address in collateralParams, because hashCollateralParams includes oracle, violating the invariant that oracle configuration must be bound by the signature? Proof idea: sign offer with oracle=O; submit take with oracle=O'; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e47f09f5-b864-48c7-a507-647614e15d4f?mode=deep",
+    "timestamp": "2026-05-31 18:13:36.433153",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with LLTV=L cause isRatified to revert with InvalidProof if the taker changes the LLTV in collateralParams, because hashCollateralParams includes lltv, violating the invariant that LLTV must be bound by the signature? Proof idea: sign offer with lltv=0.77e18; submit take with lltv=0.9e18; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_271a98f7-c94b-4000-94fd-3151a910e82a?mode=deep",
+    "timestamp": "2026-05-31 18:13:50.293811",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with maxLif=M cause isRatified to revert with InvalidProof if the taker changes maxLif in collateralParams, because hashCollateralParams includes maxLif, violating the invariant that LIF configuration must be bound by the signature? Proof idea: sign offer with maxLif=M; submit take with maxLif=M+1; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1020e012-7bd0-4184-a9f6-982978d4f92c?mode=deep",
+    "timestamp": "2026-05-31 18:14:03.906828",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with a specific collateral token cause isRatified to revert with InvalidProof if the taker substitutes a different collateral token in collateralParams, because hashCollateralParams includes token, violating the invariant that collateral token must be bound by the signature? Proof idea: sign offer with collateralToken=A; submit take with collateralToken=B; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d4aeaeff-e9fa-4d82-ae0f-2bc6519fff69?mode=deep",
+    "timestamp": "2026-05-31 18:14:18.301896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with loanToken=A cause isRatified to revert with InvalidProof if the taker substitutes loanToken=B, because hashMarket includes loanToken, violating the invariant that loan token must be bound by the signature? Proof idea: sign offer with loanToken=A; submit take with loanToken=B; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_edf8d245-bd44-4a4a-bd7a-36f79f284914?mode=deep",
+    "timestamp": "2026-05-31 18:14:32.075987",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer in a market with maturity=M cause isRatified to revert with InvalidProof if the taker changes market.maturity, because hashMarket includes maturity, violating the invariant that maturity must be bound by the signature? Proof idea: sign offer with market.maturity=M; submit take with market.maturity=M+1; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f98996c-2176-46a2-91dd-4a9998a0e153?mode=deep",
+    "timestamp": "2026-05-31 18:14:45.806231",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with maxAssets=A cause isRatified to revert with InvalidProof if the taker changes offer.maxAssets, because hashOffer includes maxAssets, violating the invariant that asset capacity must be bound by the signature? Proof idea: sign offer with maxAssets=A; submit take with maxAssets=A+1; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6bcbeff-96f6-42a1-a7d5-6481e0ee93ec?mode=deep",
+    "timestamp": "2026-05-31 18:14:59.368629",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with callbackData=D cause isRatified to revert with InvalidProof if the taker changes offer.callbackData, because hashOffer includes keccak256(callbackData), violating the invariant that callback data must be bound by the signature? Proof idea: sign offer with callbackData=D; submit take with callbackData=D'; assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cf1be1cb-5e0b-45b8-a329-6043b43c0e8e?mode=deep",
+    "timestamp": "2026-05-31 18:15:13.243802",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer with group=G cause isRatified to succeed even if the taker changes offer.group to G' (a different consumption group), because the group field is included in hashOffer and thus the proof check would fail with InvalidProof, confirming that group manipulation is caught but that the error is not a dedicated GroupMismatch error? Proof idea: fuzz offer.group; assert InvalidProof for any group != signed group.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dbf3ede9-db79-4dcd-8696-041956c9f4cf?mode=deep",
+    "timestamp": "2026-05-31 18:15:28.702086",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer cause isRatified to revert with Unauthorized if the maker's address is a smart contract that is authorized in Midnight but the ecrecover result is a different EOA that is also authorized, allowing a different authorized signer to ratify offers on behalf of the maker, violating the invariant that only the maker or explicitly authorized signers must be able to ratify? Proof idea: authorize signerA and signerB for maker; sign with signerA; assert isRatified succeeds; sign with signerB; assert isRatified also succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4c011db2-5705-4d66-86d3-266ad675c727?mode=deep",
+    "timestamp": "2026-05-31 18:15:41.383488",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Incorrect revert behavior that blocks valid user actions under realistic oracle, token, callback, or authorization conditions'] [Function: isRatified] Can a taker submitting a valid signature over a root R for an offer cause isRatified to revert with Unauthorized if the maker revokes the signer's authorization in Midnight during the same block as the take (e.g., via a front-running cancelRoot or setIsAuthorized), violating the invariant that a validly signed offer must be executable until the root is explicitly canceled? Proof idea: sign root; front-run with midnight.setIsAuthorized(signer, false, maker); assert Unauthorized revert in same block.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65676bcb-c6d6-42c0-8fc0-54f2e7e2e42b?mode=deep",
+    "timestamp": "2026-05-31 18:15:54.703075",
+    "report_generated": false
+  }
+]
