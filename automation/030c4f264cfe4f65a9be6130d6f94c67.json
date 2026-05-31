@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker using a sell offer (offer.buy=false) under preconditions where settlementFee > 0 and targetBuyerAssets is not a multiple of buyerPrice/WAD trigger buyerAssetsToUnits returning units N such that take(N) yields buyerAssets > targetBuyerAssets, violating the invariant that the periphery helper must not cause the buyer to pay more than the target, causing scoped impact: settlement fee overclaim against the buyer? Proof idea: fuzz (tick, settlementFee, targetBuyerAssets) for sell offers and assert mulDivUp(mulDivDown(targetBuyerAssets, WAD, buyerPrice), buyerPrice, WAD) <= targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7c4df4d-9f51-40a7-aaf3-2fb7e1684034?mode=deep",
+    "timestamp": "2026-05-31 20:24:22.842914",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged maker using a sell offer (offer.buy=false) under preconditions where settlementFee > 0 and targetSellerAssets is not a multiple of sellerPrice/WAD trigger sellerAssetsToUnits returning units N such that take(N) yields sellerAssets > targetSellerAssets, violating the invariant that the periphery helper must not cause the seller to receive more than the target, causing scoped impact: settlement fee underclaim (seller receives excess, protocol receives less fee)? Proof idea: fuzz (tick, settlementFee, targetSellerAssets) for sell offers and assert mulDivUp(mulDivDown(targetSellerAssets, WAD, sellerPrice), sellerPrice, WAD) <= targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bc24feb1-ac28-4b5a-a345-2efbd6e1f71e?mode=deep",
+    "timestamp": "2026-05-31 20:24:36.691525",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker using a buy offer (offer.buy=true) under preconditions where settlementFee > 0 and targetBuyerAssets is not a multiple of buyerPrice/WAD trigger buyerAssetsToUnits returning units N such that take(N) yields buyerAssets < targetBuyerAssets, violating the invariant that the periphery helper must deliver at least the target buyer assets, causing scoped impact: settlement fee underclaim (buyer receives less than expected, fee accounting desync)? Proof idea: fuzz (tick, settlementFee, targetBuyerAssets) for buy offers and assert mulDivDown(mulDivUp(targetBuyerAssets, WAD, buyerPrice), buyerPrice, WAD) >= targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7c195c78-06ca-4044-bc21-0a1771c8f4f8?mode=deep",
+    "timestamp": "2026-05-31 20:24:49.222836",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged maker using a buy offer (offer.buy=true) under preconditions where settlementFee > 0 and targetSellerAssets is not a multiple of sellerPrice/WAD trigger sellerAssetsToUnits returning units N such that take(N) yields sellerAssets < targetSellerAssets, violating the invariant that the periphery helper must deliver at least the target seller assets, causing scoped impact: settlement fee overclaim against the seller (maker receives less than expected)? Proof idea: fuzz (tick, settlementFee, targetSellerAssets) for buy offers and assert mulDivDown(mulDivUp(targetSellerAssets, WAD, sellerPrice), sellerPrice, WAD) >= targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a9fa988-087a-41ee-b881-9026006b03fc?mode=deep",
+    "timestamp": "2026-05-31 20:25:02.150383",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged caller under preconditions where offer.buy=true and settlementFee equals offerPrice (i.e., sellerPrice = offerPrice - settlementFee = 0) trigger sellerAssetsToUnits to revert via division by zero in mulDivUp(targetSellerAssets, WAD, 0), violating the invariant that valid market parameters must not cause periphery DoS, causing scoped impact: settlement fee unclaimable / fund freeze for any bundler or router relying on sellerAssetsToUnits? Proof idea: set settlementFee = tickToPrice(offer.tick) for a buy offer and call sellerAssetsToUnits with any nonzero targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2eab18e5-3086-44a9-a6c0-c9a08c2104c2?mode=deep",
+    "timestamp": "2026-05-31 20:25:16.238546",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged caller under preconditions where offer.buy=false and settlementFee is at its maximum for the current TTM breakpoint such that offerPrice + settlementFee > WAD trigger buyerAssetsToUnits to revert via the require(buyerPrice <= WAD) check, violating the invariant that valid market parameters must not cause periphery DoS, causing scoped impact: settlement fee unclaimable / fund freeze for bundlers targeting exact buyer asset amounts in high-fee sell-offer markets? Proof idea: set settlementFee = maxSettlementFee(6) and tick such that tickToPrice(tick) + settlementFee > WAD, then call buyerAssetsToUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd766746-d4e3-4148-b8de-412c13ee42c2?mode=deep",
+    "timestamp": "2026-05-31 20:25:30.232595",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the feeSetter calls setMarketSettlementFee between the view call to buyerAssetsToUnits and the actual take() execution trigger a mismatch where the units computed by TakeAmountsLib yield different buyerAssets or sellerAssets than expected, violating the invariant that fee accounting must be consistent between periphery computation and core execution, causing scoped impact: settlement fee overclaim or underclaim against buyer or seller? Proof idea: snapshot state after buyerAssetsToUnits, change fee, call take with computed units, assert actual buyerAssets != targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90373182-2255-4203-b3f4-e8540caea6d2?mode=deep",
+    "timestamp": "2026-05-31 20:25:43.556253",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where block.timestamp advances by one second between the view call to buyerAssetsToUnits and the actual take() execution, crossing a TTM breakpoint boundary (e.g., TTM transitions from 1 day to < 1 day), trigger a mismatch where the settlement fee used in TakeAmountsLib differs from the fee used in take(), violating the invariant that fee accounting must be consistent between periphery computation and core execution, causing scoped impact: settlement fee overclaim or underclaim? Proof idea: set maturity = block.timestamp + 86400, call buyerAssetsToUnits, warp 1 second, call take with computed units, assert fee discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_94c94f08-88f8-4d7c-a1a6-b98694063845?mode=deep",
+    "timestamp": "2026-05-31 20:25:57.594174",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=false and targetBuyerAssets=1 with a high settlementFee trigger buyerAssetsToUnits to return units=0 (due to mulDivDown rounding to zero), violating the invariant that a nonzero target must yield a nonzero units result, causing scoped impact: settlement fee unclaimable (take with 0 units is a no-op, fee is never charged)? Proof idea: fuzz (settlementFee, tick) with targetBuyerAssets=1 for sell offers and assert returned units > 0 when targetBuyerAssets > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ddac40a-c0dc-4e5c-b048-94650b12841a?mode=deep",
+    "timestamp": "2026-05-31 20:26:11.447544",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=true and targetSellerAssets=1 with a high settlementFee (sellerPrice near zero) trigger sellerAssetsToUnits to return a very large units value (due to mulDivUp(1, WAD, near-zero sellerPrice)), violating the invariant that computed units must not exceed offer capacity, causing scoped impact: settlement fee overclaim (take reverts or consumes entire offer, fee accounting corrupted)? Proof idea: fuzz (settlementFee near offerPrice, targetSellerAssets=1) for buy offers and assert returned units <= offer.maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6206f2a3-da74-4a63-9ea1-058d6a85e133?mode=deep",
+    "timestamp": "2026-05-31 20:26:26.287577",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged caller under preconditions where id does not correspond to offer.market (violating the 'Assumes that id and offer.market match' invariant) trigger TakeAmountsLib to use the wrong market's settlement fee, violating the invariant that fee computation must use the correct market's fee schedule, causing scoped impact: settlement fee overclaim or underclaim when the returned units are used in a subsequent take()? Proof idea: pass id of a high-fee market with offer.market of a zero-fee market, compute units, call take with correct id, assert fee discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_019ec02c-2d1a-4c9c-85bd-ab9707b79044?mode=deep",
+    "timestamp": "2026-05-31 20:26:42.797560",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=true and the market is post-maturity (block.timestamp > maturity) trigger buyerAssetsToUnits to use settlementFee(id, 0) = settlementFeeCbp0 * CBP (the 0-day fee), while take() also uses zeroFloorSub(maturity, block.timestamp)=0, but the fee at index 0 is nonzero, violating the invariant that post-maturity fee accounting must be consistent, causing scoped impact: settlement fee overclaim against the buyer in post-maturity unwinding trades? Proof idea: set settlementFeeCbp0 to max, warp past maturity, call buyerAssetsToUnits and take, assert fee charged matches expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9bf60dd7-90be-4572-b209-a120f37e04b2?mode=deep",
+    "timestamp": "2026-05-31 20:26:58.210810",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the market has TTM exactly at a breakpoint boundary (e.g., TTM = 86400 exactly = 1 day) trigger TakeAmountsLib to compute a different settlement fee than take() due to a one-second difference in block.timestamp between the view call and execution, violating the invariant that fee accounting must be consistent, causing scoped impact: settlement fee overclaim or underclaim at breakpoint boundaries? Proof idea: set maturity = block.timestamp + 86400, call buyerAssetsToUnits at T, warp 1 second, call take at T+1, assert fee used in take differs from fee used in TakeAmountsLib.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f257dfa9-2a9c-4784-9339-3d6f47e02600?mode=deep",
+    "timestamp": "2026-05-31 20:27:14.355441",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=false (sell offer) and targetBuyerAssets is exactly divisible by buyerPrice/WAD trigger buyerAssetsToUnits to return units N such that take(N) yields buyerAssets = targetBuyerAssets exactly, but the settlement fee charged (buyerAssets - sellerAssets) differs from the expected fee due to mulDivDown rounding in sellerAssets, violating the invariant that fee = units * settlementFee / WAD within one wei, causing scoped impact: settlement fee overclaim or underclaim by up to 1 wei per take? Proof idea: fuzz (units, tick, settlementFee) for sell offers and assert buyerAssets - sellerAssets is within [floor(units*fee/WAD), ceil(units*fee/WAD)].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e9036d4-1a89-4ab8-88d1-3cdf86901a0a?mode=deep",
+    "timestamp": "2026-05-31 20:27:31.083423",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the continuous fee rate is nonzero and the buyer is increasing credit trigger TakeAmountsLib to return units that do not account for the buyerPendingFeeIncrease charged in take(), violating the invariant that the periphery helper must reflect all fees charged to the buyer, causing scoped impact: continuous fee underclaim (buyer's effective cost is higher than TakeAmountsLib suggests, leading to integrator accounting errors)? Proof idea: set continuousFee = MAX_CONTINUOUS_FEE, call buyerAssetsToUnits, call take, assert actual buyer cost = buyerAssets + pendingFeeIncrease > targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd9c97e8-c8b0-4eca-8a64-264b0aaca3eb?mode=deep",
+    "timestamp": "2026-05-31 20:27:48.209980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the market's continuousFee is changed by feeSetter between the view call to TakeAmountsLib and the actual take() execution trigger a mismatch in buyerPendingFeeIncrease, violating the invariant that continuous fee accounting must be consistent between periphery computation and core execution, causing scoped impact: continuous fee overclaim or underclaim against the buyer? Proof idea: call buyerAssetsToUnits, change continuousFee via setMarketContinuousFee, call take with computed units, assert pendingFeeIncrease differs from expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0bc0cbd1-1092-4cd9-b9e2-8c529be8322e?mode=deep",
+    "timestamp": "2026-05-31 20:28:02.468315",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=true and settlementFee is at maximum for TTM=360 days (0.5% = 0.005e18) and offerPrice is near zero (high tick) trigger sellerAssetsToUnits to return units that, when passed to take(), yield sellerAssets significantly less than targetSellerAssets due to accumulated rounding in mulDivUp(WAD, sellerPrice) followed by mulDivDown(units, sellerPrice, WAD), violating the invariant that the seller receives at least targetSellerAssets, causing scoped impact: settlement fee overclaim against the seller? Proof idea: fuzz (tick near MAX_TICK, settlementFee=maxSettlementFee(6)) and assert take(sellerAssetsToUnits(target)) yields sellerAssets >= target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_29ceb2d0-d421-41d5-9bf1-ece92ea19c70?mode=deep",
+    "timestamp": "2026-05-31 20:28:18.930600",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the loan token has non-standard decimals (e.g., 6 decimals like USDC) and targetBuyerAssets is a small amount (e.g., 1e6) trigger TakeAmountsLib to return units=0 due to mulDivDown rounding, violating the invariant that nonzero target amounts must yield nonzero units, causing scoped impact: settlement fee unclaimable (take with 0 units is a no-op, fee never accrues to claimableSettlementFee)? Proof idea: use 6-decimal loan token, set targetBuyerAssets=1, fuzz (tick, settlementFee) and assert returned units > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d4d3f84-9bf7-4d87-93ed-352a849dd0bd?mode=deep",
+    "timestamp": "2026-05-31 20:28:33.713495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=false and settlementFee is interpolated between two breakpoints with non-CBP-aligned intermediate values trigger TakeAmountsLib to use a settlement fee that differs from the fee used in take() by up to 1 CBP due to integer division truncation in the interpolation formula (feeLower * (end - ttm) + feeUpper * (ttm - start)) / (end - start), violating the invariant that fee accounting must be consistent, causing scoped impact: settlement fee overclaim or underclaim by up to 1e12 wei per take? Proof idea: fuzz (ttm between breakpoints, feeLower, feeUpper) and assert settlementFee(id, ttm) matches expected interpolated value within 1 CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_828fd016-f302-4923-8e41-4605c99e20ed?mode=deep",
+    "timestamp": "2026-05-31 20:28:49.240937",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where two markets share the same loan token but have different settlement fee schedules trigger TakeAmountsLib to use the wrong market's fee when id is derived from the wrong market, violating the invariant that claimableSettlementFee[loanToken] must accurately reflect fees from all markets, causing scoped impact: settlement fee overclaim or underclaim when fees from different markets are pooled into the same claimableSettlementFee bucket? Proof idea: create two markets with same loanToken but different fees, call TakeAmountsLib with swapped ids, assert fee discrepancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ce51450c-cfcc-4885-8c85-cffbd67b04fc?mode=deep",
+    "timestamp": "2026-05-31 20:29:04.561205",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=true and targetBuyerAssets is type(uint256).max / WAD trigger buyerAssetsToUnits to overflow in mulDivUp(targetBuyerAssets, WAD, buyerPrice) since mulDivUp computes (x * y + d - 1) / d and x * y may overflow uint256, violating the invariant that periphery helpers must not overflow on valid inputs, causing scoped impact: settlement fee unclaimable / fund freeze due to revert in bundler? Proof idea: set targetBuyerAssets = type(uint256).max / WAD + 1 and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0b06d6c-fdc7-42bd-8221-c1b46d33d269?mode=deep",
+    "timestamp": "2026-05-31 20:29:17.625734",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: sellerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=false and targetSellerAssets is type(uint256).max / WAD trigger sellerAssetsToUnits to overflow in mulDivDown(targetSellerAssets, WAD, sellerPrice) since mulDivDown computes (x * y) / d and x * y may overflow uint256, violating the invariant that periphery helpers must not overflow on valid inputs, causing scoped impact: settlement fee unclaimable / fund freeze due to revert in bundler? Proof idea: set targetSellerAssets = type(uint256).max / WAD + 1 and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c5038fb0-4b03-48df-92da-c7dee96b2410?mode=deep",
+    "timestamp": "2026-05-31 20:29:31.988686",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where the market's settlement fee is zero (all breakpoints set to 0) trigger TakeAmountsLib to compute buyerPrice = sellerPrice = offerPrice, and for buy offers sellerAssetsToUnits returns mulDivUp(target, WAD, offerPrice) while take() computes sellerAssets = mulDivDown(units, offerPrice, WAD), violating the invariant that the inverse function must be exact when fee=0, causing scoped impact: settlement fee underclaim (seller receives less than target even with zero fee)? Proof idea: set all settlementFeeCbp to 0, fuzz (tick, targetSellerAssets) for buy offers and assert take(sellerAssetsToUnits(target)) yields sellerAssets >= target.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4232bf54-1ed9-4fb8-8324-5af3ecfe59b0?mode=deep",
+    "timestamp": "2026-05-31 20:29:46.359930",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits] Can an unprivileged taker under preconditions where offer.buy=false and the market is at TTM=0 (post-maturity) trigger buyerAssetsToUnits to use settlementFee(id, 0) = settlementFeeCbp0 * CBP, but the actual take() also uses TTM=0, so both are consistent, yet the fee at index 0 (max 0.14 bps) is charged to the buyer (taker) rather than the seller (maker) for sell offers, violating the invariant that the fee side assignment must be correct, causing scoped impact: settlement fee charged to wrong side post-maturity? Proof idea: set settlementFeeCbp0 to max, warp past maturity, take a sell offer, assert buyer pays fee not seller.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71558beb-445a-472f-8c4b-6184147f0cd5?mode=deep",
+    "timestamp": "2026-05-31 20:30:00.643611",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/TakeAmountsLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged taker under preconditions where a bundler calls buyerAssetsToUnits for multiple sequential takes in a single transaction, and the settlement fee changes between takes due to TTM advancing (each take uses a slightly different block.timestamp), trigger accumulated fee discrepancies across takes, violating the invariant that total fees charged must equal sum of individual expected fees, causing scoped impact: settlement fee overclaim or underclaim across a multi-take bundle? Proof idea: simulate N sequential takes in one block, assert sum(buyerAssets_i - sellerAssets_i) matches sum(expected_fee_i).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c7914a99-2e12-4404-b126-6aa71a2e301c?mode=deep",
+    "timestamp": "2026-05-31 20:30:14.955125",
+    "report_generated": false
+  }
+]
