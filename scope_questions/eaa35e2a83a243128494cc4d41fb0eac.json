@@ -1,0 +1,7 @@
+[
+  {
+    "question": "'File Name: src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_11379ff9-47c2-4c32-89e0-a03f3332b582?mode=deep",
+    "questions_generated": false
+  }
+]
