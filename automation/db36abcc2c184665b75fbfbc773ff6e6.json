@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where referralFeePct = WAD - 1 trigger pullToken(loanToken, msg.sender, assets) -> repay(market, units=1, onBehalf) -> withdrawCollateral(...) -> safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets), violating the invariant that user funds must not be frozen outside valid protocol rules, causing scoped impact: the referral fee recipient receives nearly all pulled assets while repay reduces debt by only 1 unit, leaving the position unhealthy and collateral withdrawal reverting, permanently blocking the repay+withdraw path? Proof idea: fuzz referralFeePct in [WAD-1e12, WAD-1] and assert that units = assets - mulDivDown(assets, referralFeePct, WAD) > 0 and that the resulting repay is sufficient to make the position healthy before withdrawCollateral is called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f817820-4e95-40a2-a527-7d8821501b0a?mode=deep",
+    "timestamp": "2026-05-31 21:30:22.371030",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged attacker acting as referralFeeRecipient under a market with referralFeePct > 0 trigger pullToken -> repay -> withdrawCollateral -> safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets) where referralFeeRecipient is a contract that reverts on token receipt, violating the invariant that valid repay and collateral withdrawal paths must not be blocked, causing scoped impact: the entire bundler tx reverts after repay and collateral withdrawal logic executes, permanently blocking the user from using repayAndWithdrawCollateral? Proof idea: deploy a reverting ERC20 receiver as referralFeeRecipient and assert that repayAndWithdrawCollateral always reverts regardless of valid repay inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af210048-c237-45ac-8d10-6cb0a2696591?mode=deep",
+    "timestamp": "2026-05-31 21:30:34.407228",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where filledBuyerAssets is large and referralFeePct is close to WAD trigger touchMarket -> pullToken(loanToken, msg.sender, maxBuyerAssets) -> take loop -> withdrawCollateral loop -> mulDivDown(filledBuyerAssets, referralFeePct, WAD - referralFeePct) -> safeTransfer(loanToken, msg.sender, maxBuyerAssets - filledBuyerAssets - referralFeeAssets), violating the invariant that user funds must not be frozen, causing scoped impact: referralFeeAssets overflows or exceeds maxBuyerAssets - filledBuyerAssets causing an arithmetic underflow revert that permanently blocks the buy+withdraw path even when takes succeed? Proof idea: fuzz referralFeePct in [WAD/2, WAD-1] and filledBuyerAssets in [1, type(uint128).max] and assert maxBuyerAssets - filledBuyerAssets >= mulDivDown(filledBuyerAssets, referralFeePct, WAD - referralFeePct).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0d4286f0-365b-4947-bab0-8576e02296fe?mode=deep",
+    "timestamp": "2026-05-31 21:30:46.853315",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under a market where referralFeePct is close to WAD trigger supplyCollateral -> mulDivDown(targetSellerAssets, referralFeePct, WAD - referralFeePct) -> targetFilledSellerAssets = targetSellerAssets + referralFeeAssets, violating the invariant that user funds must not be frozen, causing scoped impact: referralFeeAssets overflows uint256 in the plain multiplication inside mulDivDown (x * y where x = targetSellerAssets and y = referralFeePct can exceed type(uint256).max), causing a panic revert that permanently blocks the sell path after collateral is supplied? Proof idea: fuzz targetSellerAssets > 1e18 and referralFeePct > WAD - 2 and assert mulDivDown(targetSellerAssets, referralFeePct, WAD - referralFeePct) does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_45f3a2da-6ddb-47ec-92fb-c7812bd6aa50?mode=deep",
+    "timestamp": "2026-05-31 21:31:00.145746",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where the settlement fee changes between touchMarket and take trigger touchMarket -> pullToken -> TakeAmountsLib.buyerAssetsToUnits(MIDNIGHT, id, offer, targetFilledBuyerAssets - filledBuyerAssets) -> take -> filledBuyerAssets accumulation -> require(filledBuyerAssets == targetFilledBuyerAssets, OutOfOffers()), violating the invariant that valid buy paths must not be blocked, causing scoped impact: the settlement fee used in TakeAmountsLib differs from the fee used in Midnight.take, causing actual buyerAssets to differ from targetFilledBuyerAssets, triggering OutOfOffers and permanently blocking the assets-target buy flow? Proof idea: set up a test where feeSetter changes settlementFee between the view call in TakeAmountsLib and the take execution, and assert filledBuyerAssets == targetFilledBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6380dbbf-5c94-42cf-a7cd-0a4c6d6573af?mode=deep",
+    "timestamp": "2026-05-31 21:31:13.449207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under a market where the settlement fee changes between touchMarket and take trigger touchMarket -> supplyCollateral -> TakeAmountsLib.sellerAssetsToUnits(MIDNIGHT, id, offer, targetFilledSellerAssets - filledSellerAssets) -> take -> filledSellerAssets accumulation -> require(filledSellerAssets == targetFilledSellerAssets, OutOfOffers()), violating the invariant that valid sell paths must not be blocked, causing scoped impact: the settlement fee used in TakeAmountsLib differs from the fee used in Midnight.take, causing actual sellerAssets to differ from targetFilledSellerAssets, triggering OutOfOffers and permanently blocking the assets-target sell flow? Proof idea: differential test between TakeAmountsLib.sellerAssetsToUnits view and actual Midnight.take sellerAssets output across settlement fee boundary changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3bf2a1bf-24a4-4ef0-81b3-baf70a5d5f3f?mode=deep",
+    "timestamp": "2026-05-31 21:31:27.734488",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where buyerPrice > WAD trigger touchMarket -> pullToken -> TakeAmountsLib.buyerAssetsToUnits(MIDNIGHT, id, offer, ...) which calls require(buyerPrice <= WAD, TickLib.PriceGreaterThanOne()), violating the invariant that valid buy paths must not be blocked, causing scoped impact: any offer with sellerPrice + settlementFee > WAD causes TakeAmountsLib to revert, permanently blocking the assets-target buy flow for all offers in that tick range? Proof idea: fuzz offer.tick and settlementFee such that tickToPrice(tick) + settlementFee > WAD and assert buyWithAssetsTargetAndWithdrawCollateral reverts with PriceGreaterThanOne.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3efe3cb7-c908-44e5-b964-578d5032926a?mode=deep",
+    "timestamp": "2026-05-31 21:31:41.136408",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under a market where offerPrice equals settlementFee (sellerPrice = 0) trigger touchMarket -> supplyCollateral -> TakeAmountsLib.sellerAssetsToUnits(MIDNIGHT, id, offer, targetFilledSellerAssets - filledSellerAssets) which computes targetSellerAssets.mulDivDown(WAD, sellerPrice) with sellerPrice = 0, violating the invariant that valid sell paths must not be blocked, causing scoped impact: division by zero in mulDivDown causes a panic revert, permanently blocking the sell flow for any offer at the settlement fee tick? Proof idea: set offer.tick such that tickToPrice(tick) == settlementFee and assert sellerAssetsToUnits reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b87caf6-04a4-45f9-84c0-079107e00ecb?mode=deep",
+    "timestamp": "2026-05-31 21:31:55.272224",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where an activated collateral oracle reverts trigger pullToken -> repay(market, units, onBehalf) -> withdrawCollateral(market, collateralIndex, assets, onBehalf, collateralReceiver) which calls isHealthy which calls IOracle(collateralParam.oracle).price() for all activated collaterals, violating the invariant that valid repay paths must not be blocked, causing scoped impact: a reverting oracle for any activated collateral causes withdrawCollateral to revert, permanently blocking the repay+withdraw bundler path even when the repay itself would succeed? Proof idea: deploy a reverting oracle for one of the taker's activated collaterals and assert repayAndWithdrawCollateral always reverts after repay succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_13fb0b1d-2f30-4015-9021-515b73975e6f?mode=deep",
+    "timestamp": "2026-05-31 21:32:10.196677",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where all offers are front-run and consumed trigger touchMarket -> pullToken(loanToken, msg.sender, maxBuyerAssets) -> take loop where all takes revert (caught) -> require(filledUnits == targetUnits, OutOfOffers()), violating the invariant that user funds must not be frozen, causing scoped impact: maxBuyerAssets is pulled from msg.sender but all takes fail due to front-running, causing OutOfOffers revert that rolls back the entire tx, but the user's flow is permanently blocked until new offers are available? Proof idea: front-run all offers in the takes array by consuming them via setConsumed(group, type(uint256).max, maker) and assert buyWithUnitsTargetAndWithdrawCollateral reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58148e95-dfe1-4b2b-8a39-b4a99c65f02f?mode=deep",
+    "timestamp": "2026-05-31 21:32:23.876679",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral / supplyCollateralAndSellWithUnitsTarget] Can an unprivileged attacker under a market trigger an empty takes[] array access at takes[0].offer.market.loanToken, violating the invariant that user funds must not be frozen, causing scoped impact: array out-of-bounds access at takes[0] causes a panic revert, permanently blocking the bundler flow for any caller that passes an empty takes array? Proof idea: call buyWithUnitsTargetAndWithdrawCollateral with takes = [] and assert it reverts with array out-of-bounds panic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d658f76e-dd85-4c2f-939a-7915e1bbe18f?mode=deep",
+    "timestamp": "2026-05-31 21:32:40.063244",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where the Permit2 nonce is front-run trigger pullToken(loanToken, msg.sender, assets, permit) where permit.kind == PermitKind.Permit2 and IPermit2(PERMIT2).permitTransferFrom(...) reverts because the nonce was already consumed, violating the invariant that valid repay paths must not be blocked, causing scoped impact: the Permit2 call has no try-catch unlike ERC2612, so a front-runner consuming the nonce permanently blocks the repay+withdraw flow until the user generates a new Permit2 signature? Proof idea: front-run the Permit2 nonce consumption and assert repayAndWithdrawCollateral reverts with Permit2 InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_003719e4-bb3e-4fac-a327-4578495f40b6?mode=deep",
+    "timestamp": "2026-05-31 21:32:55.028221",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where the loan token is USDT-like (reverts on approve(nonzero) when allowance is nonzero) trigger pullToken -> forceApproveMax(loanToken, MIDNIGHT) where allowance < type(uint96).max / 2 causing safeApprove(token, spender, 0) then safeApprove(token, spender, type(uint256).max), violating the invariant that valid repay paths must not be blocked, causing scoped impact: if the token reverts on approve(0) when allowance is already 0, or reverts on approve(max) for any reason, the entire repay+withdraw flow is permanently blocked? Proof idea: deploy a mock USDT that reverts on approve(0) when allowance == 0 and assert forceApproveMax reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70bbf70b-dc04-4001-a92f-99c33a39a31e?mode=deep",
+    "timestamp": "2026-05-31 21:33:09.528356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker under a market where the receiver is a contract that reverts on ERC20 receipt trigger supplyCollateral -> take loop -> require(filledUnits == targetUnits) -> mulDivDown(filledSellerAssets, referralFeePct, WAD) -> require(filledSellerAssets - referralFeeAssets >= minSellerAssets) -> safeTransfer(loanToken, referralFeeRecipient, referralFeeAssets) -> safeTransfer(loanToken, receiver, filledSellerAssets - referralFeeAssets), violating the invariant that valid sell paths must not be blocked, causing scoped impact: a reverting receiver permanently blocks the sell flow even when takes succeed and collateral is correctly supplied? Proof idea: deploy a reverting ERC20 receiver and assert supplyCollateralAndSellWithUnitsTarget always reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7838a191-cea4-48f4-a9b1-4b891b3fd6e7?mode=deep",
+    "timestamp": "2026-05-31 21:33:24.163502",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker under a market where filledSellerAssets < referralFeeAssets trigger take loop -> filledSellerAssets accumulation -> mulDivDown(filledSellerAssets, referralFeePct, WAD) -> require(filledSellerAssets - referralFeeAssets >= minSellerAssets, SellerAssetsTooLow()), violating the invariant that valid sell paths must not be blocked, causing scoped impact: if referralFeePct is near WAD and filledSellerAssets is small, referralFeeAssets >= filledSellerAssets causing arithmetic underflow in the subtraction, permanently blocking the sell flow? Proof idea: fuzz referralFeePct in [WAD/2, WAD-1] and filledSellerAssets in [1, 1000] and assert filledSellerAssets - mulDivDown(filledSellerAssets, referralFeePct, WAD) does not underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_efd7e22d-9b69-4be1-bca7-7dae34bbcdf7?mode=deep",
+    "timestamp": "2026-05-31 21:33:38.593370",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where collateralWithdrawals references a collateralIndex with a reverting oracle trigger touchMarket -> pullToken -> take loop (succeeds) -> withdrawCollateral(market, collateralIndex, assets, taker, collateralReceiver) which calls isHealthy which calls IOracle(collateralParam.oracle).price() for all activated collaterals, violating the invariant that valid buy+withdraw paths must not be blocked, causing scoped impact: a reverting oracle for any activated collateral causes withdrawCollateral to revert after takes succeed, permanently blocking the buy+withdraw bundler path? Proof idea: set up a market with two collaterals, activate both, make one oracle revert, and assert buyWithUnitsTargetAndWithdrawCollateral reverts after takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_48596419-b6c2-4afd-9964-608d983c4299?mode=deep",
+    "timestamp": "2026-05-31 21:33:54.174297",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithUnitsTarget / supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under a market where the taker already has 16 activated collaterals trigger supplyCollateral(market, collateralIndex, assets, taker) which calls setBit(collateralBitmap, collateralIndex) and require(countBits(newCollateralBitmap) <= MAX_COLLATERALS_PER_BORROWER, TooManyActivatedCollaterals()), violating the invariant that valid sell paths must not be blocked, causing scoped impact: TooManyActivatedCollaterals revert permanently blocks the collateral supply step, preventing the taker from borrowing through the bundler? Proof idea: activate 16 collaterals for the taker and assert supplyCollateralAndSellWithUnitsTarget reverts with TooManyActivatedCollaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_445cbf78-3ca0-4424-aeda-807649253fbe?mode=deep",
+    "timestamp": "2026-05-31 21:34:11.047308",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where ConsumableUnitsLib.consumableUnits returns 0 for all offers trigger touchMarket -> pullToken -> for loop where unitsToTake = min(targetUnits - filledUnits, takes[i].units, 0) = 0 for all i -> take(offer, ..., 0, ...) which is a no-op -> require(filledUnits == targetUnits, OutOfOffers()), violating the invariant that valid buy paths must not be blocked, causing scoped impact: all offers appear consumable but consumableUnits returns 0 (offer fully consumed), causing OutOfOffers and permanently blocking the buy flow? Proof idea: set consumed[maker][group] = offer.maxUnits for all offers and assert buyWithUnitsTargetAndWithdrawCollateral reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bdbbe7e3-08f3-4d9e-958a-dee45e068364?mode=deep",
+    "timestamp": "2026-05-31 21:34:25.496066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where onBehalf has zero debt trigger pullToken(loanToken, msg.sender, assets) -> repay(market, units, onBehalf) which calls position[id][onBehalf].debt -= toUint128(units) causing arithmetic underflow revert, violating the invariant that valid repay paths must not be blocked, causing scoped impact: if the taker's debt was fully repaid by another tx before the bundler call, the bundler tx reverts with underflow, permanently blocking the repay+withdraw flow and leaving the taker unable to withdraw collateral through the bundler? Proof idea: repay all debt directly on Midnight then call repayAndWithdrawCollateral and assert it reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74eb8c1d-468b-458e-b180-a9e2f753a528?mode=deep",
+    "timestamp": "2026-05-31 21:34:40.104158",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where units < actual debt but position remains unhealthy after repay trigger pullToken -> repay(market, units, onBehalf) -> withdrawCollateral(market, collateralIndex, assets, onBehalf, collateralReceiver) which calls isHealthy and reverts with UnhealthyBorrower, violating the invariant that valid repay+withdraw paths must not be blocked, causing scoped impact: the bundler does not verify that the repay amount is sufficient to make the position healthy before attempting collateral withdrawal, permanently blocking the flow when the user underestimates the required repay amount? Proof idea: fuzz units in [1, debt-1] and assert that withdrawCollateral reverts with UnhealthyBorrower when the position remains unhealthy after partial repay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78d3593f-2f19-4a20-aa42-b74af12c5b8a?mode=deep",
+    "timestamp": "2026-05-31 21:34:54.592514",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where rounding in TakeAmountsLib.buyerAssetsToUnits causes filledBuyerAssets to overshoot targetFilledBuyerAssets trigger touchMarket -> pullToken -> TakeAmountsLib.buyerAssetsToUnits(...) -> take -> filledBuyerAssets += resBuyerAssets where resBuyerAssets > targetFilledBuyerAssets - filledBuyerAssets_prev -> loop exits -> require(filledBuyerAssets == targetFilledBuyerAssets, OutOfOffers()), violating the invariant that valid buy paths must not be blocked, causing scoped impact: rounding up in buyerAssetsToUnits for sell offers (mulDivUp) causes actual buyerAssets to exceed the target, triggering OutOfOffers and permanently blocking the assets-target buy flow? Proof idea: fuzz offer.tick, settlementFee, and targetFilledBuyerAssets and assert filledBuyerAssets == targetFilledBuyerAssets after a single take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_df740872-326a-4756-98b3-54971e7038eb?mode=deep",
+    "timestamp": "2026-05-31 21:35:08.776512",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged taker under a market where rounding in TakeAmountsLib.sellerAssetsToUnits causes filledSellerAssets to overshoot targetFilledSellerAssets trigger touchMarket -> supplyCollateral -> TakeAmountsLib.sellerAssetsToUnits(...) -> take -> filledSellerAssets += resSellerAssets where resSellerAssets > targetFilledSellerAssets - filledSellerAssets_prev -> loop exits -> require(filledSellerAssets == targetFilledSellerAssets, OutOfOffers()), violating the invariant that valid sell paths must not be blocked, causing scoped impact: rounding in sellerAssetsToUnits causes actual sellerAssets to exceed the target, triggering OutOfOffers and permanently blocking the assets-target sell flow? Proof idea: fuzz offer.tick, settlementFee, and targetFilledSellerAssets and assert filledSellerAssets == targetFilledSellerAssets after a single take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31027697-acd6-4898-82c4-8311bacae350?mode=deep",
+    "timestamp": "2026-05-31 21:35:23.760808",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where takes[i].offer.market differs from takes[0].offer.market trigger require(IMidnight(MIDNIGHT).toId(takes[i].offer.market) == id, InconsistentMarket()) revert, violating the invariant that valid buy paths must not be blocked, causing scoped impact: if any offer in the takes array references a different market (e.g., due to a stale offer list), the InconsistentMarket revert permanently blocks the buy flow even when valid offers exist? Proof idea: construct a takes array where takes[1].offer.market differs from takes[0].offer.market and assert buyWithUnitsTargetAndWithdrawCollateral reverts with InconsistentMarket.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31dedeeb-7eba-40e2-86ab-60c33833c4e9?mode=deep",
+    "timestamp": "2026-05-31 21:35:39.312055",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where takes[i].offer.buy == true trigger require(!takes[i].offer.buy, InconsistentSide()) revert, violating the invariant that valid buy paths must not be blocked, causing scoped impact: if any offer in the takes array has the wrong side (buy=true instead of false), the InconsistentSide revert permanently blocks the buy flow even when valid sell offers exist? Proof idea: construct a takes array where takes[0].offer.buy == true and assert buyWithUnitsTargetAndWithdrawCollateral reverts with InconsistentSide.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4273a2a-564b-440e-b813-77e36b6f6933?mode=deep",
+    "timestamp": "2026-05-31 21:35:54.855574",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: repayAndWithdrawCollateral] Can an unprivileged taker under a market where referralFeeRecipient is address(0) and referralFeeAssets > 0 trigger pullToken -> repay -> withdrawCollateral -> safeTransfer(loanToken, address(0), referralFeeAssets) where SafeTransferLib.safeTransfer calls token.transfer(address(0), referralFeeAssets), violating the invariant that valid repay paths must not be blocked, causing scoped impact: tokens that revert on transfer to address(0) cause the entire repay+withdraw tx to revert, permanently blocking the flow when referralFeeRecipient is accidentally set to address(0)? Proof idea: deploy a token that reverts on transfer to address(0), set referralFeeRecipient = address(0) with referralFeePct > 0, and assert repayAndWithdrawCollateral reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_647a562f-b2cf-4801-82a0-8edc0837a097?mode=deep",
+    "timestamp": "2026-05-31 21:36:10.219837",
+    "report_generated": false
+  }
+]
