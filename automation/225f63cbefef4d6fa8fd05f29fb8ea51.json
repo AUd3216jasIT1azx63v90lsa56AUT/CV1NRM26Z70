@@ -1,0 +1,44 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's isRootCanceled check uses offer.maker as the key (not the signer), causing a behavior divergence where canceling a root for maker_A does not affect offers by maker_B even if they share the same root hash, confirming that root cancellation is correctly scoped per-maker but that two makers could independently sign the same root? Proof idea: have maker_A and maker_B both sign the same root, cancel it for maker_A, and assert isRatified still succeeds for maker_B's offer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09363f2a-64ac-42a5-8bbf-56355cf11da5?mode=deep",
+    "timestamp": "2026-05-31 22:50:25.332675",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's abi.decode of ratifierData does not validate that the decoded bytes32[] proof array has no trailing bytes (ABI encoding allows padding), causing a behavior divergence where ratifierData with extra trailing bytes is silently accepted without error? Proof idea: append extra bytes to a valid ratifierData encoding and assert isRatified still returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a43977f4-5fe8-41b6-b487-fd92ad2a917a?mode=deep",
+    "timestamp": "2026-05-31 22:50:37.379101",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's offerTreeTypeHash lookup uses a hardcoded lookup table (if-else chain) rather than a computed value, causing a behavior divergence where adding a new height (e.g., 21) would require a contract upgrade, and that the current maximum of 20 is a non-obvious protocol constraint not enforced at the offer creation level? Proof idea: attempt isRatified with proof.length == 21 and assert TreeTooHigh revert; confirm no on-chain check prevents a maker from signing a root for a height-21 tree.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_92a46b9f-bcf1-4d98-9c1b-a3fd5e44cff2?mode=deep",
+    "timestamp": "2026-05-31 22:50:49.991001",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's Offer memory parameter causes a full memory copy of the offer struct (including the market with its collateralParams array) on every call, causing unnecessary gas cost from memory allocation and copying that could be reduced by using calldata for the offer parameter? Proof idea: differential test between memory and calldata offer parameter; assert gas savings for offers with large collateralParams arrays.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0347888b-9733-47c4-a0cf-17a3ac2fc3c3?mode=deep",
+    "timestamp": "2026-05-31 22:51:02.847389",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's bytes memory ratifierData parameter causes a full memory copy of the ratifierData on every call, causing unnecessary gas cost from memory allocation and copying that could be reduced by using calldata for the ratifierData parameter? Proof idea: differential test between memory and calldata ratifierData parameter; assert gas savings for large ratifierData.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aaf808c1-4238-4483-84a3-31ac59608611?mode=deep",
+    "timestamp": "2026-05-31 22:51:16.637328",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's isRootCanceled check is performed after the isLeaf Merkle proof verification, meaning that for a canceled root with a valid proof, the full O(proof.length) Merkle traversal is wasted before the cheap storage read reverts, and that swapping the order would save gas proportional to proof.length for all canceled-root take attempts? Proof idea: fuzz proof.length in [1..20] with a pre-canceled root, measure gas, and assert that a version with isRootCanceled checked first saves gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_543aecd7-667d-4c49-9d43-49993458243d?mode=deep",
+    "timestamp": "2026-05-31 22:51:29.759765",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Low'] [Function: isRatified] Can an unprivileged taker, under the precondition that the offer is valid and the root is not canceled, trigger the call sequence [Midnight.take -> EcrecoverRatifier.isRatified] and observe that the function's structHash computation uses keccak256(abi.encode(offerTreeTypeHash, root)) where abi.encode pads the two bytes32 values to 64 bytes, while an assembly-based approach using mstore/keccak256 would achieve the same result with less memory overhead, causing a minor gas inefficiency compared to the assembly pattern used in HashLib.hashNode? Proof idea: differential test between abi.encode and assembly-based structHash computation; assert gas savings.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_123c8d87-b520-4f38-9fa8-21c57e286059?mode=deep",
+    "timestamp": "2026-05-31 22:51:42.849401",
+    "report_generated": false
+  }
+]
