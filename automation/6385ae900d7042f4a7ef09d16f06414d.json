@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / domain separator] Can an unprivileged taker, after a hard fork that changes block.chainid, trigger Midnight.take with a pre-fork EcrecoverRatifier-signed offer, causing isRatified to compute a new domain separator via block.chainid (line 40) that no longer matches the signed digest, while Midnight.sol markets remain valid under INITIAL_CHAIN_ID, violating the invariant that valid maker offers must remain fillable as long as the market is live, causing scoped impact: fund freeze for makers who hold active positions and rely on EcrecoverRatifier-signed offers to roll or exit? Proof idea: fork mainnet, change block.chainid via vm.chainId, attempt take with pre-fork ratifierData, assert InvalidSignature or Unauthorized revert while midnight.marketState[id].tickSpacing > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_99dfbd85-e6a9-4d97-a2e4-efad1253bc4a?mode=deep",
+    "timestamp": "2026-05-31 19:05:29.427043",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot] Can an unprivileged authorized operator, who was granted authorization in Midnight via setIsAuthorized for an unrelated purpose (e.g., repaying debt), call cancelRoot(maker, root) on EcrecoverRatifier because cancelRoot checks IMidnight(MIDNIGHT).isAuthorized(maker, msg.sender) (line 28), permanently invalidating all of the maker's signed offer roots without the maker's consent, violating the invariant that gates and ratifiers must not be bypassable and that user funds must not be frozen outside valid protocol rules, causing scoped impact: permanent DoS of maker's offer strategy and potential fund freeze if the maker cannot fill their own offers? Proof idea: deploy market, maker authorizes operator for repay, operator calls cancelRoot for maker's active root, assert isRootCanceled[maker][root] == true and subsequent take reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee94efbd-05ce-4bc1-a185-601662058bbc?mode=deep",
+    "timestamp": "2026-05-31 19:05:41.343020",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot / isAuthorized scope] Can an unprivileged smart-contract operator, authorized by a maker via Midnight.setIsAuthorized for position management, call EcrecoverRatifier.cancelRoot on behalf of the maker for ALL roots in a single multicall, because the authorization check in cancelRoot (line 28) uses the same coarse-grained isAuthorized mapping that governs all Midnight operations, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: bulk cancellation of all maker offer roots in one transaction, freezing the maker's ability to have any EcrecoverRatifier-signed offer filled? Proof idea: maker authorizes router contract, router calls cancelRoot in a loop via multicall, assert all roots canceled and all subsequent takes revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0e2854b-04cf-4edb-8519-8627a6211195?mode=deep",
+    "timestamp": "2026-05-31 19:05:53.666017",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / authorization revocation] Can an unprivileged maker inadvertently invalidate all in-flight offers signed by a delegated operator by calling Midnight.setIsAuthorized(operator, false, maker), because isRatified checks IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) at call time (line 44) rather than at signing time, violating the invariant that valid offers must not be cancelled by actions unrelated to the offer itself, causing scoped impact: user loss when a maker revokes authorization for one purpose and unknowingly cancels all operator-signed offers that takers were about to fill? Proof idea: maker authorizes operator, operator signs root, maker revokes authorization, taker calls take, assert Unauthorized revert despite valid signature.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0af0d704-fcbf-49ee-b55a-8c23ccd33b88?mode=deep",
+    "timestamp": "2026-05-31 19:06:06.419590",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / re-authorization replay] Can an unprivileged operator, whose authorization was previously revoked by the maker, have their old signatures become valid again if the maker re-authorizes any address (including the same operator) via Midnight.setIsAuthorized, because isRatified checks authorization state at call time (line 44) with no per-signature nonce or timestamp binding, violating the invariant that cancelled or expired offers cannot be filled, causing scoped impact: stale operator signatures from a revoked authorization period become fillable again, potentially executing offers the maker believed were permanently invalidated? Proof idea: maker authorizes operator A, operator signs root R, maker revokes A, maker re-authorizes A for different purpose, taker fills offer using old root R, assert take succeeds unexpectedly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c29d8129-e45c-4ff1-954d-e4f586875636?mode=deep",
+    "timestamp": "2026-05-31 19:06:20.269360",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / ecrecover address(0)] Can an unprivileged taker craft a ratifierData with a degenerate signature (v=27, r=0, s=0) for an offer where offer.maker == address(0), causing ecrecover to return address(0) (line 42), which then passes the require(_signer != address(0)) check (line 43) and the require(_signer == offer.maker) check (line 44) simultaneously, violating the invariant that ratifier approval must bind the correct maker, causing scoped impact: unauthorized offer ratification for a zero-address maker position? Proof idea: create offer with maker=address(0), craft zero signature, call isRatified via prank(address(midnight)), assert CALLBACK_SUCCESS returned without valid signature.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_948c64cb-0396-4f64-ab51-32093e8a1781?mode=deep",
+    "timestamp": "2026-05-31 19:06:32.920212",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / domain separator cross-instance replay] Can an unprivileged taker replay a signature generated for one EcrecoverRatifier deployment against a different EcrecoverRatifier deployment on the same chain, because the domain separator (line 40) uses only block.chainid and address(this) with no name or version field, violating the invariant that signatures must bind to the specific ratifier contract, causing scoped impact: a signature intended for ratifier A is accepted by ratifier B if both are deployed on the same chain and the maker has authorized both? Proof idea: deploy two EcrecoverRatifier instances pointing to the same Midnight, sign root for ratifier A, submit ratifierData to ratifier B via take with offer.ratifier=ratifierB, assert whether isRatified accepts or rejects.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1dec3a2d-562c-4218-95f4-1f4a62d57f3e?mode=deep",
+    "timestamp": "2026-05-31 19:06:46.689406",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / Midnight address not in domain] Can an unprivileged taker use a signature generated for an EcrecoverRatifier deployed against Midnight instance A to ratify an offer on Midnight instance B, because the domain separator (line 40) includes address(this) (the ratifier address) but not the MIDNIGHT address, and if the same EcrecoverRatifier is reused across multiple Midnight deployments, violating the invariant that ratifier approval must bind the correct market and protocol instance, causing scoped impact: cross-Midnight signature replay enabling unauthorized offer fills on a different protocol instance? Proof idea: deploy two Midnight contracts, deploy one EcrecoverRatifier pointing to Midnight A, sign root, attempt take on Midnight B using same ratifierData, assert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e6310c9b-29cb-409b-9f69-7c03ad06aadc?mode=deep",
+    "timestamp": "2026-05-31 19:06:59.890842",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / proof.length > 20 ordering] Can an unprivileged taker submit ratifierData with proof.length > 20, causing HashLib.isLeaf to execute fully (line 37) before HashLib.offerTreeTypeHash(proof.length) reverts with TreeTooHigh (line 39), wasting significant gas in the isLeaf loop without any security benefit, violating the invariant that low-cost DoS must not block take, causing scoped impact: a taker or griever can force expensive reverts on any take that uses EcrecoverRatifier by providing oversized proofs? Proof idea: fuzz proof.length from 21 to 256, call take, measure gas consumed before revert, assert gas cost scales with proof.length.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b509cc1-0de7-4dca-84af-3642d8ae4b7e?mode=deep",
+    "timestamp": "2026-05-31 19:07:12.705807",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / leafIndex range check with large proof] Can an unprivileged taker submit ratifierData with proof.length == 256, causing the leafIndex range check require(leafIndex >> proof.length == 0) in HashLib.isLeaf (line 58) to always pass for any leafIndex value because Solidity right-shifts by >= 256 bits produce 0 for uint256, violating the invariant that the Merkle proof must correctly bind the offer to its position in the tree, causing scoped impact: any leafIndex value passes the range check for 256-element proofs, potentially allowing proof manipulation? Proof idea: call isLeaf with proof.length=256 and leafIndex=type(uint256).max, assert LeafIndexOutOfRange is NOT reverted, then verify offerTreeTypeHash(256) reverts with TreeTooHigh before the issue is exploitable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00c38f4d-da71-40a7-8aa6-909b3d65b2ea?mode=deep",
+    "timestamp": "2026-05-31 19:07:25.188298",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot / irreversibility] Can an unprivileged authorized operator permanently freeze a maker's offer strategy by calling cancelRoot once, because isRootCanceled[maker][root] is set to true (line 29) with no mechanism to reset it, and the maker must generate and sign an entirely new Merkle root to resume operations, violating the invariant that user funds must not be frozen outside valid protocol rules, causing scoped impact: if the maker is a smart contract that cannot re-sign (e.g., a multisig with a slow signing process), the fund freeze is extended or permanent? Proof idea: maker authorizes operator, operator cancels root, assert no function exists to set isRootCanceled[maker][root] = false, assert maker must create new root to resume.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e929092-35a9-4025-b61d-6c32f50de0b7?mode=deep",
+    "timestamp": "2026-05-31 19:07:39.123100",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot / authorization timing] Can an unprivileged attacker who is authorized by the maker after a root is signed call cancelRoot for that pre-existing root, because cancelRoot checks current authorization state (line 28) with no restriction on when the authorization was granted relative to when the root was signed, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: a newly authorized operator can retroactively cancel roots signed before the authorization was granted, disrupting the maker's historical offer commitments? Proof idea: maker signs root at T=0, maker authorizes operator at T=1, operator calls cancelRoot at T=2, assert root is canceled despite operator having no knowledge of the root at signing time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_73b274f4-0782-4b44-aa37-cb79335dce24?mode=deep",
+    "timestamp": "2026-05-31 19:07:52.328527",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / signature malleability] Can an unprivileged taker produce a second valid signature for the same EIP-712 digest by flipping the s component to its complement (s' = secp256k1_order - s) and adjusting v, because ecrecover (line 42) accepts both low-s and high-s signatures, violating the invariant that each signed root should correspond to exactly one canonical signature, causing scoped impact: a taker can produce an alternative ratifierData that passes isRatified for the same offer, potentially confusing off-chain monitoring or signature deduplication systems? Proof idea: sign root, compute malleable (v', r, s') where s' = N - s, call isRatified with both signatures, assert both return CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_012d62cf-e129-42e6-80ef-8b63d78dc115?mode=deep",
+    "timestamp": "2026-05-31 19:08:05.231702",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / proof.length == 0 single-offer tree] Can an unprivileged taker use a zero-length proof where the offer hash itself is the root, because HashLib.isLeaf with empty proof returns leafHash == root (line 63), and offerTreeTypeHash(0) returns a valid typehash (line 24), meaning a single offer can be ratified without any Merkle tree structure, violating the invariant that the EIP-712 type structure must match the actual tree depth, causing scoped impact: if the maker signed a root for a height-0 tree but intended a height-N tree, the offer is ratifiable with a different EIP-712 type commitment? Proof idea: sign root using offerTreeTypeHash(0), submit with empty proof and leafIndex=0, assert isRatified returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa3bbbf2-6237-445c-b1a5-5234aa854c34?mode=deep",
+    "timestamp": "2026-05-31 19:08:18.774883",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / offer field mutation] Can an unprivileged taker modify any field of the Offer struct passed to Midnight.take (e.g., offer.maxUnits, offer.tick, offer.expiry) and still pass isRatified, because HashLib.hashOffer (line 37) hashes all offer fields and the Merkle proof would fail for any mutation, violating the invariant that ratifier approval must bind the correct offer terms, causing scoped impact: confirming that offer field integrity is enforced end-to-end, or identifying any field omitted from hashOffer that could allow silent mutation? Proof idea: fuzz each Offer field independently, mutate one field, assert isRatified reverts with InvalidProof for all mutations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_236b0424-1a07-4cfa-8a6f-65cb9d98fbde?mode=deep",
+    "timestamp": "2026-05-31 19:08:32.607340",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / callbackData hash] Can an unprivileged taker substitute a different callbackData in the Offer struct while keeping the same ratifierData, because hashOffer hashes callbackData as keccak256(offer.callbackData) (HashLib.sol line 130), meaning any change to callbackData changes the offer hash and invalidates the proof, violating the invariant that the maker's callback instructions must be immutable once signed, causing scoped impact: confirming callbackData integrity or identifying if empty vs non-empty callbackData creates hash collisions? Proof idea: sign offer with callbackData=hex'', attempt take with callbackData=hex'01', assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4300bfc4-1129-418a-b18c-fb9d20fc58c8?mode=deep",
+    "timestamp": "2026-05-31 19:08:46.154016",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / market parameter binding] Can an unprivileged taker submit an offer with a different rcfThreshold or gate address than what was signed, because hashMarket includes rcfThreshold, enterGate, and liquidatorGate (HashLib.sol lines 109-113), causing the Merkle proof to fail, violating the invariant that the maker's market terms must be immutable once signed, causing scoped impact: confirming that market parameter substitution is blocked, or identifying any market field omitted from hashMarket that could allow silent substitution? Proof idea: sign offer for market with rcfThreshold=X, submit take with rcfThreshold=Y, assert InvalidProof revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_233b4a97-5fba-4b37-9c49-ab5f3c85673c?mode=deep",
+    "timestamp": "2026-05-31 19:08:59.753537",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot / multicall atomicity] Can an unprivileged authorized operator call cancelRoot inside a Midnight.multicall transaction that also calls take in the same block, racing to cancel the root after the take's isRatified check but before the take completes, because cancelRoot is a separate external call and multicall uses delegatecall (Midnight.sol line 213), violating the invariant that partial state updates must not be exploitable, causing scoped impact: if cancelRoot can be interleaved with take via multicall, the maker's root could be canceled mid-execution? Proof idea: construct multicall with [take, cancelRoot] and [cancelRoot, take] orderings, assert only the ordering where cancelRoot precedes take causes RootCanceled revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5bb08903-09a9-4357-8b37-641d1727e5f9?mode=deep",
+    "timestamp": "2026-05-31 19:09:12.745312",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / not-Midnight caller guard] Can an unprivileged attacker call EcrecoverRatifier.isRatified directly (not via Midnight.take), causing the require(msg.sender == MIDNIGHT) check (line 34) to revert with NotMidnight, confirming the guard is effective, but also testing whether a contract that impersonates Midnight's address via CREATE2 could bypass this check, violating the invariant that ratifier approval must only be granted through the legitimate Midnight contract, causing scoped impact: unauthorized ratification outside the take flow? Proof idea: call isRatified directly, assert NotMidnight revert; then test if a CREATE2-deployed contract at the MIDNIGHT address could call isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d7e7efa-521c-4bc5-87dd-abfede3085d5?mode=deep",
+    "timestamp": "2026-05-31 19:09:25.317648",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / authorized signer scope] Can an unprivileged authorized operator sign a Merkle root containing offers with arbitrary parameters (different market, tick, maxUnits, expiry) on behalf of the maker, because isRatified only checks IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) (line 44) without any restriction on what the operator is allowed to sign, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: an operator authorized for one purpose (e.g., repaying debt) can sign offers committing the maker to lend at any price in any market? Proof idea: maker authorizes operator for repay, operator signs root with offer at unfavorable tick, taker fills offer, assert maker's position is updated with operator-chosen terms.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b429c193-0ced-4fa9-af5c-32854c730c9b?mode=deep",
+    "timestamp": "2026-05-31 19:09:38.751252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / Merkle tree second-preimage] Can an unprivileged taker construct a Merkle proof where an internal node hash is submitted as a leaf hash, exploiting the fact that hashNode (HashLib.sol line 67) and hashOffer produce the same 32-byte output type, violating the invariant that the Merkle tree must not allow second-preimage attacks, causing scoped impact: a taker could forge a proof for a non-existent offer by treating an internal node as a leaf? Proof idea: compute hashNode(A, B) = C, attempt to use C as a leaf hash with a proof that reconstructs the root, assert whether isLeaf accepts or rejects this second-preimage.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8acd3fbf-89c4-4d97-9532-05a19666f239?mode=deep",
+    "timestamp": "2026-05-31 19:09:52.164776",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / duplicate leaf attack] Can an unprivileged taker construct a Merkle tree with two identical leaves (same offer hash), submit a proof for the duplicate leaf at index 1 using the same sibling as index 0, violating the invariant that each offer in a tree must be uniquely identifiable by its leaf index, causing scoped impact: if two identical offers exist in the tree, the same ratifierData could be used to fill both, potentially allowing double-fill of the same logical offer? Proof idea: build tree with offers[0] == offers[1], compute root, submit proof for index 0 and index 1 with same ratifierData, assert both takes succeed and check consumed accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a68cfa9-3104-4c18-bb30-ada9c7d7db6a?mode=deep",
+    "timestamp": "2026-05-31 19:10:04.486847",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / ratifier not authorized in Midnight] Can an unprivileged maker create an offer with offer.ratifier = address(ecrecoverRatifier) but forget to call Midnight.setIsAuthorized(address(ecrecoverRatifier), true, maker), causing Midnight.take to revert with RatifierUnauthorized (Midnight.sol line 355) before isRatified is ever called, violating the invariant that the ratifier authorization flow must be clearly documented and not silently fail, causing scoped impact: user loss when a maker distributes signed offers but fails to authorize the ratifier, making all offers permanently unfillable until the maker takes an on-chain action? Proof idea: deploy market, maker signs root, maker does NOT call setIsAuthorized for ecrecoverRatifier, taker calls take, assert RatifierUnauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80d9346c-3fcb-427c-9675-cf6c59b0a314?mode=deep",
+    "timestamp": "2026-05-31 19:10:18.078874",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: isRatified / ratifier authorization revocation] Can an unprivileged maker revoke the EcrecoverRatifier's authorization in Midnight via setIsAuthorized(address(ecrecoverRatifier), false, maker), causing all of the maker's EcrecoverRatifier-signed offers to become permanently unfillable because Midnight.take checks isAuthorized[offer.maker][offer.ratifier] (line 355) before calling isRatified, violating the invariant that valid offers must remain fillable until expiry or explicit cancellation, causing scoped impact: a maker who revokes ratifier authorization for one purpose inadvertently cancels all their signed offers? Proof idea: maker authorizes ecrecoverRatifier, signs root, maker revokes ecrecoverRatifier authorization, taker calls take, assert RatifierUnauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d98d771c-0628-49cb-a0e8-905fc38ad292?mode=deep",
+    "timestamp": "2026-05-31 19:10:31.318604",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: cancelRoot / self-cancellation DoS] Can an unprivileged maker accidentally cancel their own active root by calling cancelRoot(maker, root) directly, because cancelRoot allows maker == msg.sender (line 28) with no confirmation mechanism, violating the invariant that user funds must not be frozen outside valid protocol rules, causing scoped impact: a maker who calls cancelRoot by mistake permanently invalidates all offers in that Merkle tree with no undo mechanism? Proof idea: maker calls cancelRoot for active root, assert isRootCanceled[maker][root] == true, assert subsequent take reverts with RootCanceled, assert no function exists to reverse the cancellation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d82db28-8f97-45fd-82eb-033d6049d2a3?mode=deep",
+    "timestamp": "2026-05-31 19:10:45.710020",
+    "report_generated": false
+  }
+]
