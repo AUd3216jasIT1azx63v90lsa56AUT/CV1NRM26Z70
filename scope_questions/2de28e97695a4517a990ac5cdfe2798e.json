@@ -1,0 +1,122 @@
+[
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4ee7e814-13af-4d98-9054-0be25e52950e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_60705c99-714f-43a0-a804-e397b0d30589?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_820218d0-cd72-4433-b2de-c35491685769?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ae705261-d10c-4e9f-b785-17f9f1454974?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d0b271e6-8d39-415f-b94d-d0877e169a63?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6090736d-a558-4fc8-b84f-cf114c9d617a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9ff903e4-c750-4c66-b35c-0183cb6d0bc1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_052780e8-3787-4d5b-8abc-cf9b4a0d9cde?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8e93bd7b-d7b4-45e7-8a4a-d28891664d63?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_a6010918-396b-4f97-8c43-5d483e88453a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_9f9a521f-9d1f-4fc2-ab82-9d89ad1c2ac6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f4aa0570-1608-4235-91c7-91cebcadc973?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_53087ba7-e6e9-442d-80ed-1f22346968f3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b1b640d5-a601-4ad8-8964-840ec0513809?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8fd8e2f7-066f-4aa1-a126-82b7ea504c54?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_31f0c86f-a9b4-4297-ad8d-1e2435bc37ad?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e63a92cc-3090-4a20-b752-2e908b243031?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_505decab-18bc-43a9-ad4f-864e7ae847bd?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_07371432-b467-4471-9ecf-e8a0c002f242?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_82919841-aa3d-4952-8522-f4522ce7de5f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_5de8c860-ac14-4a53-8d0c-d513aa99ac67?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6e19da0c-4447-4a61-8c8e-0ca2c61666cb?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d5d6b978-8615-4461-a3c3-57e8812f63be?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Bad debt creation or undercollateralized position creation through incorrect health checks, oracle handling, LLTV/LIF math, maturity logic, or collateral bitmap accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_dad07ac4-9e26-45e4-8dcd-39112c97a559?mode=deep",
+    "questions_generated": false
+  }
+]
