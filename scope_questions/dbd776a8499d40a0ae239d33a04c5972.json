@@ -1,0 +1,127 @@
+[
+  {
+    "question": "'File Name: src/Midnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ee96624f-9d0a-46e3-b5b4-7625f47e46a9?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/ICallbacks.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e533c621-1386-42e3-a5f7-5a73eb11d927?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IERC20.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d91f799c-0fc6-48f4-88cb-0240a813507b?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IGate.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_590770f5-f4b6-4376-bd11-46a7f8ac714a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IMidnight.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3cbda3ba-cdf7-45c9-8d3a-f026964d847a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IOracle.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b8663c24-e937-4736-ac99-2fd4d4f0d74f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/interfaces/IRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_11623967-a7c1-4b77-974f-adc583f8d46d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/ConstantsLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_02e3abf7-4c99-49a6-9cd1-32cd51e14897?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/EventsLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6f0177a7-aa8d-4566-a9bd-ef93f9c6000a?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/IdLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4ccbf2d1-5150-4e7a-b415-b1c9153f4257?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/SafeTransferLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_0098d163-5762-44e8-9ea3-6171fe36a5b3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f8403980-c6f8-494d-bd41-e02e925bc148?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/libraries/UtilsLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7e792718-b1dd-4807-8d6e-14fe69a2c9a2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_4251b33e-86d5-4f27-9507-7f2b64816510?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_79fb2b45-cd8e-4c85-ad43-565f867ebbb3?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ac697645-080e-4863-b6a8-e51f8c5802cb?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_90e237cb-bb1f-47af-90f8-0ae0685f88d2?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e3f68810-6b53-40a7-9026-8f34b4ffd894?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7b9ee5e8-c6f6-45d9-baa0-1a140417cee1?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f53e86a4-00f8-49c4-8d72-e5fb776a44f5?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c05b52da-7f61-4a75-ac13-2d9a5436105c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3cb271ef-d1ab-4787-854c-7d924470666f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_157f8e69-1381-46d1-9967-22c1104a9a37?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_14e577b6-7c6d-4edb-8e9b-a38d7ceab485?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_7473c786-c9fe-47a1-b147-c1f3c8313224?mode=deep",
+    "questions_generated": false
+  }
+]
