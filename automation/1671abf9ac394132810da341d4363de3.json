@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with proof.length > 20 to trigger HashLib.TreeTooHigh revert inside isRatified, causing a DoS on all takes against a valid ratified root, violating the invariant that valid offers must remain fillable, causing scoped impact: fund freeze where legitimate offers cannot be taken? Proof idea: fuzz proof.length > 20, assert take reverts with TreeTooHigh.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c0fa7e0-7d08-4463-99e7-7c178a63246d?mode=deep",
+    "timestamp": "2026-05-31 22:20:52.549650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with leafIndex >= 2^proof.length to trigger HashLib.LeafIndexOutOfRange revert, causing a DoS on takes, violating the invariant that valid offers must remain fillable, causing scoped impact: fund freeze? Proof idea: fuzz leafIndex and proof.length, assert revert when leafIndex >> proof.length != 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d41966e8-0673-47f0-80dc-f5f7ac74801f?mode=deep",
+    "timestamp": "2026-05-31 22:21:04.475441",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a proof array containing duplicate sibling hashes, causing HashLib.isLeaf to compute an unexpected root that happens to match a ratified root, violating the invariant that ratifier approval must bind the correct offer, causing scoped impact: unauthorized fill? Proof idea: fuzz proof with duplicate entries, assert isLeaf returns false for all invalid proofs with duplicate siblings.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_baf3cbba-5621-47ec-a645-d53b92cacce3?mode=deep",
+    "timestamp": "2026-05-31 22:21:16.859884",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with ABI-encoded trailing bytes appended after the valid (root, leafIndex, proof) tuple, causing abi.decode to succeed but with unexpected decoded values, violating the invariant that ratifier approval must bind the correct offer, causing scoped impact: unauthorized fill? Proof idea: append extra bytes to valid ratifierData, assert abi.decode behavior is deterministic and extra bytes are ignored.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a4794fb-573d-4f23-beca-7ad5f930f088?mode=deep",
+    "timestamp": "2026-05-31 22:21:29.675079",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, bytes32(0), true) to ratify the zero root, then supply ratifierData with root=bytes32(0) and an empty proof for any offer whose hashOffer equals bytes32(0), violating the invariant that ratifier approval must bind the correct offer, causing scoped impact: unauthorized fill? Proof idea: ratify zero root, fuzz offer fields, assert hashOffer never returns bytes32(0) and isLeaf with empty proof only passes when leafHash==root.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_206c867f-87ba-45e0-a86b-53c7c89a7e88?mode=deep",
+    "timestamp": "2026-05-31 22:21:43.355183",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, then use midnight.multicall to atomically take the offer and call another function that modifies gate state, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: unauthorized credit/debt increase in a gated market? Proof idea: batch take with gate-state-modifying call in multicall, assert gate check is enforced independently in each take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c182beeb-5ce9-4b03-9fc0-a1717be13b6f?mode=deep",
+    "timestamp": "2026-05-31 22:21:56.543013",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged CALLBACK RECEIVER during midnight.take's onBuy/onSell callback call setIsRootRatified to ratify a new root, then trigger a nested take using that root within the same callback, violating the invariant that partial state updates must not be exploitable via reentrancy, causing scoped impact: unauthorized credit/debt increase in a restricted market? Proof idea: implement a callback that calls setIsRootRatified and nested take, assert the nested take's ratifier check uses the updated isRootRatified state and gate checks still apply.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_817e52ef-e8f6-4b0c-94bb-2b66f1823752?mode=deep",
+    "timestamp": "2026-05-31 22:22:09.291378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers, then have the maker revoke the operator's authorization via midnight.setIsAuthorized(operator, false, maker), but the root remains ratified and any taker can still fill those offers (since isRootRatified is not cleared on authorization revocation), violating the invariant that revoked authorizations must prevent future unauthorized actions, causing scoped impact: unauthorized fill after authorization revocation? Proof idea: revoke operator authorization, assert isRootRatified[maker][root] remains true and take still succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70415f98-ddb6-4288-b0cc-264427d3f7ad?mode=deep",
+    "timestamp": "2026-05-31 22:22:22.024280",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call midnight.setIsAuthorized(address(setterRatifier), false, maker) to deauthorize SetterRatifier, then call setIsRootRatified(maker, root, true) which succeeds (operator is still authorized by maker), but subsequent takes fail with RatifierUnauthorized because setterRatifier is no longer authorized by maker, causing a DoS, violating the invariant that valid offers must remain fillable, causing scoped impact: fund freeze? Proof idea: deauthorize setterRatifier via operator, ratify root, assert take reverts with RatifierUnauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_522a54d8-d5a4-4bfd-86a1-0bd160663692?mode=deep",
+    "timestamp": "2026-05-31 22:22:34.919354",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker exploit the fact that SetterRatifier does not include chain ID in isRootRatified storage, allowing a root ratified on chain A to be replayed on chain B if the same SetterRatifier is deployed at the same address via CREATE2, violating the invariant that ratifier approval must not be replayable across chains, causing scoped impact: unauthorized fill on a different chain? Proof idea: simulate cross-chain deployment with same SetterRatifier address, ratify root on chain A, assert take succeeds on chain B with same root and same offer hash.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_968461d3-2e60-43d4-bea3-4ef659ea0bcf?mode=deep",
+    "timestamp": "2026-05-31 22:22:47.691555",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with liquidatorGate, then take those offers to create debt positions, and subsequently call midnight.liquidate as a non-whitelisted liquidator (msg.sender not approved by liquidatorGate), violating the invariant that liquidator gate must not be bypassed through alternate paths, causing scoped impact: unauthorized liquidation in a gated market? Proof idea: create gated market, ratify offers, create debt, attempt liquidation as non-whitelisted liquidator, assert liquidate reverts with LiquidatorGatedFromLiquidating.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_48593bcf-6976-4fd8-a39a-b643b663a264?mode=deep",
+    "timestamp": "2026-05-31 22:23:02.387469",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with liquidatorGate, then attempt to bypass the liquidatorGate by calling liquidate via an authorized operator of a whitelisted liquidator, exploiting the fact that liquidate checks msg.sender (not onBehalf), violating the invariant that liquidator gate must not be bypassed, causing scoped impact: unauthorized liquidation? Proof idea: assert liquidate always checks canLiquidate(msg.sender) and there is no onBehalf parameter that could substitute a whitelisted address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_02635236-ddbe-4ac3-9567-f83b4a412294?mode=deep",
+    "timestamp": "2026-05-31 22:23:16.551635",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatifier / take] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing sell offers (debt-increasing), then take those offers as taker in a market post-maturity where debt increase is forbidden, violating the invariant that debt must not increase after maturity, causing scoped impact: unauthorized debt increase post-maturity? Proof idea: warp to post-maturity, ratify sell offer root, attempt take as seller, assert take reverts with CannotIncreaseDebtPostMaturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_857c7436-969c-4d79-a767-a8bc4d7ac6d0?mode=deep",
+    "timestamp": "2026-05-31 22:23:31.300349",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers with maxUnits=type(uint256).max and group=bytes32(0), allowing unlimited fills against the maker's position across multiple takes, violating the invariant that offers must not be overfilled, causing scoped impact: unauthorized unlimited credit/debt increase? Proof idea: ratify root with maxUnits=type(uint256).max, fuzz fill amounts across multiple takes, assert consumed[maker][group] tracking prevents overfill.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bac50094-bea3-4596-8a60-23d1b4939171?mode=deep",
+    "timestamp": "2026-05-31 22:23:44.265599",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers with maxAssets > 0, then take those offers with units that cause buyerAssets or sellerAssets to exceed maxAssets due to rounding in mulDivDown/mulDivUp near the boundary, violating the invariant that offers must not be overfilled, causing scoped impact: offer overfill? Proof idea: fuzz units near maxAssets/price boundary, assert consumed tracking prevents overfill even with rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d9818df0-77ba-458f-86e0-aec10279c060?mode=deep",
+    "timestamp": "2026-05-31 22:23:57.772176",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers spanning multiple markets (gated and ungated), where the same root is used to fill offers in both markets, violating the invariant that gate checks must apply per-market, causing scoped impact: unauthorized credit/debt increase in a gated market via cross-market root reuse? Proof idea: construct multi-market offer tree, ratify root, assert gate checks are enforced independently per market in each take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2b77791-9195-4e54-ae9b-58f0e5fe4014?mode=deep",
+    "timestamp": "2026-05-31 22:24:11.168671",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers with start > block.timestamp (not yet started), then take those offers before the start time, violating the invariant that offers must not be filled before their start time, causing scoped impact: unauthorized fill of a not-yet-started offer? Proof idea: ratify root with future start, attempt take before start, assert take reverts with OfferNotStarted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58f7d1ae-c42d-455e-a6af-0ceb6a54aa3a?mode=deep",
+    "timestamp": "2026-05-31 22:24:24.563588",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers with a shared group, then fill multiple offers in the group to exceed the group budget, violating the invariant that consumption group budget cannot be exceeded across offers, causing scoped impact: offer overfill via group budget bypass? Proof idea: ratify offers with shared group, fill multiple offers, assert consumed[maker][group] is correctly accumulated and capped.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_335ff2f2-1822-4e4c-b131-a3b6f17b2a36?mode=deep",
+    "timestamp": "2026-05-31 22:24:38.152118",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with LLTV=1 (no overcollateralization), creating debt positions that immediately realize bad debt upon liquidation, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: unauthorized bad debt creation via ratified offers? Proof idea: ratify offers in LLTV=1 market, create debt, liquidate, assert bad debt accounting is correct and not double-counted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cf66d081-7ccb-4e3e-acdd-27aed61ec9b8?mode=deep",
+    "timestamp": "2026-05-31 22:24:51.898504",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, where the gate's canIncreaseCredit/canIncreaseDebt checks the buyer/seller address (not msg.sender), and the operator is whitelisted but the actual buyer/seller is not, violating the invariant that enter gate must restrict credit/debt increase for the correct account, causing scoped impact: unauthorized credit/debt increase? Proof idea: whitelist operator but not buyer/seller, assert gate checks buyer/seller address in take, not msg.sender.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d972c4d-62b0-48bf-873b-662f851f4787?mode=deep",
+    "timestamp": "2026-05-31 22:25:05.831893",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers, then have the maker's authorization of SetterRatifier expire or be revoked by another authorized operator, causing a race condition where the root is ratified but the ratifier is no longer authorized, violating the invariant that valid offers must remain fillable, causing scoped impact: fund freeze? Proof idea: revoke setterRatifier authorization via another operator, assert take reverts with RatifierUnauthorized even though root is ratified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_26adec06-8661-497a-af6a-30d643b37552?mode=deep",
+    "timestamp": "2026-05-31 22:25:18.574704",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER exploit the ordering of checks in midnight.take (ratifier called before gate checks at lines 355-406) to pass ratification for an offer in a gated market, observe that isRatified is view and has no side effects, but confirm that a gate revert after ratifier success rolls back all state, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: partial state corruption if gate revert does not fully roll back? Proof idea: assert isRatified is view with no state changes, confirm gate revert causes full transaction revert with no partial state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3403691-3c97-48d6-afd1-337d1d1e46f1?mode=deep",
+    "timestamp": "2026-05-31 22:25:32.399116",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with liquidatorGate, then use a liquidate callback (onLiquidate) to call liquidate again on a different borrower, bypassing the liquidatorGate check on msg.sender for the nested call, violating the invariant that liquidator gate must not be bypassed through callback paths, causing scoped impact: unauthorized liquidation? Proof idea: implement onLiquidate callback that calls liquidate, assert liquidatorGate checks msg.sender in all liquidate calls including nested ones.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75e83e1b-83bc-4cd0-a38c-72d8f2d255c8?mode=deep",
+    "timestamp": "2026-05-31 22:25:47.043541",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers, then call midnight.setConsumed(group, type(uint256).max, maker) on behalf of maker to cancel all offers in the group, then call setIsRootRatified(maker, root, true) again to re-ratify the same root, violating the invariant that cancelled offers cannot be filled, causing scoped impact: unauthorized replay of cancelled offers? Proof idea: cancel group via setConsumed, re-ratify root, assert take reverts with ConsumedUnits or ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6edf20c0-39b8-4a0d-97da-62cdd8c893d5?mode=deep",
+    "timestamp": "2026-05-31 22:26:00.714730",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing offers in a market with enterGate, where the gate's canIncreaseCredit returns true for the maker (buyer) but the gate's canIncreaseDebt returns false for the taker (seller), and the operator takes the offer as the seller, violating the invariant that enter gate must restrict debt increase, causing scoped impact: unauthorized debt increase in a gated market? Proof idea: configure gate to block canIncreaseDebt for seller, ratify buy offer, take as non-whitelisted seller, assert take reverts with SellerGatedFromIncreasingDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d7c75827-283d-43d8-84d2-9897596663f9?mode=deep",
+    "timestamp": "2026-05-31 22:26:14.269671",
+    "report_generated": false
+  }
+]
