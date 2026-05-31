@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, after a maker's offer is partially filled, resubmit the same (sig, root, leafIndex, proof) tuple in a second call to take() under the precondition that the maker has not called cancelRoot() and consumed[maker][group] < maxUnits, triggering take() -> IRatifier.isRatified() -> ecrecover() with the identical digest a second time, violating the invariant that a ratifier approval must bind to a single fill event and not be reusable across fills, causing scoped impact: offer replay allows taker to drain maker's group budget across multiple transactions without a fresh signature? Proof idea: fuzz (units1, units2) where units1 + units2 <= maxUnits, assert that two sequential take() calls with identical ratifierData both succeed and that consumed[maker][group] == units1 + units2.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_715ba8da-62d9-42ee-a9c5-d32af1c38581?mode=deep",
+    "timestamp": "2026-05-31 19:41:14.433975",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged taker replay a valid (sig, root, proof) across two different Midnight market instances under the precondition that the same EcrecoverRatifier contract is authorized as ratifier in both markets and the offer struct differs only in offer.market, triggering take() on market B with a signature originally produced for market A, violating the invariant that ratifier approval must bind the correct market, causing scoped impact: unauthorized fill of an offer in a market the maker never intended? Proof idea: deploy two markets with identical collateral/loan params but different maturity; sign offer for market A; attempt take() on market B with same ratifierData; assert RatifierFail or InvalidProof is thrown.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_723de1ca-cc3d-4e74-b36d-e0fd1acbbd43?mode=deep",
+    "timestamp": "2026-05-31 19:41:26.435032",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker exploit the EIP-712 domain separator using block.chainid instead of INITIAL_CHAIN_ID under the precondition of a hard fork that changes block.chainid, triggering isRatified() to compute a new domain separator while Midnight.toId() still uses INITIAL_CHAIN_ID, violating the invariant that domain separation must be consistent with market identity, causing scoped impact: signatures valid on the pre-fork chain become invalid post-fork (fund freeze for makers with open offers) while market IDs remain unchanged, creating a permanent desync between offer authorization and market state? Proof idea: unit test that sets block.chainid != INITIAL_CHAIN_ID and asserts that isRatified() rejects a previously valid signature while the market ID is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a4aa64ff-3401-454e-a366-c855c43ef4bc?mode=deep",
+    "timestamp": "2026-05-31 19:41:39.903310",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker forge a valid ratification by passing ecrecover() a malleable signature (flipped s value, adjusted v) under the precondition that the maker's original signature has s in the upper half of the curve order, triggering ecrecover() to return the same signer address for the malleated (v', r, s') tuple, violating the invariant that each distinct signature bytes value should correspond to a unique authorization event, causing scoped impact: signature malleability allows a different bytes representation to pass isRatified() without maker re-signing, enabling replay with a modified ratifierData blob? Proof idea: take a valid (v, r, s), compute (v^1, r, n-s), assert isRatified() accepts both and that the signer address matches.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_47a2a362-f842-4d52-9466-72dcc4fe1ebe?mode=deep",
+    "timestamp": "2026-05-31 19:41:52.489864",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker pass ratifierData with an empty proof array (proof.length == 0) and a root equal to HashLib.hashOffer(offer) under the precondition that the maker has ratified that root (or it is not canceled), triggering isLeaf() to return true because currentHash == root when proof is empty and leafHash == root, violating the invariant that a Merkle proof must commit to a tree structure and not degenerate to a single-leaf trivial proof, causing scoped impact: any offer whose hash equals a ratified root can be filled without a real Merkle tree, bypassing the intended multi-offer tree structure? Proof idea: set root = hashOffer(offer), leafIndex = 0, proof = [], sign root, assert isRatified() returns CALLBACK_SUCCESS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_54d40c5e-8e2d-4150-bab2-b70b51051b29?mode=deep",
+    "timestamp": "2026-05-31 19:42:06.352325",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / Midnight.setIsAuthorized] Can an unprivileged authorized operator desync the ratifier authorization state under the precondition that operator is authorized by maker (isAuthorized[maker][operator] == true), triggering operator to call setIsAuthorized(ecrecoverRatifier, true, maker) to authorize the ratifier, then immediately call setIsAuthorized(operator, false, maker) to deauthorize itself, leaving the ratifier authorized but the operator removed, violating the invariant that authorization changes must reflect maker intent, causing scoped impact: operator can permanently authorize a ratifier on behalf of maker without maker's ongoing consent, enabling future offer fills the maker did not intend? Proof idea: state test asserting that after operator self-removes, isAuthorized[maker][ecrecoverRatifier] remains true and take() succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c16ef30-2ff1-4747-9744-a6cf429fe912?mode=deep",
+    "timestamp": "2026-05-31 19:42:19.543895",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.cancelRoot / Midnight.setIsAuthorized] Can an unprivileged authorized operator block a maker's ability to cancel a root under the precondition that operator is authorized by maker, triggering operator to call setIsAuthorized(operator, false, maker) (self-deauthorize) before the maker can call cancelRoot(), violating the invariant that makers must always be able to cancel their own offers, causing scoped impact: if maker's key is unavailable and operator self-removes, the maker cannot cancel the root through the operator, leaving open offers permanently fillable? Proof idea: authorize operator, have operator self-deauthorize, assert maker can still call cancelRoot() directly and that no path exists for operator to block maker's direct cancelRoot() call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_178732de-9c9b-4c4d-b5fb-595397527c72?mode=deep",
+    "timestamp": "2026-05-31 19:42:33.529982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker exploit the absence of a nonce in the EIP-712 signed struct under the precondition that a maker signs a root containing offer O with maxUnits=N, the offer is fully consumed (consumed[maker][group] == N), and the maker then calls setConsumed(group, 0, maker) to reset consumption, triggering take() with the original ratifierData to re-fill the offer from zero, violating the invariant that cancelled or exhausted offers cannot be refilled, causing scoped impact: consumption reset combined with signature reuse allows offer to be filled beyond the maker's original intent? Proof idea: fill offer to maxUnits, call setConsumed to reset, attempt take() with same ratifierData, assert ConsumedUnits or that the second fill succeeds unexpectedly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_404a4f4d-45ab-4bdb-8712-291fc16534ed?mode=deep",
+    "timestamp": "2026-05-31 19:42:47.815077",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker pass address(0) as the recovered signer by crafting (v=27, r=0, s=0) or other degenerate signature values under the precondition that ecrecover() returns address(0) for invalid inputs, triggering the require(_signer != address(0)) check to revert with InvalidSignature(), but then testing whether any edge-case (v, r, s) combination causes ecrecover() to return a non-zero address that happens to equal offer.maker or an authorized address, violating the invariant that only the maker's key can produce a valid signature, causing scoped impact: unauthorized offer fill if a degenerate signature recovers to a valid address? Proof idea: fuzz (v, r, s) space for inputs where ecrecover returns offer.maker without knowledge of the private key.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_085bb25f-c11e-42f6-b4a6-975bc4bffe1f?mode=deep",
+    "timestamp": "2026-05-31 19:43:02.055905",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker exploit the minimal EIP-712 domain (no name, no version fields) to produce a cross-protocol signature collision under the precondition that another deployed contract uses the same EIP712_DOMAIN_TYPEHASH = keccak256('EIP712Domain(uint256 chainId,address verifyingContract)') with the same chainId and verifyingContract address, triggering isRatified() to accept a signature originally produced for that other protocol's struct that happens to encode to the same digest, violating the invariant that EIP-712 domain separation must prevent cross-protocol replay, causing scoped impact: a signature from a different protocol authorizes an unintended offer fill? Proof idea: deploy a second contract with the same domain typehash and identical address, craft a struct that produces the same digest, assert isRatified() accepts it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ea28b95-f69b-4e75-b6aa-df8b0af93022?mode=deep",
+    "timestamp": "2026-05-31 19:43:16.959174",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: Midnight.take / EcrecoverRatifier.isRatified] Can an unprivileged taker fill an offer at block.timestamp == offer.expiry under the precondition that the offer's expiry is set to exactly the current block timestamp, triggering take() to pass the require(block.timestamp <= offer.expiry) check (equality allowed), then calling isRatified() which does not independently check expiry, violating the invariant that expired offers must not be fillable, causing scoped impact: an offer intended to expire at a specific second is fillable in the same second it expires, potentially allowing a fill the maker considered expired? Proof idea: set offer.expiry = block.timestamp, call take(), assert it succeeds; then advance 1 second and assert OfferExpired.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e780e298-2da0-400d-b2b0-353c4afc6fef?mode=deep",
+    "timestamp": "2026-05-31 19:43:30.889665",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: Midnight.take / EcrecoverRatifier.isRatified] Can an unprivileged taker fill an offer where offer.start == offer.expiry == block.timestamp under the precondition that the block timestamp equals both the start and expiry of the offer, triggering take() to pass both require(block.timestamp >= offer.start) and require(block.timestamp <= offer.expiry) simultaneously, violating the invariant that an offer with zero validity window should not be fillable, causing scoped impact: a maker who sets start == expiry intending a zero-window offer can still have it filled in the exact block? Proof idea: set start = expiry = block.timestamp, call take(), assert success or revert and document the boundary behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7560dbd0-415c-41d0-9d56-db0a682ff3c0?mode=deep",
+    "timestamp": "2026-05-31 19:43:44.494300",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker use a Merkle proof with leafIndex >= 2^proof.length under the precondition that the isLeaf() function checks leafIndex >> proof.length == 0 but a crafted leafIndex with high bits set could pass if proof.length is large enough, triggering isLeaf() to traverse the proof using the wrong left/right ordering, violating the invariant that the Merkle proof must uniquely identify the leaf position, causing scoped impact: a taker could prove membership of a different leaf (a different offer) using a manipulated leafIndex, authorizing an offer the maker did not include in the tree? Proof idea: fuzz (leafIndex, proof) pairs where leafIndex has bits set beyond proof.length boundary and assert isLeaf() correctly rejects them.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71fb6532-8eda-4552-bed4-625b513298ac?mode=deep",
+    "timestamp": "2026-05-31 19:43:59.262105",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker construct two different (leafIndex, proof) pairs that both prove the same offer hash is a leaf in the same root under the precondition that the Merkle tree has duplicate internal nodes or the proof path is ambiguous, triggering isLeaf() to return true for both proofs, violating the invariant that a Merkle proof must uniquely bind an offer to a position in the tree, causing scoped impact: second-preimage attack on the Merkle tree allows a taker to prove an offer is at multiple positions, potentially enabling fills with different consumed-amount accounting? Proof idea: construct a tree with duplicate leaves, generate two valid proofs for the same leaf hash at different indices, assert both pass isLeaf().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6cea60f3-02aa-4d1c-aa37-61cf3d8bb103?mode=deep",
+    "timestamp": "2026-05-31 19:44:13.729832",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: SetterRatifier.setIsRootRatified / SetterRatifier.isRatified] Can an unprivileged authorized operator re-enable a previously disabled root under the precondition that operator is authorized by maker (isAuthorized[maker][operator] == true) and the maker had previously called setIsRootRatified(maker, root, false) to disable a root, triggering operator to call setIsRootRatified(maker, root, true) to re-enable it, violating the invariant that a maker's cancellation of offer authorization must be permanent and not reversible by a third party, causing scoped impact: operator re-enables a root the maker explicitly disabled, allowing fills of offers the maker intended to cancel? Proof idea: maker disables root, operator re-enables it, assert take() succeeds with the re-enabled root.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0310bf3-c973-42ce-8ee3-76bd930e86d3?mode=deep",
+    "timestamp": "2026-05-31 19:44:28.502884",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: SetterRatifier.isRatified / Midnight.take] Can an unprivileged taker fill an offer using SetterRatifier after the maker's authorization of the ratifier has been revoked under the precondition that isAuthorized[maker][setterRatifier] was set to false after the root was ratified, triggering take() to revert at require(isAuthorized[offer.maker][offer.ratifier]) with RatifierUnauthorized(), but testing whether the authorization check in take() and the root check in SetterRatifier are evaluated in the correct order and cannot be bypassed via multicall, violating the invariant that ratifier deauthorization must immediately prevent all fills, causing scoped impact: stale ratifier authorization allows fills after maker revokes? Proof idea: ratify root, deauthorize ratifier, attempt take(), assert RatifierUnauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44399774-c75d-47bf-8c49-28da3b2ede1c?mode=deep",
+    "timestamp": "2026-05-31 19:44:41.479503",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / Midnight.multicall] Can an unprivileged attacker use multicall to atomically authorize a ratifier, fill an offer, and deauthorize the ratifier under the precondition that the attacker is an authorized operator of the maker, triggering multicall([setIsAuthorized(ratifier, true, maker), take(offer, ...), setIsAuthorized(ratifier, false, maker)]) in a single transaction, violating the invariant that ratifier authorization must reflect a stable maker intent and not be transiently set for a single fill, causing scoped impact: transient ratifier authorization via multicall allows fills the maker never persistently authorized? Proof idea: encode the three-call multicall, execute it, assert take() succeeds and ratifier is deauthorized after.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_614217a0-eb2f-4623-be7c-da96694d78a1?mode=deep",
+    "timestamp": "2026-05-31 19:44:55.092259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker exploit the fact that the EIP-712 struct hash signs the Merkle root (not the individual offer) under the precondition that a maker signs a root R containing offers O1 and O2, and the maker intends to cancel O1 by calling cancelRoot(maker, R), triggering cancelRoot() to cancel the entire root R including O2, violating the invariant that individual offer cancellation should be possible without canceling all offers in the same tree, causing scoped impact: root-level granularity of cancellation forces makers to cancel all offers in a tree to cancel one, creating a DoS on the remaining valid offers? Proof idea: sign root with two offers, cancel root, assert both offers are uncancellable and that no per-offer cancellation path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e07aaaee-cf57-4ba9-91d9-64cfdd2f4df0?mode=deep",
+    "timestamp": "2026-05-31 19:45:08.216807",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker pass a ratifierData where proof.length > 20 under the precondition that offerTreeTypeHash() reverts with TreeTooHigh() for height > 20, triggering isRatified() to revert before checking the signature, violating the invariant that invalid ratifier data should produce a clean RatifierFail error rather than a revert that could be confused with other errors, causing scoped impact: a taker can cause take() to revert with TreeTooHigh instead of RatifierFail, potentially confusing off-chain monitoring or error handling in integrating contracts? Proof idea: pass proof array of length 21, assert take() reverts with TreeTooHigh() propagated through isRatified().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f156659-10e3-4a50-90e6-0fb38d72a9dd?mode=deep",
+    "timestamp": "2026-05-31 19:45:22.162071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker exploit the view modifier on isRatified() to observe the ratification check result without state changes under the precondition that isRatified() is view and can be called directly (not through Midnight), triggering a direct call to EcrecoverRatifier.isRatified() from an address other than MIDNIGHT to revert with NotMidnight(), but testing whether the view function can be staticcalled from a callback context to leak information about offer validity without triggering the NotMidnight guard, violating the invariant that ratifier checks must only be performed in the context of a legitimate take(), causing scoped impact: information leakage about offer validity enables front-running or griefing? Proof idea: staticcall isRatified() from a non-Midnight address, assert NotMidnight revert; then test from within a callback context.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7b72ba88-e904-4e6b-b2a6-15ce26fe0598?mode=deep",
+    "timestamp": "2026-05-31 19:45:35.439466",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged taker fill an offer where offer.ratifier is set to a contract that always returns CALLBACK_SUCCESS without any signature check under the precondition that the maker has authorized this trivial ratifier (isAuthorized[maker][trivialRatifier] == true), triggering take() to call trivialRatifier.isRatified() which returns CALLBACK_SUCCESS unconditionally, violating the invariant that ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group, causing scoped impact: a maker who accidentally authorizes a permissive ratifier exposes all their offers to unauthorized fills? Proof idea: deploy a ratifier that always returns CALLBACK_SUCCESS, authorize it, attempt take() with any offer struct, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81c3b815-04d3-4926-95a6-80cffed7216b?mode=deep",
+    "timestamp": "2026-05-31 19:45:49.502406",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker exploit the fact that the signed digest does not include the taker address or the fill amount under the precondition that a maker signs a root containing an offer with maxUnits=1000, triggering any taker (not just the intended one) to fill any amount up to maxUnits using the same signature, violating the invariant that ratifier approval should bind the correct taker and fill amount, causing scoped impact: any address can fill the offer for any amount up to maxUnits using the maker's signature, enabling front-running or unintended counterparty fills? Proof idea: sign offer as maker, have a different address call take() with the same ratifierData, assert it succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4381ecf8-1edf-4f69-a931-e286a641fc2f?mode=deep",
+    "timestamp": "2026-05-31 19:46:02.819354",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged attacker exploit the absence of a salt or nonce field in the Offer struct's EIP-712 hash under the precondition that a maker wants to create two distinct offers with identical parameters (same market, tick, group, maxUnits, etc.) but different intended fill windows, triggering HashLib.hashOffer() to produce the same hash for both offers, violating the invariant that each offer must have a unique identity to prevent confusion between distinct maker intents, causing scoped impact: two structurally identical offers cannot be distinguished in the Merkle tree, so canceling one cancels both and fills of one count against the other's consumption? Proof idea: create two offers with identical fields, assert hashOffer() returns the same value, verify that consumed[maker][group] is shared.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc6bd340-806d-4946-aa9a-126187bbf223?mode=deep",
+    "timestamp": "2026-05-31 19:46:16.150495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.cancelRoot / Midnight.isAuthorized] Can an unprivileged attacker grief a maker by front-running a take() with a cancelRoot() call under the precondition that the attacker is an authorized operator of the maker (isAuthorized[maker][attacker] == true), triggering attacker to call cancelRoot(maker, root) in the same block as a legitimate taker's take(), causing take() to revert with RootCanceled(), violating the invariant that authorized operators must not be able to grief makers by canceling roots at will, causing scoped impact: authorized operator can DoS all fills from a given root by front-running with cancelRoot()? Proof idea: authorize attacker, submit take() and cancelRoot() in same block with attacker front-running, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b39b63eb-e297-4209-b142-980497577ee7?mode=deep",
+    "timestamp": "2026-05-31 19:46:30.440175",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker exploit the fact that isRatified() checks isAuthorized[offer.maker][_signer] at call time (not at signing time) under the precondition that a signer was authorized at signing time but deauthorized before the take(), triggering take() to call isRatified() which calls IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) and returns false, causing RatifierFail, violating the invariant that a signed offer should remain valid until explicitly canceled by the maker, causing scoped impact: deauthorizing a signing key retroactively invalidates all outstanding signed offers without the maker calling cancelRoot(), creating an unintended offer cancellation mechanism? Proof idea: sign offers with delegated key, deauthorize key, assert all signed offers become unfillable without explicit root cancellation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c8de990-96cd-4f7f-bb33-402e299184aa?mode=deep",
+    "timestamp": "2026-05-31 19:46:44.745396",
+    "report_generated": false
+  }
+]
