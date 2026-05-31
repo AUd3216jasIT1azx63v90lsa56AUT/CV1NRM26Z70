@@ -22,5 +22,29 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dae70549-646a-4bd8-9fea-bc30e92bba74?mode=deep",
     "timestamp": "2026-05-31 22:54:29.134559",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / hasCredit / _updatePosition ordering] Can an unprivileged taker under preconditions where the buyer has existing credit and debt simultaneously trigger take() calling _updatePosition for the buyer only if hasCredit(id, buyer) || units > buyerPos.debt, violating the invariant that position updates (slashing) must be applied before any credit/debt modification, causing scoped impact: if _updatePosition is skipped for a buyer with stale lastLossFactor, the buyer's credit is modified without applying the pending slash, allowing the buyer to retain more credit than they are entitled to after a bad debt event? Proof idea: realize bad debt, then take with a buyer who has credit but units <= buyerPos.debt, assert buyer's credit is correctly slashed before the take modifies it.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_18937a94-728b-437f-9ec0-fde8d3e9d940?mode=deep",
+    "timestamp": "2026-05-31 23:42:43.910014",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / sellerCreditDecrease / _updatePosition] Can an unprivileged taker under preconditions where the seller has credit and a stale lastLossFactor trigger take() calling _updatePosition for the seller only if hasCredit(id, seller), violating the invariant that the seller's credit must be slashed before computing sellerCreditDecrease = min(units, sellerPos.credit), causing scoped impact: if the seller's credit is slashed after sellerCreditDecrease is computed, the seller's credit is decremented by the pre-slash amount, potentially underflowing or leaving the seller with negative effective credit? Proof idea: realize bad debt, then take with a seller who has credit, assert sellerCreditDecrease uses the post-slash credit value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5f847bb-df28-45b7-a333-b6b10450883e?mode=deep",
+    "timestamp": "2026-05-31 23:42:56.193667",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: maxLif / LIQUIDATION_CURSOR_LOW / LIQUIDATION_CURSOR_HIGH / WAD] Can an unprivileged market creator under preconditions where lltv = LLTV_8 = WAD trigger touchMarket() validating maxLif == maxLif(WAD, LIQUIDATION_CURSOR_LOW) or maxLif(WAD, LIQUIDATION_CURSOR_HIGH), where maxLif(WAD, cursor) = mulDivDown(WAD, WAD, WAD - mulDivDown(cursor, 0, WAD)) = mulDivDown(WAD, WAD, WAD) = WAD, violating the invariant that for LLTV=1 the LIF must be exactly 1 (no incentive), causing scoped impact: if maxLif is computed as anything other than WAD for LLTV=1, liquidators receive an unintended incentive or the market creation reverts incorrectly? Proof idea: assert maxLif(WAD, LIQUIDATION_CURSOR_LOW) == WAD and maxLif(WAD, LIQUIDATION_CURSOR_HIGH) == WAD.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_286c2f21-a453-4eda-91bf-cb4cb48530b9?mode=deep",
+    "timestamp": "2026-05-31 23:43:09.056901",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / WAD / multicall / totalUnits invariant] Can an unprivileged taker under preconditions where multicall batches multiple take() calls in a single transaction trigger a sequence where totalUnits is updated multiple times within the same transaction, violating the invariant that totalUnits must equal the sum of all position credits plus continuousFeeCredit at the end of each transaction, causing scoped impact: intermediate totalUnits values are used in lossFactor computations within the same multicall, producing incorrect lossFactor updates that corrupt lender credit accounting? Proof idea: multicall two takes that both realize bad debt, assert final totalUnits and lossFactor are consistent with sequential application.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a914771e-7be5-431f-97ce-e78497f2ea9b?mode=deep",
+    "timestamp": "2026-05-31 23:43:21.919628",
+    "report_generated": false
   }
 ]
