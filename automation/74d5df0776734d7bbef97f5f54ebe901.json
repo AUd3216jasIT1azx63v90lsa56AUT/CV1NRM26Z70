@@ -1,0 +1,32 @@
+[
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: touchMarket collateralParams loop + maxLif validation] Can an unprivileged market creator under the precondition that touchMarket validates maxLif for each collateral by calling maxLif(lltv, LIQUIDATION_CURSOR_LOW) and maxLif(lltv, LIQUIDATION_CURSOR_HIGH) (two mulDivDown calls per collateral) call touchMarket with 128 collaterals to force 256 mulDivDown computations in the creation loop, violating the invariant that market creation gas must not be weaponizable, causing scoped impact: gas griefing of the first user to interact with a newly created 128-collateral market? Proof idea: measure gas of touchMarket maxLif validation for collateralParams.length in [1, 64, 128].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_844e9360-4057-4c26-840e-dfcc1d9d73d2?mode=deep",
+    "timestamp": "2026-05-31 20:05:46.128530",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall (delegatecall loop) + memory expansion] Can an unprivileged attacker under the precondition that multicall uses delegatecall and each call can allocate large memory (e.g., via large calldata or returndata) call multicall([take(offer_with_large_callbackData)] * N) to force N delegatecall invocations each expanding memory, violating the invariant that multicall must not allow quadratic memory expansion gas costs, causing scoped impact: OOG or gas griefing via memory expansion in multicall? Proof idea: fuzz callbackData size and N and assert gas for multicall([take(large_callbackData)]*N).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad023588-5606-4bd3-9438-bb5c03fd85cc?mode=deep",
+    "timestamp": "2026-05-31 20:05:58.057378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate while loop + collateralBitmap with bit 127 set] Can an unprivileged borrower under the precondition that the liquidate bitmap loop uses msb() which returns 127 for bit 127 and market.collateralParams[127] must exist (requiring MAX_COLLATERALS = 128 collaterals in the market) activate collateral at index 127 in a 128-collateral market to verify that the liquidate loop correctly accesses market.collateralParams[127] without out-of-bounds access, violating the invariant that collateral index from bitmap must always be a valid index in market.collateralParams, causing scoped impact: revert or incorrect liquidation if bitmap index exceeds collateralParams length? Proof idea: fuzz collateral activation at index 127 in a 128-collateral market and assert liquidate succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5cb14ae3-a172-48ba-adea-cddf6b401ce1?mode=deep",
+    "timestamp": "2026-05-31 20:06:10.680662",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall + withdraw + repay (withdrawable storage contention)] Can an unprivileged user under the precondition that withdraw decrements marketState[id].withdrawable and repay increments it and multicall is unbounded call multicall([repay(market, 1, borrower, address(0), ''), withdraw(market, 1, lender, receiver)] * N) for large N to force 2N reads and writes to marketState[id].withdrawable in a single transaction, violating the invariant that withdrawable must equal sum of repaid units minus withdrawn units at all times, causing scoped impact: accounting desync or gas griefing? Proof idea: invariant test asserting withdrawable == expected after any multicall sequence of repay/withdraw.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0bd9202-7d1e-42aa-9b1b-b0ad0f14741e?mode=deep",
+    "timestamp": "2026-05-31 20:06:23.355072",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/ConstantsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: MidnightBundles forceApproveMax loop] Can an unprivileged taker under the precondition that forceApproveMax is called once per collateral in collateralSupplies[] and each call may perform two approve() calls (reset to 0 then set to max) call supplyCollateralAndSellWithUnitsTarget with collateralSupplies.length = N for large N to force up to 2N approve() calls, violating the invariant that bundler approval management must not be unbounded in gas, causing scoped impact: gas griefing or OOG for any borrower supplying many collaterals via the bundler? Proof idea: fuzz collateralSupplies.length and assert gas for N=128.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_08f57e80-8d02-4da7-bc34-e42de9f3e1ec?mode=deep",
+    "timestamp": "2026-05-31 20:06:37.398033",
+    "report_generated": false
+  }
+]
