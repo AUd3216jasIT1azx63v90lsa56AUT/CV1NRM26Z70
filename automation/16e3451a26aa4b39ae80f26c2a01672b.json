@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged front-runner under the precondition that Alice has broadcast a signed Authorization{authorizer=Alice, authorized=Bob, isAuthorized=true, nonce=N, deadline=T} submit that exact signature before Alice's intended relayer, consuming nonce N, so that Alice's own submission reverts with InvalidNonce(), causing a nonce desync that forces Alice to re-sign with nonce N+1 while Bob remains unauthorized? Proof idea: fuzz (privateKey, deadline, nonce) and assert that a second caller submitting the same (authorization, signature) tuple always reverts with InvalidNonce after the first submission succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f3b649d-b3e1-42f4-a177-6ea2c3063dea?mode=deep",
+    "timestamp": "2026-05-31 20:24:30.917996",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker under the precondition that a valid Authorization{isAuthorized=false, nonce=N} has been signed by Alice to revoke Bob, front-run Alice's revocation by submitting a previously captured Authorization{isAuthorized=true, nonce=N-1} (already consumed), then submit a freshly crafted Authorization{isAuthorized=true, nonce=N+1} signed by Bob (who is still authorized at the time of signing), granting Bob permanent authorization after Alice intended to revoke him? Proof idea: state-transition test asserting that after Alice's revocation tx lands, isAuthorized[Alice][Bob] == false regardless of Bob's prior authorized-signer status.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58787a86-bdb3-48a9-9fdc-123f08be042b?mode=deep",
+    "timestamp": "2026-05-31 20:24:42.748105",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / IMidnight.isAuthorized] Can an unprivileged delegated signer B, under the precondition that isAuthorized[A][B] == true on Midnight, sign an Authorization{authorizer=A, authorized=C, isAuthorized=true, nonce=currentNonce[A]} and submit it to EcrecoverAuthorizer, thereby granting C authorization over A's positions without A's direct consent, violating the invariant that only A or A's explicitly authorized agents can change A's isAuthorized mapping? Proof idea: unit test asserting that after B submits such an authorization, isAuthorized[A][C] == true and A's nonce increments, then verify whether A intended this transitive grant.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_47407d2c-7b89-4858-9e20-a626cbc698c6?mode=deep",
+    "timestamp": "2026-05-31 20:24:55.095197",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker under the precondition that block.timestamp == authorization.deadline submit a valid Authorization at exactly the deadline block (since the check is block.timestamp <= authorization.deadline, inclusive), while the authorizer believed the signature expired at that timestamp, causing an unexpected authorization to be set after the intended expiry? Proof idea: fuzz deadline values around block.timestamp and assert that submissions at deadline == block.timestamp succeed while the authorizer's off-chain model treats them as expired.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5fb81e95-ae88-4bd7-8d4b-2ff5b616af03?mode=deep",
+    "timestamp": "2026-05-31 20:25:07.918545",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker under the precondition that a signed Authorization with deadline=type(uint256).max is captured, replay it indefinitely across any future block as long as the nonce matches, since there is no maximum deadline cap in EcrecoverAuthorizer, violating the invariant that stale authorizations should not persist forever? Proof idea: fuzz (deadline, block.timestamp) pairs and assert that deadline=type(uint256).max always passes the Expired() check regardless of block.timestamp.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_94585871-c640-4fd1-a5a3-83cd3871ae24?mode=deep",
+    "timestamp": "2026-05-31 20:25:20.737982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / EIP712_DOMAIN_TYPEHASH] Can an unprivileged attacker under the precondition that a second EcrecoverAuthorizer is deployed at a different address on the same chain, replay a signature originally created for the first EcrecoverAuthorizer on the second one, given that the domain separator includes address(this) but the signer may have signed for the wrong verifyingContract? Proof idea: differential test deploying two EcrecoverAuthorizer instances and asserting that a signature valid for instance A is rejected by instance B.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_342d7b06-c245-4b1d-8035-24e8f9e5ff94?mode=deep",
+    "timestamp": "2026-05-31 20:25:33.955406",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / EIP712_DOMAIN_TYPEHASH] Can an unprivileged attacker under the precondition that the EIP712_DOMAIN_TYPEHASH omits name and version fields (only chainId and verifyingContract), craft a signature that is valid for EcrecoverAuthorizer but also accidentally valid for another contract on the same chain that uses the same minimal domain typehash and the same struct layout, causing cross-contract signature replay that grants unauthorized delegation? Proof idea: deploy a mock contract with identical domain typehash and AUTHORIZATION_TYPEHASH and assert that a signature accepted by EcrecoverAuthorizer is also accepted by the mock.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90d4d5a1-de1d-4cc1-b1ad-5ab1e8e50d78?mode=deep",
+    "timestamp": "2026-05-31 20:25:46.304066",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker under the precondition that ecrecover returns address(0) for a malformed signature (e.g., v not in {27,28}, or s in the upper half of the curve order) bypass the InvalidSignature() check if the authorizer's address happens to be address(0), since the check is signer != address(0) before the signer == authorization.authorizer check? Proof idea: fuzz (v, r, s) tuples that cause ecrecover to return address(0) and assert that the Unauthorized() revert is always triggered when authorizer != address(0).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_301488b8-7d1a-4612-bf28-afaa6cb7ad87?mode=deep",
+    "timestamp": "2026-05-31 20:25:59.119813",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.setIsAuthorized] Can an unprivileged attacker under the precondition that EcrecoverAuthorizer is authorized on Midnight (isAuthorized[victim][EcrecoverAuthorizer] == true), submit a signed Authorization{authorizer=victim, authorized=attacker, isAuthorized=true} with a valid nonce, causing EcrecoverAuthorizer to call Midnight.setIsAuthorized(attacker, true, victim), granting the attacker full delegation over the victim's positions including take, withdraw, and withdrawCollateral? Proof idea: end-to-end test asserting that after the authorization, the attacker can call withdraw(market, units, victim, attacker) and receive victim's funds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e032c072-9f1b-47b7-bde3-2089dfcf7147?mode=deep",
+    "timestamp": "2026-05-31 20:26:11.639075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.multicall] Can an unprivileged attacker under the precondition that a victim has signed an Authorization with nonce=N, use Midnight.multicall to atomically (1) call setIsAuthorized to grant the attacker authorization, (2) call take on behalf of the victim, and (3) call withdrawCollateral to drain the victim's collateral, all within a single transaction before the victim can revoke? Proof idea: multicall sequence test asserting that the victim's collateral balance is zero after the attacker's multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a93cd45-aa96-4128-9d9c-000c1149dbf2?mode=deep",
+    "timestamp": "2026-05-31 20:26:24.317805",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / EIP712_DOMAIN_TYPEHASH] Can an unprivileged attacker under the precondition that EcrecoverRatifier and EcrecoverAuthorizer both use EIP712_DOMAIN_TYPEHASH = keccak256('EIP712Domain(uint256 chainId,address verifyingContract)'), craft a signature intended for EcrecoverRatifier's OfferTree struct that is accidentally accepted by EcrecoverAuthorizer's Authorization struct (or vice versa) due to a struct hash collision, enabling cross-module signature replay? Proof idea: differential test asserting that AUTHORIZATION_TYPEHASH != any offerTreeTypeHash(height) for all valid heights 0..20.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cfdf296b-b410-4022-a865-6f5b00ada8d6?mode=deep",
+    "timestamp": "2026-05-31 20:26:36.810385",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.cancelRoot / isAuthorized] Can an unprivileged attacker under the precondition that isAuthorized[maker][attacker] == true call cancelRoot(maker, root) to cancel the maker's active offer tree, then after the maker revokes the attacker's authorization, the cancellation persists (isRootCanceled[maker][root] == true), permanently preventing the maker from using that root even after revoking the attacker? Proof idea: state-transition test asserting that isRootCanceled[maker][root] remains true after isAuthorized[maker][attacker] is set to false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d017fef3-7135-40cb-bce4-e8007597e59b?mode=deep",
+    "timestamp": "2026-05-31 20:26:50.265376",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / HashLib.offerTreeTypeHash] Can an unprivileged attacker under the precondition that a maker has signed a root for a height-N tree, submit a proof with proof.length > 20 to trigger the TreeTooHigh() revert in offerTreeTypeHash, causing a DoS on all takes against that maker's offers, violating the liveness invariant that valid offers must be takeable? Proof idea: fuzz proof.length values > 20 and assert that isRatified always reverts with TreeTooHigh.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70458042-ea18-4cc0-8675-08f0eea8b5e1?mode=deep",
+    "timestamp": "2026-05-31 20:27:03.238818",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverRatifier.isRatified / HashLib.isLeaf] Can an unprivileged attacker under the precondition that a maker has signed a Merkle root, submit a proof with a crafted leafIndex that satisfies leafIndex >> proof.length == 0 but places the target offer at a different position in the tree than intended, causing a different offer's hash to be verified as the leaf, enabling replay of a different offer under the maker's signature? Proof idea: fuzz (leafIndex, proof) pairs and assert that isLeaf only returns true when the leaf hash matches the actual offer hash at the claimed position.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c72a7541-a85e-455c-81fc-19e96b5fc265?mode=deep",
+    "timestamp": "2026-05-31 20:27:16.835637",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / nonce] Can an unprivileged attacker under the precondition that a victim has signed multiple authorizations (nonce=0, nonce=1, nonce=2) for different authorized addresses, selectively submit them out of order to desync the victim's intended authorization state, since nonces must be consumed sequentially and submitting nonce=0 blocks nonce=1 from being submitted until nonce=0 is consumed? Proof idea: state-transition test asserting that submitting nonce=1 before nonce=0 always reverts with InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bedede50-7aa4-4311-8652-3bb7043a9907?mode=deep",
+    "timestamp": "2026-05-31 20:27:30.649188",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.setIsAuthorized] Can an unprivileged attacker under the precondition that a victim has signed Authorization{authorized=attacker, isAuthorized=true, nonce=N} and Authorization{authorized=attacker, isAuthorized=false, nonce=N+1} (a grant followed by a revocation), submit only the grant (nonce=N) and withhold the revocation (nonce=N+1), leaving the attacker permanently authorized since the victim cannot submit nonce=N+1 without first consuming nonce=N? Proof idea: assert that after submitting nonce=N, the victim can directly call Midnight.setIsAuthorized to revoke without needing nonce=N+1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_945df3c7-d601-45ae-8e3d-8782699c981e?mode=deep",
+    "timestamp": "2026-05-31 20:27:44.892356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.tExchange / liquidationLocked] Can an unprivileged attacker under the precondition that two different (marketId, borrower) pairs produce the same keccak256(abi.encode(key1, key2, baseSlot)) transient storage slot, cause one borrower's liquidation lock to bleed into another borrower's slot, either preventing a valid liquidation or allowing a locked borrower to be liquidated during a callback? Proof idea: fuzz (key1_a, key2_a, key1_b, key2_b) and assert that keccak256(abi.encode(key1_a, key2_a, baseSlot)) != keccak256(abi.encode(key1_b, key2_b, baseSlot)) whenever (key1_a, key2_a) != (key1_b, key2_b).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_134b9a12-3d6c-4a36-8c79-d0992bf940fa?mode=deep",
+    "timestamp": "2026-05-31 20:27:58.314342",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.tExchange / UtilsLib.tGet] Can an unprivileged attacker under the precondition that tExchange uses abi.encode(key1, key2, baseSlot) for slot derivation, craft a (key1, key2) pair where key1 is a bytes32 with trailing zeros and key2 is an address, such that the encoded bytes collide with a different (key1', key2') encoding, causing the liquidation lock for one (marketId, borrower) to be read/written as the lock for a different pair? Proof idea: differential test asserting that abi.encode(key1, key2, base) != abi.encode(key1', key2', base) for all distinct (key1, key2) != (key1', key2') pairs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ffbaadfe-2e20-49eb-a3fc-d1dc7c59858b?mode=deep",
+    "timestamp": "2026-05-31 20:28:12.086166",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.mulDivUp / EcrecoverAuthorizer.setIsAuthorized] Can an unprivileged attacker under the precondition that mulDivUp(x, y, d) is called with x*y close to type(uint256).max and d=1, trigger an overflow in (x*y + (d-1)) that causes a revert in a health check or fee computation, making a borrower's position appear unhealthy and liquidatable when it is actually healthy, thereby enabling unauthorized seizure of collateral? Proof idea: fuzz (x, y, d) near overflow boundaries and assert that mulDivUp reverts rather than returning a wrong value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_207542f5-8b49-4ba6-9096-667f594d272b?mode=deep",
+    "timestamp": "2026-05-31 20:28:26.393320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.toUint128 / Midnight.take] Can an unprivileged attacker under the precondition that a take operation produces a credit or debt value exceeding type(uint128).max, trigger a CastOverflow revert in toUint128, causing a DoS on the take function that prevents a lender from receiving credit or a borrower from taking a loan, violating the liveness invariant? Proof idea: fuzz units values near type(uint128).max and assert that toUint128 reverts with CastOverflow before any state is committed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98e385c4-c4a0-41ef-9713-db5c33b8ef29?mode=deep",
+    "timestamp": "2026-05-31 20:28:38.805182",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.atMostOneNonZero / Midnight.liquidate] Can an unprivileged attacker under the precondition that both seizedAssets and repaidUnits are nonzero, bypass the InconsistentInput() check if atMostOneNonZero returns true when both are nonzero due to an assembly bug in the or(iszero(x), iszero(y)) logic, enabling a liquidation that seizes more collateral than the repaid debt justifies? Proof idea: fuzz (seizedAssets, repaidUnits) with both nonzero and assert that atMostOneNonZero always returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eca493fd-6bdd-4250-9f5d-ef1027e9c1da?mode=deep",
+    "timestamp": "2026-05-31 20:28:51.578881",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.msb / Midnight.liquidate] Can an unprivileged attacker under the precondition that a borrower's collateralBitmap is manipulated to be zero before the while loop exits (e.g., via a reentrancy during the liquidation callback), cause msb(0) to return 255 (since clz(0) is undefined in EVM assembly), leading to an out-of-bounds access in market.collateralParams[255] that reverts or corrupts state? Proof idea: reentrancy test asserting that liquidationLocked prevents collateralBitmap modification during the liquidation callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1a4b247-1170-48f8-9cdb-5f8cd482a87c?mode=deep",
+    "timestamp": "2026-05-31 20:29:04.358306",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: UtilsLib.zeroFloorSub / Midnight.take] Can an unprivileged attacker under the precondition that zeroFloorSub(x, y) silently returns 0 when x < y instead of reverting, cause a take operation to compute buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) = 0 when units < buyerPos.debt, resulting in the buyer receiving no credit increase while still having their consumed amount incremented, corrupting the credit/debt accounting? Proof idea: fuzz (units, buyerPos.debt) with units < buyerPos.debt and assert that the resulting credit and debt state is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f61bdc4-7821-4a46-8cec-fd43f466053f?mode=deep",
+    "timestamp": "2026-05-31 20:29:18.098099",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / AUTHORIZATION_TYPEHASH] Can an unprivileged attacker under the precondition that the AUTHORIZATION_TYPEHASH constant is precomputed as keccak256('Authorization(address authorizer,address authorized,bool isAuthorized,uint256 nonce,uint256 deadline)'), verify that the on-chain constant 0x81d0284fb0e2cde18d0553b06189d6f7613c96a01bb5b5e7828eade6a0dcac91 matches this string exactly, and if there is a mismatch (e.g., field order or type name differs), exploit the discrepancy to craft signatures that are accepted on-chain but rejected by standard EIP-712 wallets, enabling phishing attacks? Proof idea: unit test asserting AUTHORIZATION_TYPEHASH == keccak256(AUTHORIZATION_TYPE) where AUTHORIZATION_TYPE is the exact bytes string.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4fdfe5d3-d251-4779-98de-00eb20a243fb?mode=deep",
+    "timestamp": "2026-05-31 20:29:31.178420",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: EcrecoverAuthorizer.setIsAuthorized / EIP712_DOMAIN_TYPEHASH] Can an unprivileged attacker under the precondition that EIP712_DOMAIN_TYPEHASH = keccak256('EIP712Domain(uint256 chainId,address verifyingContract)') omits the name field, cause a hardware wallet or EIP-712-compliant signer to display an incomplete domain to the user (missing contract name), making it impossible for the user to distinguish which contract they are authorizing, enabling a phishing attack where the user signs for a malicious EcrecoverAuthorizer clone? Proof idea: differential test comparing the domain separator of EcrecoverAuthorizer against a standard EIP-712 domain with name and version fields.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_05c2e95d-9678-4db0-b7af-066402e58fbe?mode=deep",
+    "timestamp": "2026-05-31 20:29:44.923409",
+    "report_generated": false
+  }
+]
