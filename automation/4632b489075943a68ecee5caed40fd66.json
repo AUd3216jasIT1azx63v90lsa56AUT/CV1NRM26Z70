@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (leafIndex out of range)] Can an attacker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer, ratifierData with leafIndex=2^proof.length, proof=[])] in one tx, under PRECONDITIONS where proof.length=0 and leafIndex=1, triggering a CALL_SEQUENCE of [flash-ratify, take calls isRatified, isLeaf checks leafIndex >> 0 == 1 != 0 → LeafIndexOutOfRange revert], violating the INVARIANT that invalid proof inputs must revert cleanly, causing scoped impact: if LeafIndexOutOfRange is not caught by take's RatifierFail check, the revert propagates incorrectly? Proof idea: assert take reverts with RatifierFail when isLeaf reverts with LeafIndexOutOfRange.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5760e48d-bf20-4660-9afe-b3a866ae364b?mode=deep",
+    "timestamp": "2026-05-31 23:18:49.211560",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (two authorized operators racing)] Can two authorized operators for maker each compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer, units=U)] in separate txs that land in the same block, under PRECONDITIONS where consumed[maker][group] + 2*U > maxUnits, triggering a CALL_SEQUENCE of [operatorA flash-ratifies and takes, operatorB flash-ratifies and takes], violating the INVARIANT that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: if both txs succeed, the offer is overfilled beyond maxUnits? Proof idea: run two txs in same block; assert only one succeeds and consumed[maker][group] <= maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03bf2ca1-ab94-41c6-8104-228dd22d1e62?mode=deep",
+    "timestamp": "2026-05-31 23:19:01.405786",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (offer.expiry boundary)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where offer.expiry == block.timestamp)] in one tx, under PRECONDITIONS where block.timestamp == offer.expiry exactly, triggering a CALL_SEQUENCE of [flash-ratify, take checks block.timestamp <= offer.expiry → passes at equality], violating the INVARIANT that expired offers cannot be filled, causing scoped impact: offer filled at exact expiry boundary via flash ratification in same block? Proof idea: warp to offer.expiry; assert take succeeds at equality and fails at expiry+1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f483d49e-cdbf-45e8-a3d2-82b32cf5c838?mode=deep",
+    "timestamp": "2026-05-31 23:19:13.920754",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (offer.start boundary)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where offer.start == block.timestamp)] in one tx, under PRECONDITIONS where block.timestamp == offer.start exactly, triggering a CALL_SEQUENCE of [flash-ratify, take checks block.timestamp >= offer.start → passes at equality], violating the INVARIANT that offers not yet started cannot be filled, causing scoped impact: offer filled at exact start boundary via flash ratification? Proof idea: warp to offer.start; assert take succeeds at equality.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1545301b-2378-436b-978a-13e63bf55a85?mode=deep",
+    "timestamp": "2026-05-31 23:19:26.834790",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (SelfTake bypass attempt)] Can an attacker who is authorized for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where offer.maker=maker, taker=attacker)] in one tx, under PRECONDITIONS where attacker != maker (SelfTake check passes), triggering a CALL_SEQUENCE of [flash-ratify, take checks offer.maker != taker → passes], violating the INVARIANT that maker intent must be genuine and not manufactured by an authorized operator acting as taker against the maker's own offer, causing scoped impact: authorized operator fills maker's own offer as taker, extracting value from maker's position? Proof idea: assert maker's consumed[group] increases and operator receives sellerAssets or credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9fc9fed4-8789-4681-8a26-51a015c56b67?mode=deep",
+    "timestamp": "2026-05-31 23:19:40.981972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (continuous fee crystallization)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(buy offer increasing maker's credit)] in one tx, under PRECONDITIONS where maker has existing credit with pendingFee accrued, triggering a CALL_SEQUENCE of [flash-ratify, take calls _updatePosition for buyer if hasCredit, pendingFee increases by buyerPendingFeeIncrease], violating the INVARIANT that continuous fee crystallization must correctly account for existing pendingFee before adding new credit, causing scoped impact: if _updatePosition is skipped or pendingFee is double-counted due to sequencing, maker's fee accounting is corrupted? Proof idea: assert pendingFee after take equals expected value accounting for both prior accrual and new credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c818ae2-e3c0-4fac-819f-3df614608fd5?mode=deep",
+    "timestamp": "2026-05-31 23:19:53.960952",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (lossFactor maxed)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer)] in one tx, under PRECONDITIONS where marketState[id].lossFactor == type(uint128).max, triggering a CALL_SEQUENCE of [flash-ratify, take checks lossFactor < type(uint128).max → MarketLossFactorMaxedOut revert], violating the INVARIANT that take must revert when loss factor is maxed, causing scoped impact: flash ratification does not bypass the MarketLossFactorMaxedOut guard? Proof idea: set lossFactor to max; assert take reverts with MarketLossFactorMaxedOut regardless of ratification state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60580f49-395e-453f-ae2c-198f8802d573?mode=deep",
+    "timestamp": "2026-05-31 23:20:07.393412",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (bad debt realization mid-multicall)] Can an attacker compose [Midnight.liquidate(borrower, seizedAssets=0, repaidUnits=0) to realize bad debt, SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer)] in one tx, under PRECONDITIONS where bad debt realization changes lossFactor and totalUnits before the take, triggering a CALL_SEQUENCE of [liquidate updates lossFactor, flash-ratify, take uses updated lossFactor], violating the INVARIANT that bad debt realization must reduce lender credit exactly once and that take after bad debt realization must use the updated lossFactor, causing scoped impact: if take's _updatePosition uses stale lossFactor after bad debt realization in same multicall, lender credit is incorrectly computed? Proof idea: assert updatePositionView returns correct credit after bad debt realization and take in same multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e72ecf62-a793-40ec-addf-afa8c2cfd690?mode=deep",
+    "timestamp": "2026-05-31 23:20:21.357181",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (tick not accessible)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where offer.tick % tickSpacing != 0)] in one tx, under PRECONDITIONS where the market's tickSpacing was recently changed via setMarketTickSpacing, triggering a CALL_SEQUENCE of [flash-ratify, take checks offer.tick % tickSpacing → TickNotAccessible revert], violating the INVARIANT that offers can only be placed at valid ticks, causing scoped impact: flash ratification does not bypass tick spacing validation? Proof idea: change tickSpacing; assert take reverts with TickNotAccessible for offers at old ticks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_578e942e-1bf8-4bfc-991e-3ee465cfcaf2?mode=deep",
+    "timestamp": "2026-05-31 23:20:35.020009",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (maxAssets vs maxUnits)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where maxAssets>0 and maxUnits>0)] in one tx, under PRECONDITIONS where the offer has both maxAssets and maxUnits nonzero, triggering a CALL_SEQUENCE of [flash-ratify, take checks atMostOneNonZero(maxAssets, maxUnits) → MultipleNonZero revert], violating the INVARIANT that at most one of maxAssets or maxUnits can be nonzero, causing scoped impact: flash ratification does not bypass the MultipleNonZero guard? Proof idea: construct offer with both nonzero; assert take reverts with MultipleNonZero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58385d26-762c-4582-81c9-f2d3b3776b3d?mode=deep",
+    "timestamp": "2026-05-31 23:20:48.770336",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (settlement fee manipulation)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer at maturity boundary)] in one tx where block.timestamp is at a fee breakpoint, under PRECONDITIONS where the settlement fee changes discontinuously at the breakpoint, triggering a CALL_SEQUENCE of [flash-ratify, take computes settlementFee using current timeToMaturity], violating the INVARIANT that settlement fee must be correctly computed at take time and that flash ratification does not allow fee manipulation, causing scoped impact: if fee is computed at a boundary where feeLower != feeUpper, rounding leakage occurs? Proof idea: fuzz block.timestamp at fee breakpoints; assert claimableSettlementFee[loanToken] increases by exactly buyerAssets - sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_efe21bc5-d00b-4827-b58c-c70e8c1d2986?mode=deep",
+    "timestamp": "2026-05-31 23:21:02.888366",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (collateral bitmap overflow)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.supplyCollateral(market, idx, assets, maker) x16, Midnight.take(sell offer)] in one tx, under PRECONDITIONS where maker already has MAX_COLLATERALS_PER_BORROWER (16) activated collaterals, triggering a CALL_SEQUENCE of [flash-ratify, supply 17th collateral → TooManyActivatedCollaterals revert], violating the INVARIANT that borrowers can use at most 16 collaterals simultaneously, causing scoped impact: flash ratification does not bypass the collateral bitmap limit? Proof idea: activate 16 collaterals; assert supplyCollateral reverts with TooManyActivatedCollaterals on 17th.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6be7d99f-18fc-4f08-810c-811c394fbbcc?mode=deep",
+    "timestamp": "2026-05-31 23:21:17.239813",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (liquidation lock bypass)] Can an attacker compose [Midnight.take(offerA with sellerCallback that calls Midnight.liquidate(seller)), SetterRatifier.setIsRootRatified(maker, root, true)] in one tx, under PRECONDITIONS where the seller callback attempts to liquidate the seller while the liquidation lock is active, triggering a CALL_SEQUENCE of [take sets liquidationLocked(id, seller)=true via tExchange, sellerCallback calls liquidate → NotLiquidatable revert because locked], violating the INVARIANT that liquidations are locked for the seller during take callbacks, causing scoped impact: if the liquidation lock check is bypassed via flash ratification or multicall sequencing, seller is liquidated during their own take? Proof idea: assert liquidate reverts with NotLiquidatable when called from sellerCallback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2be3dee3-665f-4c9b-af3f-df3a90760518?mode=deep",
+    "timestamp": "2026-05-31 23:21:31.763700",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (transient storage liquidation lock across multicall steps)] Can an attacker compose Midnight.multicall([take(offerA), liquidate(seller of offerA)]) in one tx, under PRECONDITIONS where the liquidation lock is stored in transient storage (tstore/tload) and is released after take completes, triggering a CALL_SEQUENCE of [take sets lock=true, take completes and sets lock=false via tExchange, multicall continues, liquidate checks lock=false → proceeds], violating the INVARIANT that the liquidation lock must protect the seller during take callbacks but not beyond, causing scoped impact: seller is liquidated in the same multicall immediately after take completes, before they can react? Proof idea: assert liquidate succeeds in multicall step after take if seller is unhealthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_77458fff-3f9b-434c-acea-f4d467f5c097?mode=deep",
+    "timestamp": "2026-05-31 23:21:44.920870",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (withdrawable underflow)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(buy offer), Midnight.withdraw(units > withdrawable)] in one tx, under PRECONDITIONS where withdrawable is insufficient for the withdrawal, triggering a CALL_SEQUENCE of [flash-ratify, take increases totalUnits but not withdrawable for buy, withdraw subtracts from withdrawable → underflow revert], violating the INVARIANT that withdrawable must cover all credit withdrawals, causing scoped impact: if take of a buy offer does not increase withdrawable but withdraw expects it to, the multicall reverts? Proof idea: assert withdrawable is unchanged after buy take and withdraw reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ab185fe6-b26e-4018-9266-a6a2caeb363b?mode=deep",
+    "timestamp": "2026-05-31 23:21:58.606109",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (offer.group == bytes32(0))] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer where offer.group == bytes32(0))] in one tx, under PRECONDITIONS where consumed[maker][bytes32(0)] is shared across all offers with zero group, triggering a CALL_SEQUENCE of [flash-ratify, take updates consumed[maker][0] += units], violating the INVARIANT that consumption group budget cannot be exceeded and that the zero group is a valid shared group, causing scoped impact: if multiple offers use group=0, flash ratification of one root allows filling all of them up to the shared budget? Proof idea: assert consumed[maker][bytes32(0)] is correctly bounded by maxUnits across all offers in the zero group.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0a3a6a1-3a9e-48c7-966c-0845895e9e59?mode=deep",
+    "timestamp": "2026-05-31 23:22:12.492882",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (no-op take with units=0)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer, units=0)] in one tx, under PRECONDITIONS where the offer has maxUnits > 0 and the take with units=0 is a no-op, triggering a CALL_SEQUENCE of [flash-ratify, take with units=0 calls maker callback even if consumed==max per spec], violating the INVARIANT that no-op takes must not corrupt accounting state, causing scoped impact: if a no-op take with flash-ratified root triggers the maker callback and the callback modifies state, accounting is corrupted? Proof idea: assert position state is unchanged after units=0 take and callback is called.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5077dc15-fcdf-49ea-a9b7-5e83ff83c60a?mode=deep",
+    "timestamp": "2026-05-31 23:22:28.740675",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (payer confusion)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(buy offer where offer.callback != address(0))] in one tx, under PRECONDITIONS where payer = offer.callback (not msg.sender) and the callback is a contract controlled by the operator, triggering a CALL_SEQUENCE of [flash-ratify, take sets payer=buyerCallback, safeTransferFrom(loanToken, buyerCallback, address(this), buyerAssets-sellerAssets)], violating the INVARIANT that ERC20 transfer deltas must match accounting deltas and that payer must have approved Midnight, causing scoped impact: if the callback contract has pre-approved Midnight, operator can use flash ratification to pull funds from the callback contract? Proof idea: assert loanToken.balanceOf(buyerCallback) decreases by buyerAssets-sellerAssets after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ca0860c2-f7d5-434b-bf85-90d95bd5e811?mode=deep",
+    "timestamp": "2026-05-31 23:22:43.021133",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (receiver confusion)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(sell offer where offer.receiverIfMakerIsSeller = attacker)] in one tx, under PRECONDITIONS where the maker is the seller and receiverIfMakerIsSeller is set to attacker's address, triggering a CALL_SEQUENCE of [flash-ratify, take sets receiver=offer.receiverIfMakerIsSeller=attacker, safeTransfer(loanToken, attacker, sellerAssets)], violating the INVARIANT that user funds must not be stolen or redirected outside valid protocol rules, causing scoped impact: operator flash-ratifies a sell offer with attacker as receiver, redirecting maker's sellerAssets to attacker? Proof idea: assert loanToken.balanceOf(attacker) increases by sellerAssets after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_393e4cbd-e8fe-4795-a1e0-2535b94a04f6?mode=deep",
+    "timestamp": "2026-05-31 23:22:56.000368",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (Merkle proof with duplicate leaf)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offerA, ratifierData with proof that also validates offerB)] in one tx, under PRECONDITIONS where the Merkle tree has a duplicate leaf (offerA == offerB at different indices), triggering a CALL_SEQUENCE of [flash-ratify root, take offerA with leafIndex=0, take offerA again with leafIndex=1 using same proof structure], violating the INVARIANT that cancelled, expired, or already-consumed offers cannot be filled and that Merkle proof must uniquely bind one offer, causing scoped impact: if duplicate leaves allow the same offer to be filled twice under different leaf indices, consumed accounting is bypassed? Proof idea: construct Merkle tree with duplicate leaves; assert second take fails with ConsumedUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be6585a4-942e-41e5-ab95-b4becb91de9b?mode=deep",
+    "timestamp": "2026-05-31 23:23:09.983833",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (hashNode collision)] Can an attacker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.take(offer, ratifierData with crafted proof)] in one tx, under PRECONDITIONS where hashNode(left, right) = keccak256(left ++ right) and a second preimage attack is attempted, triggering a CALL_SEQUENCE of [flash-ratify root, take calls isLeaf with crafted proof that produces root from a different offer hash], violating the INVARIANT that Merkle proof verification must correctly bind the offer to the root and prevent second preimage attacks, causing scoped impact: attacker fills an offer not in the Merkle tree by exploiting hash collision in hashNode? Proof idea: attempt to construct a proof where an internal node hash equals a valid leaf hash; assert isLeaf returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5998ab67-18c2-4028-9f35-c076fd094e32?mode=deep",
+    "timestamp": "2026-05-31 23:23:23.812866",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (authorization check timing in isRatified)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, root, true), Midnight.setIsAuthorized(SetterRatifier, false, maker), Midnight.take(offer)] in one tx via Midnight.multicall, under PRECONDITIONS where SetterRatifier was previously authorized as ratifier, triggering a CALL_SEQUENCE of [flash-ratify root, revoke ratifier authorization, take checks isAuthorized[maker][SetterRatifier] → RatifierUnauthorized revert], violating the INVARIANT that ratifier authorization must be valid at take time, causing scoped impact: take correctly reverts when ratifier authorization is revoked before take in same multicall? Proof idea: assert take reverts with RatifierUnauthorized when setIsAuthorized(false) precedes take in multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_88c1edc8-49e7-4cea-8d0d-a3ff17f86f30?mode=deep",
+    "timestamp": "2026-05-31 23:23:38.771124",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (multiple roots for same maker)] Can an authorized operator for maker compose [SetterRatifier.setIsRootRatified(maker, rootA, true), SetterRatifier.setIsRootRatified(maker, rootB, true), Midnight.take(offerA, rootA), Midnight.take(offerB, rootB), SetterRatifier.setIsRootRatified(maker, rootA, false), SetterRatifier.setIsRootRatified(maker, rootB, false)] in one tx, under PRECONDITIONS where both roots cover different offers in different groups, triggering a CALL_SEQUENCE of [flash-ratify rootA and rootB, take offerA, take offerB, revoke both roots], violating the INVARIANT that ratifier approval must represent durable maker commitment and that flash ratification of multiple roots must not allow unauthorized multi-offer fills, causing scoped impact: operator fills two offers under two transiently ratified roots in one tx? Proof idea: assert both Take events emitted and both roots are unratified after tx.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09e45a9d-4a33-4a66-bdd1-b163732e2e56?mode=deep",
+    "timestamp": "2026-05-31 23:23:54.800180",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (isRatified called by non-Midnight)] Can an attacker directly call SetterRatifier.isRatified(offer, ratifierData) from an address other than MIDNIGHT, under PRECONDITIONS where msg.sender != MIDNIGHT, triggering a CALL_SEQUENCE of [direct call to isRatified → NotMidnight revert], violating the INVARIANT that isRatified must only be callable by MIDNIGHT, causing scoped impact: direct call to isRatified is correctly blocked? Proof idea: assert isRatified reverts with NotMidnight when called by any address other than MIDNIGHT.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8784b6a5-a167-4f39-a411-f3f8f72d5bd8?mode=deep",
+    "timestamp": "2026-05-31 23:24:09.789952",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: SetterRatifier.setIsRootRatified + Midnight.take (authorized operator authorizes another operator)] Can an authorized operator A for maker compose [Midnight.setIsAuthorized(B, true, maker), SetterRatifier.setIsRootRatified(maker, root, true, called by B), Midnight.take(offer)] in one tx, under PRECONDITIONS where A is authorized for maker and A authorizes B in the same tx, triggering a CALL_SEQUENCE of [A calls setIsAuthorized(B, true, maker), B calls setIsRootRatified(maker, root, true), take proceeds], violating the INVARIANT that authorization delegation must not allow transitive flash authorization chains that manufacture ratifier state, causing scoped impact: A delegates to B in same tx, B flash-ratifies root, take succeeds under a root ratified by a transiently authorized operator? Proof idea: assert isAuthorized[maker][B] is false and isRootRatified[maker][root] is false after tx but Take event was emitted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_61a4f6e7-e9e7-4f1d-9a83-dbb47f056cc1?mode=deep",
+    "timestamp": "2026-05-31 23:24:27.360569",
+    "report_generated": false
+  }
+]
