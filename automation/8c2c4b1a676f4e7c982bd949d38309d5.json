@@ -1,0 +1,50 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via take (buyerAssets - sellerAssets underflow)] Can an unprivileged taker, by taking a buy offer where buyerAssets < sellerAssets due to rounding in mulDivDown vs mulDivUp, cause buyerAssets - sellerAssets to underflow and revert with arithmetic panic, under preconditions where offer.buy = true and the settlement fee causes buyerPrice < sellerPrice (impossible by construction since buyerPrice = sellerPrice + settlementFee), or where mulDivDown(units, buyerPrice, WAD) < mulDivDown(units, sellerPrice, WAD) due to rounding, violating the invariant that buyerAssets >= sellerAssets for buy offers, causing scoped impact: DoS on take for buy offers with specific unit/price combinations? Proof idea: fuzz units and prices for buy offers and assert buyerAssets >= sellerAssets always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8481b983-c327-4b5c-a1f1-c444cb906da4?mode=deep",
+    "timestamp": "2026-05-31 22:22:41.237343",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: tExchange via multicall (liquidation lock across delegatecall)] Can an unprivileged taker, by using multicall to batch a take (which sets the liquidation lock via tExchange) followed by a liquidate call in the same transaction, cause the liquidate to see the lock as set (since transient storage persists within a transaction) and revert with NotLiquidatable, under preconditions where the seller is unhealthy and the taker wants to take and then liquidate in the same multicall, violating the invariant that liquidation must be available for unhealthy positions outside of take callbacks, causing scoped impact: DoS on liquidation within multicall when a prior take set the lock? Proof idea: multicall([take(seller_offer), liquidate(seller)]) and assert NotLiquidatable on the liquidate call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f0426d7-99a2-4733-9ec0-2da4ac381d00?mode=deep",
+    "timestamp": "2026-05-31 22:22:53.106154",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via updatePositionView (postSlashCredit rounds to zero for small credit)] Can an unprivileged liquidator, by triggering bad debt that increases lossFactor significantly, cause credit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - lastLossFactor) to round down to 0 for a lender with small credit (e.g., credit = 1), effectively zeroing the lender's credit and blocking their withdraw, under preconditions where the loss factor increases by nearly type(uint128).max - lastLossFactor, violating the invariant that credit must not be zeroed unless the lender's proportional share of bad debt equals their full credit, causing scoped impact: DoS on withdraw for small-credit lenders after large bad debt events? Proof idea: create a lender with credit = 1, trigger large bad debt and assert updatePosition zeros the credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80d3d8ed-7edf-4046-a560-a73b8799873e?mode=deep",
+    "timestamp": "2026-05-31 22:23:05.428195",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivUp via withdraw (pendingFeeDecrease > credit)] Can an unprivileged lender, by constructing a position where pendingFee = credit (at the invariant boundary) and calling withdraw(units = credit), cause pendingFeeDecrease = mulDivUp(credit, credit, credit) = credit, and then _position.pendingFee -= credit to succeed (pendingFee goes to 0), and _position.credit -= credit to succeed (credit goes to 0), verifying that the full-withdrawal path correctly zeroes both fields, under preconditions where pendingFee = credit = type(uint128).max, violating the invariant that pendingFee must be 0 after full credit withdrawal, causing scoped impact: DoS on withdraw if pendingFeeDecrease > pendingFee causes underflow? Proof idea: set pendingFee = credit, withdraw all credit and assert pendingFee = 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc9c6248-932e-41dc-93f1-3e6326b5a8d9?mode=deep",
+    "timestamp": "2026-05-31 22:23:18.147575",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via liquidate (maxDebt with mulDivDown rounding making healthy position appear unhealthy)] Can an unprivileged liquidator, by calling liquidate on a borrower whose true maxDebt (computed with exact arithmetic) equals debt, cause mulDivDown rounding in maxDebt += collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD) to round down and make maxDebt < debt, triggering a false NotLiquidatable revert or allowing liquidation of a technically healthy position, under preconditions where collateral * price / ORACLE_PRICE_SCALE * lltv / WAD is not an integer, violating the invariant that healthy positions must not be liquidatable, causing scoped impact: DoS on liquidation (false NotLiquidatable) or unauthorized liquidation of healthy positions? Proof idea: fuzz collateral, price, lltv near the health boundary and assert isHealthy and liquidate are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_367860d3-6820-4fd1-8592-b2627c55f155?mode=deep",
+    "timestamp": "2026-05-31 22:23:31.727641",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via supplyCollateral (collateral overflow)] Can an unprivileged borrower, by calling supplyCollateral with assets such that oldCollateral + assets > type(uint128).max, cause UtilsLib.toUint128(oldCollateral + assets) to revert with CastOverflow, under preconditions where the borrower already has collateral near type(uint128).max at the given index, violating the invariant that supplyCollateral must succeed for any assets that fit within uint128, causing scoped impact: DoS on collateral supply when the position is near the uint128 limit? Proof idea: supply collateral to type(uint128).max - 1, then supply 2 more and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e32f7e85-ddb7-4343-9c9d-56efa6416964?mode=deep",
+    "timestamp": "2026-05-31 22:23:44.925477",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via liquidate (badDebt with mulDivUp overflow for LLTV=1)] Can an unprivileged borrower, by creating a position in a LLTV=1 market with collateral = type(uint128).max and oracle price = ORACLE_PRICE_SCALE (so collateral * price = type(uint128).max * 1e36), cause _collateral.mulDivUp(price, ORACLE_PRICE_SCALE) = type(uint128).max and then mulDivUp(WAD, maxLif) where maxLif = WAD (for LLTV=1) to return type(uint128).max, and verify that the badDebt zeroFloorSub correctly handles this, under preconditions where LLTV = 1 and maxLif = WAD, violating the invariant that bad debt computation must not revert for LLTV=1 markets, causing scoped impact: DoS on liquidation in LLTV=1 markets? Proof idea: create LLTV=1 market, supply max collateral, liquidate and assert no overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c70df19-5965-4425-8f55-1c5dadcc406f?mode=deep",
+    "timestamp": "2026-05-31 22:24:00.006308",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via take (totalUnits - sellerCreditDecrease underflow)] Can an unprivileged taker, by taking a sell offer where sellerCreditDecrease > totalUnits (which should be impossible since sellerCreditDecrease <= sellerPos.credit <= totalUnits), cause _marketState.totalUnits + buyerCreditIncrease - sellerCreditDecrease to underflow before the toUint128 call, under preconditions where the accounting invariant totalUnits >= sum(credit) is violated, violating the invariant that totalUnitsEqualsSumNegativeDebtPlusWithdrawable must hold, causing scoped impact: DoS on take if the totalUnits invariant is violated? Proof idea: assert that sellerCreditDecrease <= totalUnits always holds and that the subtraction never underflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00772855-c103-4ebb-bca8-98fd58273ba0?mode=deep",
+    "timestamp": "2026-05-31 22:24:15.103147",
+    "report_generated": false
+  }
+]
