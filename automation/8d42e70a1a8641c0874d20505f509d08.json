@@ -1,0 +1,50 @@
+[
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer does not validate that the MIDNIGHT contract at the stored address actually implements IMidnight, allowing a scenario where MIDNIGHT is an EOA or a contract that returns arbitrary values from isAuthorized, under the precondition that the EcrecoverAuthorizer was deployed with a non-Midnight address as MIDNIGHT, by submitting any authorization, violating the invariant that the periphery must only interact with a valid Midnight instance, causing arbitrary authorization state changes? Proof idea: deploy EcrecoverAuthorizer with mock MIDNIGHT and assert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_baf595cb-eb84-4679-8e63-c5e4b99dbbb1?mode=deep",
+    "timestamp": "2026-05-31 21:53:06.879119",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the interaction between EcrecoverAuthorizer and the gate system to bypass an enter gate by first using EcrecoverAuthorizer to authorize a gate-exempt address over the victim, and then having that address perform a gated action on the victim's behalf, under the precondition that the gate checks msg.sender but not the authorizer, by constructing this two-step attack, violating the invariant that gate checks must apply to all entry paths including authorized operators, causing unauthorized credit or debt increase? Proof idea: unit test where authorized operator bypasses enter gate and assert gate is checked for the authorizer's account.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0746825e-0069-494a-ad38-654d1f8543ac?mode=deep",
+    "timestamp": "2026-05-31 21:53:18.890626",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer's nonce is global per authorizer (not per authorized address) to invalidate all pending authorizations for different operators by consuming nonces rapidly, under the precondition that the victim has multiple pre-signed authorizations for different operators at consecutive nonces, by submitting them all in a single block in an unexpected order, violating the invariant that the victim's authorization management must be predictable and non-interfering across different operators, causing the victim to lose control of their authorization state? Proof idea: fuzz multi-operator authorization ordering and assert final state matches victim's intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66985ce9-2aa7-457f-9c30-e8304926c92b?mode=deep",
+    "timestamp": "2026-05-31 21:53:31.399248",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer does not validate that authorization.nonce matches the current nonce before the ecrecover computation (the nonce check at line 26 happens before ecrecover at line 31), allowing the attacker to submit a signature with a wrong nonce to cause a revert after the nonce check but before the ecrecover, under the precondition that the attacker wants to waste gas or cause a specific revert path, by submitting a signature with nonce+1, violating the invariant that the revert reason must accurately reflect the failure cause, causing misleading error messages that confuse integrators? Proof idea: unit test with wrong nonce and assert correct revert reason.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98e07ebb-291c-4bc7-beec-71a4b2d391c7?mode=deep",
+    "timestamp": "2026-05-31 21:53:44.373119",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer's domain separator uses keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, address(this))) without a 'name' field to produce a domain separator that collides with another protocol's EIP-712 domain on the same chain and address, under the precondition that another protocol uses the same minimal domain type hash and happens to be deployed at the same address, by replaying signatures between the two protocols, violating the invariant that domain separators must be globally unique, causing cross-protocol signature replay? Proof idea: compute domain separators for two protocols with same chainid and address and assert they differ.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_beb242ee-4e5a-4d82-b8b2-40640bf7ef27?mode=deep",
+    "timestamp": "2026-05-31 21:53:57.039162",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer allows any address to be set as 'authorized' including smart contracts with complex logic, to authorize a malicious contract that implements callbacks or hooks triggered by Midnight operations, under the precondition that the victim is tricked into signing an authorization for a malicious contract address, by submitting the authorization and then triggering the malicious contract's hooks during a Midnight operation, violating the invariant that authorized addresses must not be able to exploit callback paths, causing fund loss through reentrancy or state manipulation? Proof idea: unit test with malicious authorized contract that reenters Midnight during an authorized operation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74b8d4b8-b4aa-4b45-9547-ecf592e96f1b?mode=deep",
+    "timestamp": "2026-05-31 21:54:10.170750",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer's setIsAuthorized function is not protected by any reentrancy guard, and the IMidnight.setIsAuthorized call at line 47 could trigger a callback in a malicious Midnight implementation that reenters EcrecoverAuthorizer.setIsAuthorized with a different authorization, under the precondition that MIDNIGHT has a hook in setIsAuthorized that calls back into EcrecoverAuthorizer, by constructing this reentrant call, violating the invariant that EcrecoverAuthorizer state must be consistent after each call, causing nonce desync or double authorization? Proof idea: reentrancy test with mock Midnight that reenters EcrecoverAuthorizer and assert nonce and authorization state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_34f3e19f-d107-44df-a1fc-2d4b87642942?mode=deep",
+    "timestamp": "2026-05-31 21:54:22.991488",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EcrecoverAuthorizer does not validate that authorization.authorizer != authorization.authorized to allow a scenario where an address authorizes itself, creating a self-referential authorization that could be exploited by other protocol components that check isAuthorized[x][x], under the precondition that the victim signs Authorization{authorizer: x, authorized: x, isAuthorized: true}, by submitting this authorization, violating the invariant that self-authorization must not create exploitable state, causing unexpected behavior in Midnight's authorization checks? Proof idea: fuzz self-authorization and assert Midnight behavior when isAuthorized[x][x] is true across all protocol functions.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f69e734-2517-455d-9cac-494a372ab844?mode=deep",
+    "timestamp": "2026-05-31 21:54:35.511372",
+    "report_generated": false
+  }
+]
