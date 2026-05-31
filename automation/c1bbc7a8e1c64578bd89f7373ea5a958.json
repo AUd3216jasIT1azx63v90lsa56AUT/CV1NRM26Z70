@@ -1,0 +1,68 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.collateralParams having an unsorted or duplicate collateral token list, causing touchMarket to revert with CollateralParamsNotSorted, under the precondition that isAuthorized[maker][operator]==true and touchMarket validates collateral ordering, by ratifying a root with unsorted collateralParams, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with unsorted collateralParams, assert take reverts with CollateralParamsNotSorted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f90c488e-113f-4256-aac9-a544d1426f68?mode=deep",
+    "timestamp": "2026-05-31 22:23:06.122880",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.collateralParams having lltv not in the allowed LLTV tiers, causing touchMarket to revert with LltvNotAllowed, under the precondition that isAuthorized[maker][operator]==true and touchMarket validates lltv, by ratifying a root with lltv=0.5e18 (not in allowed tiers), violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with lltv=0.5e18, assert take reverts with LltvNotAllowed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_90acbaf0-32f6-4cf2-86d6-4eb883901f00?mode=deep",
+    "timestamp": "2026-05-31 22:23:18.050720",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market having more than 128 collateral params, causing touchMarket to revert with TooManyCollateralParams, under the precondition that isAuthorized[maker][operator]==true and MAX_COLLATERALS=128, by ratifying a root with 129 collateralParams, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with 129 collateralParams, assert take reverts with TooManyCollateralParams.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cfc2beaa-39c0-49dd-8570-e8e24846bcc1?mode=deep",
+    "timestamp": "2026-05-31 22:23:30.324351",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market having zero collateral params, causing touchMarket to revert with NoCollateralParams, under the precondition that isAuthorized[maker][operator]==true and touchMarket requires at least one collateral, by ratifying a root with empty collateralParams, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with empty collateralParams, assert take reverts with NoCollateralParams.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_03eca544-911d-4033-a138-24e7d56cb0cf?mode=deep",
+    "timestamp": "2026-05-31 22:23:43.212835",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with both offer.maxAssets > 0 and offer.maxUnits > 0, causing take to revert with MultipleNonZero, under the precondition that isAuthorized[maker][operator]==true and take checks atMostOneNonZero(maxAssets, maxUnits), by ratifying a root with both maxAssets and maxUnits nonzero, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with maxAssets=1 and maxUnits=1, assert take reverts with MultipleNonZero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ec75e2d-0b48-494c-a854-3c55624d73ff?mode=deep",
+    "timestamp": "2026-05-31 22:23:56.523644",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.maker == taker (self-take), causing take to revert with SelfTake, under the precondition that isAuthorized[maker][operator]==true and take checks offer.maker != taker, by ratifying a root with offer.maker=taker, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with offer.maker=taker, assert take reverts with SelfTake.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8cf17a4d-757a-4af9-aeaa-5e30a410ba1c?mode=deep",
+    "timestamp": "2026-05-31 22:24:11.034256",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.ratifier set to a different ratifier contract (not SetterRatifier), causing the take to use a different ratifier than the one whose root was ratified, under the precondition that isAuthorized[maker][operator]==true and the offer hash includes offer.ratifier, by ratifying a root with offer.ratifier=EcrecoverRatifier, violating the invariant that ratifier approval must bind the correct ratifier contract, causing scoped impact: offer is validated by a different ratifier than the maker intended? Proof idea: unit test where operator ratifies root with offer.ratifier=EcrecoverRatifier, assert take uses EcrecoverRatifier validation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6dab80fd-b3d9-40b9-9188-35115e6d72d0?mode=deep",
+    "timestamp": "2026-05-31 22:24:25.377427",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.tick not divisible by DEFAULT_TICK_SPACING (4) for a newly created market, causing take to revert with TickNotAccessible, under the precondition that isAuthorized[maker][operator]==true and new markets have tickSpacing=4, by ratifying a root with tick=1, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with tick=1 for new market, assert take reverts with TickNotAccessible.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82bcfa0a-bda1-4f1b-a7fd-d683f4205356?mode=deep",
+    "timestamp": "2026-05-31 22:24:39.933591",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.expiry < block.timestamp (already expired), causing take to revert with OfferExpired, under the precondition that isAuthorized[maker][operator]==true and take checks block.timestamp <= offer.expiry, by ratifying a root with expiry=1, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with expiry=1, assert take reverts with OfferExpired.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6a1b8ce-eb75-4380-a827-590286640ba4?mode=deep",
+    "timestamp": "2026-05-31 22:24:55.097330",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.start > block.timestamp (not yet started), causing take to revert with OfferNotStarted, under the precondition that isAuthorized[maker][operator]==true and take checks block.timestamp >= offer.start, by ratifying a root with start=type(uint256).max, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is blocked (DoS)? Proof idea: unit test where operator ratifies root with start=type(uint256).max, assert take reverts with OfferNotStarted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbb3ba94-a4b7-4633-a703-45e0e159725d?mode=deep",
+    "timestamp": "2026-05-31 22:25:09.874160",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium Periphery integration bug that can cause user loss when interacting with the core Midnight contract as intended'] [Function: setIsRootRatified] Can an operator ratify a root containing an offer with offer.market.lossFactor == type(uint128).max, causing take to revert with MarketLossFactorMaxedOut, under the precondition that isAuthorized[maker][operator]==true and take checks lossFactor < type(uint128).max, by ratifying a root for a market with maxed-out lossFactor, violating the invariant that ratified offers must be executable, causing scoped impact: maker's offer flow is permanently blocked (fund freeze)? Proof idea: unit test where market lossFactor is maxed, operator ratifies root, assert take reverts with MarketLossFactorMaxedOut.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fcd59471-1b3b-4a24-9bac-f7b1e09ee660?mode=deep",
+    "timestamp": "2026-05-31 22:25:25.723457",
+    "report_generated": false
+  }
+]
