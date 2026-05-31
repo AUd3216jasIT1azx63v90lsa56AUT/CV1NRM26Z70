@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker submit an EcrecoverAuthorizer authorization with ecrecover returning address(0) due to a malformed signature (v, r, s = 0), under preconditions where the signature is crafted to produce ecrecover output of address(0), triggering setIsAuthorized with signer == address(0), violating the invariant that InvalidSignature is enforced when ecrecover returns address(0), causing scoped impact: if the check require(signer != address(0)) is absent, any address could be authorized on behalf of any authorizer? Proof idea: unit test asserting setIsAuthorized reverts with InvalidSignature when ecrecover returns address(0).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_beb0572c-03c7-47c8-ad46-e0493f8b09ae?mode=deep",
+    "timestamp": "2026-05-31 23:04:38.041284",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: touchMarket / setDefaultSettlementFee / setMarketSettlementFee] Can the settlement fee for a market be in an inconsistent state where some breakpoints are from the default at creation time and others are overridden by setMarketSettlementFee, under preconditions where feeSetter calls setMarketSettlementFee for only some indices after market creation, triggering touchMarket (all defaults) -> setMarketSettlementFee(id, 3, newFee) (only index 3), violating the invariant that the settlement fee schedule is internally consistent (e.g., monotonically non-decreasing), causing scoped impact: a non-monotonic fee schedule where index 3 (30d) fee is lower than index 2 (7d) fee creates fee arbitrage at the 7d-30d TTM range? Proof idea: fuzz partial fee overrides and assert settlementFee(id, ttm) is monotonically non-decreasing for all ttm values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85bb429a-14f4-4707-a292-c7b77c877497?mode=deep",
+    "timestamp": "2026-05-31 23:04:50.441044",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: MidnightBundles.pullToken / IERC20Permit.permit] Can a token with a permit function that has a different function selector than IERC20Permit.permit (e.g., due to a different parameter order) be used as loanToken, under preconditions where the token's permit selector matches a different function in the token contract, triggering IERC20Permit(token).permit(from, address(this), amount, deadline, v, r, s) which calls the wrong function, violating the invariant that the permit call correctly authorizes the bundler to transfer amount tokens, causing scoped impact: the try/catch swallows the wrong-function call, and safeTransferFrom proceeds without proper authorization, reverting if no pre-existing allowance? Proof idea: mock token test with a permit function that has a different signature and assert pullToken behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9225341c-d9df-4504-b4f1-c3ec0263a7c7?mode=deep",
+    "timestamp": "2026-05-31 23:05:02.880414",
+    "report_generated": false
+  }
+]
