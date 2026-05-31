@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker who is already an authorized delegate of victim (via Midnight.isAuthorized) sign a new Authorization struct granting themselves or a colluding address full control, under the precondition that victim previously authorized the attacker for any reason, by calling EcrecoverAuthorizer.setIsAuthorized with a valid signature where signer == attacker and authorization.authorizer == victim, violating the invariant that authorization must only allow intended account delegation, causing the attacker to withdraw victim collateral or drain credit? Proof idea: fuzz (authorizer, authorized, isAuthorized) with attacker as existing delegate and assert that a second-hop authorization cannot be created without explicit victim re-consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2fffd11-c7e1-4b68-832e-6023ad6c442c?mode=deep",
+    "timestamp": "2026-05-31 18:34:59.152464",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized / ecrecover] Can an unprivileged attacker submit a crafted Signature with v, r, s values that cause ecrecover to return a non-zero address that happens to equal authorization.authorizer (e.g., via signature malleability or crafted low-s/high-s variants), under the precondition that the attacker knows the authorizer address and can brute-force or precompute a matching digest, by submitting the malformed signature to setIsAuthorized, violating the invariant that only the true key-holder can authorize, causing unauthorized delegation and subsequent fund loss? Proof idea: fuzz (v, r, s) for a fixed digest and assert ecrecover output never matches an arbitrary target address without the private key.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e62ab1fb-c8d0-46a0-84cc-a7f3544d868e?mode=deep",
+    "timestamp": "2026-05-31 18:35:11.118555",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker front-run a victim's legitimate setIsAuthorized call that revokes an operator (isAuthorized=false) by submitting the revocation signature first to consume the nonce, then submitting a previously captured authorization signature (isAuthorized=true) with the next nonce, under the precondition that the attacker observed both signed messages in the mempool, by reordering the two transactions, violating the invariant that nonce ordering must reflect the signer's intent, causing the operator to remain authorized and drain victim funds? Proof idea: state-test with two signed authorizations at nonce N and N+1 submitted in reverse order and assert final isAuthorized state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7fcd0cda-67ca-4e17-9677-c7ef92a9452b?mode=deep",
+    "timestamp": "2026-05-31 18:35:23.963284",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized / domain separator] Can an unprivileged attacker replay a valid EcrecoverAuthorizer signature on a second deployment of EcrecoverAuthorizer at a different address (e.g., via CREATE2 with a different salt) that points to the same MIDNIGHT contract, under the precondition that the victim signed an authorization for the first deployment and the attacker controls or can predict the second deployment address, by deploying a new EcrecoverAuthorizer and submitting the old signature, violating the invariant that signatures must be bound to a specific verifying contract, causing unauthorized authorization on the same Midnight instance? Proof idea: deploy two EcrecoverAuthorizer instances, sign for one, submit to the other, and assert the call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b29c7c9-0ff8-45e4-9349-f95fca65f199?mode=deep",
+    "timestamp": "2026-05-31 18:35:36.961059",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the EIP-712 domain separator omits the 'name' and 'version' fields (only chainId and verifyingContract are included) to produce a signature collision with another EIP-712 contract deployed at the same address on a different chain after a hard fork, under the precondition that the chain forks and a new chain reuses the same contract address, by submitting a pre-fork signature on the post-fork chain, violating the invariant that signatures must not be cross-chain replayable, causing unauthorized authorization and fund loss? Proof idea: simulate chain fork by changing block.chainid and assert old signatures are rejected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_663a9313-449c-4e00-9a6d-e6e43a46a684?mode=deep",
+    "timestamp": "2026-05-31 18:35:49.648384",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker who is an authorized operator of victim use EcrecoverAuthorizer to sign an Authorization that grants the attacker's own address authorization over the victim, under the precondition that victim previously called Midnight.setIsAuthorized(attacker, true, victim) directly, by constructing Authorization{authorizer: victim, authorized: attacker, isAuthorized: true} and signing with attacker's key (which passes the isAuthorized check at line 34), violating the invariant that an operator cannot self-escalate permissions through the signature path, causing the attacker to permanently retain authorization even after victim attempts revocation? Proof idea: unit test where operator signs self-authorization and assert Midnight.isAuthorized(victim, attacker) is set.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1389de1f-092d-48f0-ba27-2a20c51f091a?mode=deep",
+    "timestamp": "2026-05-31 18:36:03.027839",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker cause a victim's nonce to be incremented without the victim's consent by submitting a valid signature (obtained from the victim) for a benign authorization, consuming the nonce, and then preventing a critical revocation signature (which uses the now-stale nonce) from being accepted, under the precondition that the attacker has a valid signed authorization from the victim at nonce N, by submitting it before the victim's revocation at nonce N, violating the invariant that nonce consumption must reflect the authorizer's sequencing intent, causing the victim's operator to remain authorized and drain funds? Proof idea: fuzz nonce ordering with two competing signed messages and assert the victim can always revoke.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a79c5d0-7085-45f1-af14-f42ac4fdb8d1?mode=deep",
+    "timestamp": "2026-05-31 18:36:15.604922",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker submit a signature where authorization.authorizer == address(0) and the ecrecover result is some non-zero address X, under the precondition that IMidnight.isAuthorized(address(0), X) returns true (e.g., if address(0) has been authorized by some initialization path), by calling setIsAuthorized with authorizer=address(0), violating the invariant that address(0) must not be a valid authorizer, causing authorization state corruption that allows fund theft? Proof idea: unit test with authorizer=address(0) and assert the call reverts or has no effect on real accounts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_120f4bdf-ff8b-4aaf-8fa4-ff39c68dcbb5?mode=deep",
+    "timestamp": "2026-05-31 18:36:28.392703",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the permissionless submission model (any address can submit a valid signature) to grief a victim by repeatedly submitting the victim's own valid signatures in rapid succession, consuming all pre-signed nonces and forcing the victim to re-sign, under the precondition that the attacker observed multiple signed authorizations in the mempool or off-chain channels, by submitting them all before the victim's intended ordering, violating the invariant that the authorizer controls the sequencing of their own authorization changes, causing a window where an operator remains authorized and drains funds? Proof idea: fuzz submission ordering of N pre-signed authorizations and assert final state matches victim's last intended state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5fbe2a47-3637-4900-a767-ec1eec4cb29c?mode=deep",
+    "timestamp": "2026-05-31 18:36:41.244403",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized / IMidnight.setIsAuthorized] Can an unprivileged attacker exploit the fact that EcrecoverAuthorizer calls IMidnight.setIsAuthorized(authorized, isAuthorized, authorizer) — the 3-argument form — without verifying that EcrecoverAuthorizer itself is still authorized by the authorizer on Midnight at call time, under the precondition that the victim revoked EcrecoverAuthorizer's own authorization on Midnight between signature creation and submission, by submitting a valid signature after revocation, violating the invariant that the periphery contract must be authorized at execution time, causing the Midnight call to revert and the nonce to be consumed without effect? Proof idea: unit test revoke-then-submit and assert nonce is not consumed on revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0096f38-bfa4-419e-956e-a8a9f5e645ca?mode=deep",
+    "timestamp": "2026-05-31 18:36:55.128278",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker construct an Authorization struct where authorization.authorized == address(EcrecoverAuthorizer) and authorization.isAuthorized == true, signed by the victim, under the precondition that the victim is tricked into signing this struct, by submitting it to setIsAuthorized, causing EcrecoverAuthorizer to be authorized over the victim's account, and then using EcrecoverAuthorizer's own authorization to sign further authorizations granting the attacker control, violating the invariant that the periphery contract must not be self-authorizing, causing fund loss? Proof idea: unit test where EcrecoverAuthorizer is set as authorized and then used to sign a second authorization.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb24a29c-ad82-4e3e-9c8d-70df67e1f609?mode=deep",
+    "timestamp": "2026-05-31 18:37:09.895988",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit ECDSA signature malleability (flipping s to curve_order - s and adjusting v) to produce a second valid signature for the same Authorization struct, under the precondition that the original signature was submitted and the nonce was consumed, by submitting the malleable variant before the original, violating the invariant that each signed authorization must be usable exactly once, causing the nonce to be consumed by the malleable variant and the original to fail? Proof idea: compute malleable (v', r, s') from a valid (v, r, s) and assert both cannot be submitted for the same nonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c06d212c-c034-42d4-9eb9-2b200d45847d?mode=deep",
+    "timestamp": "2026-05-31 18:37:23.604330",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker who controls a contract at a predictable CREATE2 address arrange for that address to be authorized by a victim (via social engineering), then deploy a malicious contract at that address that calls EcrecoverAuthorizer.setIsAuthorized to grant the attacker authorization, under the precondition that the victim authorized the CREATE2 address before deployment, by deploying the malicious contract and triggering the call, violating the invariant that authorization must reflect the victim's intent at the time of granting, causing the attacker to gain full control over the victim's Midnight state? Proof idea: simulate CREATE2 address pre-authorization and post-deployment exploitation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75c2cfff-e787-4687-85a2-3f622c7ccde6?mode=deep",
+    "timestamp": "2026-05-31 18:37:37.628942",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized / nonce] Can an unprivileged attacker exploit the fact that nonce is stored as uint256 and incremented with ++ (post-increment) to cause an integer overflow if nonce[authorizer] reaches type(uint256).max, under the precondition that an authorizer has submitted 2^256-1 authorizations (theoretical), by submitting one more, violating the invariant that nonce must be strictly monotonically increasing, causing nonce to wrap to 0 and allowing replay of the very first signed authorization? Proof idea: fuzz nonce at type(uint256).max - 1 and assert overflow behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b031999e-e8e0-4c00-ad3e-e0d061f26f87?mode=deep",
+    "timestamp": "2026-05-31 18:37:51.763016",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker submit a valid Authorization with authorization.authorized == authorization.authorizer (self-authorization), under the precondition that the attacker has the victim's signature for such a struct, by calling setIsAuthorized, violating the invariant that self-authorization must be a no-op or explicitly handled, causing unexpected state in Midnight.isAuthorized[victim][victim] that could be exploited by other protocol paths that check self-authorization? Proof idea: unit test self-authorization and assert Midnight behavior when isAuthorized[x][x] is true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b1ae9b2-76b3-4718-b062-57750f73e016?mode=deep",
+    "timestamp": "2026-05-31 18:38:06.690032",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the coarse-grained authorization model (not scoped by market or action) to use a legitimately obtained authorization (e.g., for a specific helper task) to perform unintended actions such as withdrawing collateral from all markets, under the precondition that the victim authorized the attacker for a narrow purpose but the protocol grants full control, by calling Midnight functions that withdraw collateral or drain credit on behalf of the victim, violating the invariant that authorization scope must match the victim's intent, causing direct fund loss? Proof idea: invariant test asserting that an authorized address cannot access markets or assets the victim did not intend to expose.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6015c228-bd0e-4914-a2e2-da414aa0b88d?mode=deep",
+    "timestamp": "2026-05-31 18:38:19.806401",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the deadline check uses block.timestamp <= authorization.deadline (inclusive) to submit a signature at exactly block.timestamp == deadline in a block where the attacker also performs a fund-draining action, under the precondition that the attacker can control block timing (e.g., as a validator or via flashbots), by submitting the authorization and the drain in the same block at the deadline boundary, violating the invariant that expired signatures must not be usable, causing fund loss at the exact deadline? Proof idea: fuzz block.timestamp == deadline and assert authorization is accepted or rejected consistently.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4b1982f4-d642-4f12-a74c-11414ba9d499?mode=deep",
+    "timestamp": "2026-05-31 18:38:34.038184",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker who is an authorized delegate of victim A use EcrecoverAuthorizer to authorize themselves over victim B (a different account), under the precondition that the attacker signs Authorization{authorizer: victimB, authorized: attacker, isAuthorized: true} and the isAuthorized check at line 34 passes because attacker is authorized by victimA not victimB, by submitting this authorization, violating the invariant that the signer must be authorized by the specific authorizer in the struct, causing cross-account authorization and fund theft from victimB? Proof idea: unit test where signer is authorized by account X but signs for account Y and assert the call reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa9f39ce-d2a9-41b6-8c1e-c92628ba3d8b?mode=deep",
+    "timestamp": "2026-05-31 18:38:47.453378",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit a reentrancy path where IMidnight(MIDNIGHT).isAuthorized(authorization.authorizer, signer) at line 34 triggers a callback or state change in a malicious Midnight mock, under the precondition that MIDNIGHT is a contract with a malicious isAuthorized implementation (e.g., a market creator deploys a fake Midnight), by deploying EcrecoverAuthorizer pointing to the malicious MIDNIGHT, violating the invariant that the authorizer contract must only interact with the legitimate Midnight, causing authorization state corruption? Proof idea: deploy mock Midnight with reentrant isAuthorized and assert EcrecoverAuthorizer state remains consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b122bd22-f79a-4053-8070-9e5b150dd5ae?mode=deep",
+    "timestamp": "2026-05-31 18:39:01.018488",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the nonce is incremented before the IMidnight.setIsAuthorized call at line 47, so if the Midnight call reverts (e.g., EcrecoverAuthorizer is not authorized on Midnight), the nonce is still consumed, under the precondition that the victim's EcrecoverAuthorizer authorization on Midnight has been revoked, by submitting a valid signature that causes the Midnight call to revert, violating the invariant that nonce consumption must be atomic with the authorization state change, causing the victim to lose a nonce slot and potentially be unable to use a pre-signed authorization? Proof idea: unit test where Midnight.setIsAuthorized reverts and assert nonce state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a24bd463-fc1b-4900-9e55-67948ce6bcb0?mode=deep",
+    "timestamp": "2026-05-31 18:39:15.117298",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker submit an Authorization with a far-future deadline (e.g., type(uint256).max) that was signed by the victim, and hold it indefinitely to use at the most advantageous moment (e.g., when victim has maximum collateral deposited), under the precondition that the victim signed such an authorization without realizing the deadline risk, by submitting it years later, violating the invariant that authorization signatures must have bounded validity windows, causing fund loss at an unexpected future time? Proof idea: fuzz deadline values and assert protocol enforces a maximum deadline or that users are warned.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_11ee6db8-5e68-469c-8c9b-4f6f262764bf?mode=deep",
+    "timestamp": "2026-05-31 18:39:28.194104",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that authorization is not scoped by market to use a single signed authorization to drain collateral across all markets where the victim has positions, under the precondition that the victim authorized the attacker for one specific market interaction, by calling Midnight.withdrawCollateral or equivalent for every market where the victim has collateral, violating the invariant that authorization scope must be bounded, causing total fund loss across all markets? Proof idea: invariant test with N markets and assert authorized address cannot access markets beyond the intended scope.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_554911ad-ccf2-4881-a320-85e15912a36f?mode=deep",
+    "timestamp": "2026-05-31 18:39:41.687977",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the hashStruct at line 28 uses abi.encode(AUTHORIZATION_TYPEHASH, authorization) where authorization is a memory struct, to manipulate struct encoding if the Authorization struct has padding or alignment issues, under the precondition that the Solidity ABI encoding of the struct differs from the EIP-712 encoding expected by the signer's wallet, by crafting a struct with unexpected field values that encode identically, violating the invariant that the signed digest must uniquely represent the authorization intent, causing an authorization for different terms than the victim intended? Proof idea: differential test between off-chain EIP-712 encoding and on-chain abi.encode output.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59fa48a7-40c2-4877-bb84-6976b885ea3c?mode=deep",
+    "timestamp": "2026-05-31 18:39:54.923610",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker exploit the fact that the domain separator at line 29 is computed on every call (not cached) to manipulate block.chainid via a chain fork or L2 context where chainid changes mid-transaction, under the precondition that the execution environment allows chainid to differ between the signing time and submission time, by submitting a signature on a chain where chainid matches the signing chain, violating the invariant that domain separator must be stable within a transaction, causing cross-chain authorization replay? Proof idea: fuzz block.chainid values and assert domain separator consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_11e28733-34fd-46ac-8723-66e9cb9aaa8e?mode=deep",
+    "timestamp": "2026-05-31 18:40:08.996318",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/EcrecoverAuthorizer.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: setIsAuthorized] Can an unprivileged attacker who has been authorized by victim use EcrecoverAuthorizer to sign an Authorization revoking the victim's own authorization over a critical address (e.g., a recovery address), under the precondition that the attacker is an authorized delegate and can sign on behalf of the victim, by submitting Authorization{authorizer: victim, authorized: recoveryAddress, isAuthorized: false}, violating the invariant that an operator must not be able to remove the victim's own authorizations without explicit victim consent, causing the victim to lose access to their recovery mechanism and funds? Proof idea: unit test where operator revokes victim's other authorizations and assert victim retains control.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e5b92432-892c-4bc2-bee5-5406892fccf4?mode=deep",
+    "timestamp": "2026-05-31 18:40:21.552794",
+    "report_generated": false
+  }
+]
