@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the totalUnits update in take() (totalUnits = totalUnits + buyerCreditIncrease - sellerCreditDecrease) under preconditions where multiple takes in a single multicall() cause totalUnits to be updated incrementally, and a concurrent bad debt realization in a callback changes lossFactor between takes, causing the lossFactor-based credit slashing to be applied inconsistently across the multicall, violating the invariant that all credit updates within a multicall see a consistent lossFactor, causing scoped impact: lenders' credits are incorrectly slashed or not slashed, allowing over-redemption? Proof idea: multicall([take1, liquidate_with_bad_debt, take2]), assert totalUnits == sum(credits) + continuousFeeCredit after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_809ee3a6-9cce-476a-ae37-9e2358868857?mode=deep",
+    "timestamp": "2026-05-31 18:40:34.833699",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: liquidate / withdraw] Can an unprivileged liquidator exploit the badDebt computation using mulDivUp (collateral.mulDivUp(price, ORACLE_PRICE_SCALE).mulDivUp(WAD, maxLif)) under preconditions where the collateral value is just above the debt, causing mulDivUp to round the recoverable value up so badDebt = 0 even though the actual recoverable value is slightly below debt, then no lossFactor update occurs, lenders' credits are not slashed, but the liquidator seizes collateral worth less than repaidUnits, violating the invariant that if badDebt = 0 then collateral value >= debt, causing scoped impact: lenders hold credit backed by insufficient collateral and redeem more than recoverable? Proof idea: fuzz collateral and price near the debt threshold, assert badDebt > 0 iff collateral * price / ORACLE_PRICE_SCALE / maxLif < debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_447cd714-6046-4255-b7a3-42bb604ac365?mode=deep",
+    "timestamp": "2026-05-31 18:40:46.894096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the settlement fee piecewise linear interpolation in settlementFee() under preconditions where timeToMaturity is exactly at a breakpoint boundary (e.g., exactly 1 day, 7 days, 30 days), causing the interpolation to return feeLower or feeUpper exactly, and the rounding in (feeLower * (end - timeToMaturity) + feeUpper * (timeToMaturity - start)) / (end - start) to truncate, causing the settlement fee to be 1 wei less than expected, then the buyer's credit is 1 wei more than the assets paid justify, violating the invariant that credit increase <= assets paid / buyerPrice, causing scoped impact: systematic 1-wei over-credit per take at fee breakpoints? Proof idea: fuzz timeToMaturity at each of the 7 breakpoints, assert settlementFee is monotonically non-decreasing and credit <= assets paid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a8fa5ce-d471-434e-820a-c674ea4664a5?mode=deep",
+    "timestamp": "2026-05-31 18:40:59.417996",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: withdraw / claimContinuousFee] Can an unprivileged lender race against the fee claimer under preconditions where continuousFeeCredit > 0 and withdrawable = continuousFeeCredit + epsilon, causing a lender to call withdraw(units = epsilon) which reduces withdrawable to continuousFeeCredit, then the fee claimer calls claimContinuousFee(amount = continuousFeeCredit) which reduces withdrawable to 0, then another lender with credit > 0 calls withdraw() which reverts due to withdrawable underflow, violating the invariant that lenders with valid credit can always withdraw up to their credit, causing scoped impact: lender's credit is permanently frozen because withdrawable was drained by fee claims? Proof idea: set up scenario where continuousFeeCredit == withdrawable, have fee claimer claim all, assert lender withdraw reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf64e3b4-a53c-42ee-ac42-836103604fef?mode=deep",
+    "timestamp": "2026-05-31 18:41:12.491123",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the offer.reduceOnly flag under preconditions where offer.reduceOnly = true and the buyer has existing debt, causing the take to reduce the buyer's debt without increasing credit (buyerCreditIncrease = 0), while the seller receives sellerAssets tokens, but the buyer pays buyerAssets tokens, and the difference buyerAssets - sellerAssets goes to claimableSettlementFee, violating the invariant that settlement fee is only charged when credit or debt changes, causing scoped impact: settlement fee is charged on a pure debt-reduction trade, overcollecting fees and reducing the assets available for lender redemption? Proof idea: take with reduceOnly=true and buyer.debt >= units, assert claimableSettlementFee increases by buyerAssets - sellerAssets, assert this is economically justified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e9aea2b-cf92-4bcd-89d4-3069a7aec5f1?mode=deep",
+    "timestamp": "2026-05-31 18:41:26.231577",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the consumed group budget mechanism under preconditions where two offers share the same group and the taker fills both in a single multicall(), causing consumed[maker][group] to be updated twice, and if the second take's newConsumed check passes due to a race condition in the multicall, the maker's offer is overfilled, violating the invariant that consumed[maker][group] <= offer.maxAssets (or maxUnits), causing scoped impact: maker's offer is filled beyond their intended maximum, creating more credit than the maker intended to back? Proof idea: multicall([take(offer1, units1), take(offer2, units2)]) where offer1.group == offer2.group, assert consumed[maker][group] <= max(offer1.maxAssets, offer2.maxAssets).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a3580dd5-9e95-4f93-b97a-c1dae45793c9?mode=deep",
+    "timestamp": "2026-05-31 18:41:40.477297",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: liquidate / withdraw] Can an unprivileged liquidator exploit the post-maturity LIF ramp (lif = min(maxLif, WAD + (maxLif - WAD) * (block.timestamp - maturity) / TIME_TO_MAX_LIF)) under preconditions where block.timestamp - maturity < TIME_TO_MAX_LIF causing lif < maxLif, then seizedAssets = repaidUnits.mulDivDown(lif, WAD).mulDivDown(ORACLE_PRICE_SCALE, liquidatedCollatPrice) is computed with lif < maxLif, but badDebt is computed using maxLif (worst case), causing badDebt to be overstated relative to the actual liquidation incentive, violating the invariant that badDebt computation and liquidation incentive use consistent LIF values, causing scoped impact: lenders' credits are slashed more than the actual bad debt, allowing the remaining lenders to redeem more per unit? Proof idea: liquidate at maturity + 1 second, assert badDebt computed with maxLif vs lif used for seizedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf9177af-4d25-4413-94b6-bfe4acf4cb88?mode=deep",
+    "timestamp": "2026-05-31 18:41:54.390519",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the LLTV = 1 (LLTV_8 = 1e18) special case under preconditions where a market is created with lltv = WAD, causing maxLif = WAD (no liquidation incentive) and maxRepaid = type(uint256).max (RCF deactivated), then a borrower takes a sell offer to borrow the maximum possible, and since LLTV = 1 means no overcollateralization, any price drop makes the position immediately undercollateralized, causing bad debt to be realized during liquidation, violating the invariant that lenders' credits are backed by sufficient collateral, causing scoped impact: lenders redeem less than face value due to bad debt from LLTV = 1 markets? Proof idea: create LLTV = 1 market, borrow max, assert any oracle price drop causes badDebt > 0 in liquidate().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac02c229-03cd-4f42-9a1f-8f0704639cd7?mode=deep",
+    "timestamp": "2026-05-31 18:42:10.097584",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the tick spacing check (offer.tick % _marketState.tickSpacing == 0) under preconditions where the tickSpacingSetter reduces tickSpacing from 4 to 1 after an offer is signed, causing previously invalid ticks to become valid, and a taker fills an offer at a tick that was not accessible when the offer was signed, violating the invariant that offers are only fillable at ticks the maker intended, causing scoped impact: maker's offer is filled at an unintended price, creating credit at a price that does not reflect the maker's economic intent? Proof idea: sign offer at tick 2 (invalid at spacing 4), reduce spacing to 1, fill offer, assert maker's economic intent is violated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6094ef71-c916-4e07-b74f-89629177da29?mode=deep",
+    "timestamp": "2026-05-31 18:42:25.861000",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: withdraw / _updatePosition] Can an unprivileged lender exploit the case where lossFactor = type(uint128).max under preconditions where the market has been completely wiped out by bad debt, causing updatePositionView to return postSlashCredit = 0 (since _lastLossFactor < type(uint128).max branch returns 0), then the lender calls withdraw(units = 0) which calls _updatePosition setting credit = 0, then the lender calls withdraw(units > 0) which reverts due to credit underflow, violating the invariant that a lender with credit > 0 can always call withdraw(0) without losing credit, causing scoped impact: lender's credit is zeroed out by a no-op withdraw, permanently losing their claim? Proof idea: max out lossFactor, call withdraw(0), assert credit becomes 0, assert lender cannot recover.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3df04276-58ac-4e5f-aa23-df9913685e02?mode=deep",
+    "timestamp": "2026-05-31 18:42:39.544852",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the ERC777 send hook in the loan token under preconditions where the loan token implements ERC777 and the seller's callback (sellerCallback) triggers a hook when tokens are transferred to the seller's receiver, causing the hook to reenter Midnight's withdraw() or repay() before the sellerCallback check completes, violating the invariant that no state can be reused during a take's callback sequence, causing scoped impact: reentrant withdraw() drains withdrawable before the take's state is finalized, allowing the attacker to redeem more than their credit? Proof idea: ERC777 token with hook that calls withdraw(), take() with sellerCallback, assert withdrawable and credit are consistent after reentrancy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5ea1760c-d18b-44f0-a90f-cc0fc2515e97?mode=deep",
+    "timestamp": "2026-05-31 18:42:53.823015",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: repay / withdraw] Can an unprivileged borrower exploit the repay() callback mechanism under preconditions where the repay callback (IRepayCallback.onRepay) reenters withdraw() before SafeTransferLib.safeTransferFrom pulls the repayment tokens, causing withdrawable to be increased by units (from repay state update) and then immediately decreased by units (from reentrant withdraw), resulting in the lender receiving tokens before the borrower's repayment tokens arrive, violating the invariant that withdrawable only increases after tokens are received, causing scoped impact: lender redeems tokens that have not yet been deposited by the borrower? Proof idea: repay callback that calls withdraw(), assert token balance of Midnight is non-negative after both calls complete.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bbf17e50-3c96-4ecd-add7-d416a8899268?mode=deep",
+    "timestamp": "2026-05-31 18:43:08.957864",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the buyerCallback mechanism under preconditions where the buyerCallback (IBuyCallback.onBuy) reenters take() with a different offer before the first take's token transfers complete, causing the buyer's credit to be updated twice in the same transaction while the token transfers are deferred, violating the invariant that credit updates and token transfers are atomic, causing scoped impact: buyer accumulates credit from two takes but only pays for one? Proof idea: buyerCallback that calls take() again, assert buyer credit == sum of both takes' buyerCreditIncrease, assert tokens paid == sum of both takes' buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f9770c7a-b46d-4d51-ac80-268fcbbe4e10?mode=deep",
+    "timestamp": "2026-05-31 18:43:25.698862",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the liquidation lock mechanism (UtilsLib.tExchange(LIQUIDATION_LOCK_SLOT, id, seller, true)) under preconditions where the seller is locked during a take's callbacks, and the buyerCallback reenters liquidate() for the seller, which reverts due to liquidationLocked(id, seller) = true, but the revert is caught by a try/catch in the callback, allowing the callback to proceed and the take to complete, violating the invariant that the seller cannot be liquidated during take callbacks, causing scoped impact: if the lock bypass were possible, the seller's collateral could be seized mid-take, corrupting the health check at the end of take()? Proof idea: buyerCallback with try/catch around liquidate(seller), assert liquidate reverts with NotLiquidatable when locked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_913cd91d-41f8-455a-b28d-602a1ee86df3?mode=deep",
+    "timestamp": "2026-05-31 18:43:42.949939",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: withdraw / _updatePosition] Can an unprivileged lender exploit the pendingFee proportional reduction in withdraw() (pendingFeeDecrease = pendingFee.mulDivUp(units, credit)) under preconditions where units = credit - 1 (withdrawing almost all credit), causing pendingFeeDecrease = pendingFee.mulDivUp(credit - 1, credit) = pendingFee (rounded up), leaving pendingFee = 0 after the withdrawal, then the lender withdraws the remaining 1 unit of credit with pendingFee = 0, receiving 1 token with no fee deduction, violating the invariant that total fee paid = original pendingFee, causing scoped impact: lender pays less continuous fee than owed by splitting withdrawals? Proof idea: withdraw(credit - 1), assert pendingFee = 0, withdraw(1), assert total tokens received = credit - pendingFee + rounding_error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_832929bb-ef11-4f30-abd5-2da498f2bacc?mode=deep",
+    "timestamp": "2026-05-31 18:43:59.124909",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the multi-collateral valuation in isHealthy() under preconditions where a borrower has 16 collaterals (MAX_COLLATERALS_PER_BORROWER) with mixed decimals (6, 8, 18, 27), causing the maxDebt computation (collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD)) to accumulate rounding errors across 16 iterations, resulting in maxDebt being slightly lower than the true value, causing a healthy position to appear unhealthy, violating the invariant that healthy positions cannot be liquidated, causing scoped impact: healthy borrower is liquidated, their collateral is seized, and lenders receive repaidUnits that inflate withdrawable beyond the economic value? Proof idea: fuzz 16 collateral amounts and prices near the health threshold, assert isHealthy() result matches exact arithmetic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_76000f0f-18a0-4aa1-b6a2-aeedb0ca1a35?mode=deep",
+    "timestamp": "2026-05-31 18:44:15.334885",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the wExp approximation in TickLib.wExp() under preconditions where the tick is near MAX_TICK = 5820, causing the third-order Taylor approximation of exp to have significant error, resulting in tickToPrice() returning a price that differs from the true exponential by more than PRICE_ROUNDING_STEP = 1e12, then the buyer's credit is computed as units (face value) but the assets paid are based on the approximated price, violating the invariant that credit increase is economically backed by assets paid at the correct price, causing scoped impact: buyer receives credit worth more than the assets paid? Proof idea: compute tickToPrice(5820) using exact exp and compare to wExp approximation, assert error < PRICE_ROUNDING_STEP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d32f9f2d-348e-4f44-af47-9b63bfd80b2b?mode=deep",
+    "timestamp": "2026-05-31 18:44:32.149031",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the offer.maxAssets vs offer.maxUnits cap logic under preconditions where offer.maxAssets > 0 and offer.buy = true, causing consumed[maker][group] to track buyerAssets (not units), and a taker fills the offer with units such that buyerAssets = offer.maxAssets - 1 (just under the cap), then fills again with units = 1 causing buyerAssets to round up to 1 (due to mulDivDown), making newConsumed = offer.maxAssets, then fills a third time with units = 1 causing buyerAssets = 0 (mulDivDown rounds to 0), making newConsumed = offer.maxAssets (unchanged), violating the invariant that a fully consumed offer cannot be filled further, causing scoped impact: offer is filled beyond maxAssets via dust-unit fills? Proof idea: fill offer to maxAssets - 1, then fill with units = 1 repeatedly, assert consumed never exceeds maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e09da53a-949d-4e2e-af7f-0580e5009e4d?mode=deep",
+    "timestamp": "2026-05-31 18:44:47.721886",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / withdraw] Can an unprivileged taker exploit the try/catch pattern in MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral under preconditions where a take() reverts mid-execution after partial state changes (e.g., consumed is updated but token transfer fails), causing the bundler to silently skip the failed take and continue, but the consumed state is already updated (consumed is updated before callbacks in take()), violating the invariant that consumed state is only updated for successful takes, causing scoped impact: maker's offer capacity is consumed without the corresponding credit being created, effectively canceling the maker's offer without their consent? Proof idea: deploy a token that reverts on the second transferFrom, call buyWithUnitsTargetAndWithdrawCollateral, assert consumed[maker][group] is not updated for failed takes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e787e1c1-95dc-469a-ae3d-149ff6459629?mode=deep",
+    "timestamp": "2026-05-31 18:45:03.600842",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the case where offer.buy = false and the taker is the buyer under preconditions where the taker has existing debt equal to units, causing buyerCreditIncrease = 0 (debt is reduced, no new credit), and the taker pays buyerAssets = units.mulDivUp(buyerPrice, WAD) tokens, but receives no credit, while the maker (seller) receives sellerAssets and their credit decreases, violating the invariant that the taker's payment is economically justified by the debt reduction, causing scoped impact: taker overpays for debt reduction if buyerPrice > 1 (which is impossible since tick <= MAX_TICK and prices are <= 1), confirming this path is safe? Proof idea: assert tickToPrice(tick) <= WAD for all valid ticks, assert buyerAssets <= units for all valid ticks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7665a7e7-8187-4423-af52-e7a232f77a1b?mode=deep",
+    "timestamp": "2026-05-31 18:45:19.506082",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the case where the loan token has 0 decimals under preconditions where the loan token has 0 decimals (1 token = 1 raw unit), causing units to represent 1e18 times more value than expected (since the protocol uses WAD = 1e18 for price scaling), resulting in buyerAssets = units * price / WAD being computed in raw token units, and the buyer's credit of units tokens being worth 1e18 times more than the assets paid, violating the invariant that credit face value equals assets paid at price = 1, causing scoped impact: buyer redeems 1e18 times more value than paid? Proof idea: deploy 0-decimal token, take() with units = 1, assert buyerAssets = price / WAD (rounds to 0 for price < WAD), assert credit = 1 but assets paid = 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_adf6e90a-8440-4366-b17f-d9e3c54a8199?mode=deep",
+    "timestamp": "2026-05-31 18:45:38.536768",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the case where the loan token has 27 decimals under preconditions where units = 1 (1 raw token unit = 1e-27 of a standard token), causing buyerAssets = 1 * price / WAD to round to 0 (since price < WAD and 1 * price < WAD), resulting in the buyer paying 0 tokens but receiving 1 unit of credit, violating the invariant that credit increase must be backed by non-zero asset payment, causing scoped impact: attacker accumulates credit for free via dust-unit takes? Proof idea: deploy 27-decimal token, take() with units = 1 and price = WAD - 1, assert buyerAssets = 0, assert buyer credit increases by 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_495b9fec-1783-4d2a-8531-063809166192?mode=deep",
+    "timestamp": "2026-05-31 18:45:54.984524",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: liquidate / withdraw] Can an unprivileged liquidator exploit the rcfThreshold check in liquidate() under preconditions where rcfThreshold = 0 (market created with rcfThreshold = 0), causing the RCF condition to always be satisfied (since zeroFloorSub(x, 0) = x >= 0 = rcfThreshold for any x), allowing the liquidator to repay the full debt in one liquidation regardless of the recovery close factor, violating the invariant that the RCF limits liquidation to what is needed to restore health, causing scoped impact: liquidator over-liquidates a healthy-after-partial-liquidation position, seizing more collateral than economically justified? Proof idea: create market with rcfThreshold = 0, liquidate unhealthy position with repaidUnits = full debt, assert position is over-liquidated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0ea063a-b6f0-42a0-80c9-01c115e39f04?mode=deep",
+    "timestamp": "2026-05-31 18:46:10.432982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the case where timeToMaturity = 0 in the settlement fee computation under preconditions where block.timestamp > market.maturity (post-maturity), causing timeToMaturity = zeroFloorSub(maturity, block.timestamp) = 0, and settlementFee(id, 0) returns settlementFeeCbp0 * CBP (the 0-day fee), then buyerPrice = sellerPrice + settlementFee and the buyer pays buyerAssets = units * buyerPrice / WAD, but the buyer's credit increases by units (face value), violating the invariant that post-maturity credit is backed by assets paid at the correct post-maturity price, causing scoped impact: if settlementFeeCbp0 = 0 (zero post-maturity fee), buyer pays sellerAssets = units * sellerPrice / WAD < units and receives units credit, redeeming more than paid? Proof idea: set settlementFeeCbp0 = 0, post-maturity take with price < 1, assert buyer credit = units but buyerAssets < units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9284aa58-b20e-429d-ae94-0db1acd9a5da?mode=deep",
+    "timestamp": "2026-05-31 18:46:26.003476",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Market settlement or maturity logic flaw that allows credit/debt units to redeem for more assets than economically owed'] [Function: take / withdraw] Can an unprivileged taker exploit the case where the same address is both buyer and seller in different markets sharing the same loan token under preconditions where the attacker is a lender in market A and a borrower in market B, both with the same loan token, and uses multicall() to simultaneously withdraw from market A and repay in market B, causing the loan token balance to be used twice (once for withdrawal, once for repayment), violating the invariant that each loan token unit can only be used once, causing scoped impact: attacker effectively double-spends loan tokens across markets? Proof idea: multicall([withdraw(marketA, units, attacker, attacker), repay(marketB, units, attacker, address(0), '')]), assert total loan token balance of Midnight decreases by exactly units (not 0 or 2*units).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d06a315-a67b-4af4-b373-f05cf3273298?mode=deep",
+    "timestamp": "2026-05-31 18:46:43.668813",
+    "report_generated": false
+  }
+]
