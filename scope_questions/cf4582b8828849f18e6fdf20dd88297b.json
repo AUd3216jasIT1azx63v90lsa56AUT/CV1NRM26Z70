@@ -1,0 +1,57 @@
+[
+  {
+    "question": "'File Name: src/periphery/EcrecoverAuthorizer.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_01161dde-45ed-4328-8f44-0c17ea67e6d8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/MidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_000288b2-e949-491c-9eb5-103af3e78afa?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_97ce547c-5ab5-4d66-8b3e-393a0d8ab699?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IERC20Permit.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d40b4f58-4e5a-4d0d-b00c-5e2ed59f4de6?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_06d21141-8d06-4733-8580-8f13c9ea8a23?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_3ab18d7c-9278-4d66-ad17-38d671a41386?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/periphery/interfaces/IPermit2.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c231083d-53dc-419d-92a4-6ce8fea0baad?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/EcrecoverRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d2234710-e303-4cf2-84da-cc28a2e93ec8?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/SetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_654acffc-3c3e-49e2-b829-599d781d994d?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_6fce790e-3769-4dec-99b0-1b4be7f1f8db?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_04b56d49-7578-4140-aa9c-847811ec3c0a?mode=deep",
+    "questions_generated": false
+  }
+]
