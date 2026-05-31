@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take] Can an unprivileged taker, under the precondition that tick=0 causes tickToPrice to return 0 (due to divHalfDownUnchecked rounding 4.92e11 down through PRICE_ROUNDING_STEP=1e12), compose a multicall of [take(sell_offer_at_tick_0, units=N), withdraw(units=N)] to receive N units of credit while the maker-seller receives 0 sellerAssets, violating the invariant that every lend/take must create correct credit and asset transfer, causing scoped impact: direct loss — maker receives zero loan tokens for N units of debt created? Proof idea: fuzz tick in [0..4] and assert tickToPrice(tick) > 0 for all valid ticks; assert sellerAssets > 0 for any take that increases sellerDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_392a83bf-0b0c-44e2-b1bb-73c62a328a55?mode=deep",
+    "timestamp": "2026-05-31 19:51:54.409000",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take] Can an unprivileged taker, under the precondition that tickToPrice(tick) < settlementFee(id, timeToMaturity) for a buy offer at a low tick, compose a multicall of [take(buy_offer_at_tick_T1), take(buy_offer_at_tick_T2)] where T1 succeeds and T2 reverts due to underflow in sellerPrice = offerPrice - _settlementFee, causing the multicall to atomically revert and leaving consumed state partially updated, violating the invariant that partial fills must update consumed state before any exploitable reentry point? Proof idea: fuzz tick and settlementFee breakpoints; assert that any take revert within multicall leaves consumed[maker][group] unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0223a1aa-4f51-456c-93e0-27afac421605?mode=deep",
+    "timestamp": "2026-05-31 19:52:06.294376",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: priceToTick / multicall] Can an unprivileged market creator, under the precondition that priceToTick(0, spacing) returns (MAX_TICK + spacing - 1) / spacing * spacing which may exceed MAX_TICK for spacings that do not divide MAX_TICK=5820 exactly, compose a multicall of [touchMarket(market), periphery_call_using_priceToTick(price=0, spacing=S)] to trigger a TickOutOfRange revert inside tickToPrice when the rounded-up result is passed back into take, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: fund freeze — all takes on the market revert? Proof idea: fuzz spacing values S where S divides DEFAULT_TICK_SPACING=4 but (MAX_TICK + S - 1) / S * S > MAX_TICK; assert priceToTick(0, S) <= MAX_TICK for all valid S.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d4d4afc1-0fbc-4c05-b07b-fc0294040a97?mode=deep",
+    "timestamp": "2026-05-31 19:52:18.780389",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: wExp / tickToPrice] Can an unprivileged taker, under the precondition that wExp uses a 3-term Taylor series (1 + r + r²/2 + r³/6) with |r| < ln2, compose a multicall of [take(offer_at_tick_A), take(offer_at_tick_A+1)] where tickToPrice(A) >= tickToPrice(A+1) due to approximation error breaking monotonicity, violating the invariant that higher ticks must correspond to higher prices (lower yields), causing scoped impact: accounting corruption — two offers at adjacent ticks produce identical or inverted prices, enabling arbitrage between them in a single transaction? Proof idea: differential test tickToPrice(t) vs tickToPrice(t+1) for all t in [0, MAX_TICK-1]; assert strict monotonicity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6672e85c-277a-41b1-a3ce-025d6dbe094f?mode=deep",
+    "timestamp": "2026-05-31 19:52:31.485010",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: divHalfDownUnchecked / tickToPrice] Can an unprivileged taker, under the precondition that divHalfDownUnchecked is unchecked and called with x near type(uint256).max, compose a multicall of [take(offer_at_extreme_tick), take(offer_at_normal_tick)] where the first take silently overflows divHalfDownUnchecked((x + (d-1)/2), d) producing a wrapped price, violating the invariant that total credit, debt, and token balances must stay solvent, causing scoped impact: insolvency — buyer pays incorrect asset amount derived from wrapped price? Proof idea: fuzz x in [type(uint256).max - 1e18, type(uint256).max] and d=PRICE_ROUNDING_STEP; assert no overflow in divHalfDownUnchecked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2a187dd-2f8c-4458-b608-aa3f0b75af1e?mode=deep",
+    "timestamp": "2026-05-31 19:52:44.686497",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / setMarketTickSpacing] Can an unprivileged taker acting as tickSpacingSetter, under the precondition that setMarketTickSpacing reduces spacing from 4 to 2 enabling tick=2 which was previously inaccessible, compose a multicall of [setMarketTickSpacing(id, 2), take(offer_at_tick_2)] where the tick accessibility check offer.tick % _marketState.tickSpacing == 0 passes with the new spacing within the same transaction, violating the invariant that offers must not be filled under wrong terms (the offer was signed under spacing=4 assumptions), causing scoped impact: offer bug — maker's offer at tick=2 is filled even though it was created when tick=2 was inaccessible? Proof idea: create offer at tick=2 when spacing=4 (would fail tick check), reduce spacing to 2 in multicall, then take; assert take reverts or offer terms are validated against spacing at signing time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4f9ee61a-26d0-4f6d-8836-57177cf2f65b?mode=deep",
+    "timestamp": "2026-05-31 19:52:59.710861",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / liquidate] Can an unprivileged liquidator, under the precondition that the liquidation lock (LIQUIDATION_LOCK_SLOT via tExchange) is cleared after take() completes and transient storage resets between calls within the same multicall, compose a multicall of [take(sell_offer, seller=victim), liquidate(victim)] where the victim's debt increased in the first call making them unhealthy, and the liquidation lock is no longer set in the second call, violating the invariant that only unhealthy accounts should be liquidatable (the account was healthy before the multicall), causing scoped impact: unauthorized seizure — victim's collateral seized in same tx as debt creation? Proof idea: state-test that liquidationLocked(id, seller) is false after take() returns; assert liquidate reverts if called immediately after take in same multicall when seller was healthy before.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebb2f29a-0e13-4189-8885-7bb850b7a216?mode=deep",
+    "timestamp": "2026-05-31 19:53:13.946585",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / withdraw] Can an unprivileged taker, under the precondition that a buy offer at tick=MAX_TICK gives offerPrice≈1e18 and buyerCreditIncrease=units when buyer has no existing debt, compose a multicall of [take(buy_offer_at_MAX_TICK, units=N), withdraw(units=N)] to atomically receive N loan tokens without any prior deposit, violating the invariant that every lend/take must create correct credit and asset transfer (the credit is valid but the immediate withdrawal drains withdrawable), causing scoped impact: fund freeze for other lenders — withdrawable is reduced by N before the maker's assets are transferred? Proof idea: assert withdrawable[id] >= sum(all_lender_credits) after any multicall sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_154c848c-9d06-41db-afc8-1ed60fa3250c?mode=deep",
+    "timestamp": "2026-05-31 19:53:27.695657",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / repay] Can an unprivileged borrower, under the precondition that repay() increases marketState.withdrawable before the token transfer (optimistic accounting), compose a multicall of [repay(market, units=D, onBehalf=self, callback=address(0)), take(sell_offer_at_tick_T, units=D)] to repay debt and immediately re-borrow in the same transaction, where the second take's health check uses the post-repay state, violating the invariant that debt must not increase after maturity if block.timestamp == market.maturity, causing scoped impact: bad debt — borrower re-borrows at maturity boundary using repay+take sequencing? Proof idea: warp to maturity-1, multicall [repay, take(sell)]; assert CannotIncreaseDebtPostMaturity fires correctly at exact maturity boundary.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b11c7ca9-f108-4f69-8068-2d481862c9f4?mode=deep",
+    "timestamp": "2026-05-31 19:53:41.806571",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / supplyCollateral / withdrawCollateral] Can an unprivileged borrower, under the precondition that supplyCollateral does not call any oracle and withdrawCollateral calls isHealthy after state update, compose a multicall of [supplyCollateral(market, idx, assets, self), take(sell_offer_at_tick_T, units=U), withdrawCollateral(market, idx, assets, self, receiver)] where the health check in withdrawCollateral uses tickToPrice-derived debt but the oracle price used in isHealthy differs from the tick price, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy, causing scoped impact: bad debt — borrower withdraws all collateral after borrowing in same tx? Proof idea: fuzz oracle price vs tick price; assert isHealthy(market, id, borrower) is true after withdrawCollateral in any multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa6ebdc4-59c5-44ca-8c44-2218a4fd5841?mode=deep",
+    "timestamp": "2026-05-31 19:53:56.072901",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (two takes same group)] Can an unprivileged taker, under the precondition that two offers share the same consumption group (offer.group) and both have maxUnits=M, compose a multicall of [take(offer1_group_G, units=M), take(offer2_group_G, units=M)] where consumed[maker][G] is updated to M after the first take and then to 2M after the second, violating the invariant that consumption group budget cannot be exceeded across offers, causing scoped impact: offer bug — maker's total exposure across the group exceeds maxUnits=M? Proof idea: invariant test that consumed[maker][group] <= max(offer.maxUnits, offer.maxAssets) for all offers in the group after any multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b6b0964-4459-4053-970e-a42feeedc19b?mode=deep",
+    "timestamp": "2026-05-31 19:54:09.297900",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / flashLoan] Can an unprivileged taker, under the precondition that flashLoan sends tokens before the callback and take requires buyerAssets from payer, compose a multicall of [flashLoan([loanToken], [N], callback, data)] where the callback itself calls take(buy_offer, units=N/price) using the flash-loaned tokens as buyerAssets, and the flash loan repayment is satisfied by the sellerAssets received, violating the invariant that every borrow/take must create correct debt and collateral obligation (no collateral posted), causing scoped impact: bad debt — taker borrows via take funded by flash loan with no collateral in same tx? Proof idea: assert that after flashLoan+take multicall, seller's debt is backed by sufficient collateral per isHealthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a628d483-ce54-496a-98e2-9287978fd539?mode=deep",
+    "timestamp": "2026-05-31 19:54:22.451679",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / liquidate (bad debt path)] Can an unprivileged liquidator, under the precondition that liquidate() with badDebt>0 updates lossFactor and totalUnits before the repay/seize step, compose a multicall of [liquidate(borrower, seizedAssets=0, repaidUnits=0), take(offer)] where the first call realizes bad debt (reducing totalUnits and increasing lossFactor) and the second call's _updatePosition uses the new lossFactor to slash the buyer's credit before crediting new units, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: accounting corruption — lender credit is slashed and then new credit is added at the slashed rate in the same block? Proof idea: assert updatePositionView returns consistent credit before and after a [liquidate(bad_debt), take] multicall sequence.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a43af42-7c94-47b1-9088-dba4e5ccb76d?mode=deep",
+    "timestamp": "2026-05-31 19:54:36.213209",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (buy then sell same tick)] Can an unprivileged taker, under the precondition that buying units reduces existing debt before increasing credit and selling units reduces existing credit before increasing debt, compose a multicall of [take(buy_offer_at_tick_T, units=U), take(sell_offer_at_tick_T, units=U)] where the net position change is zero but the settlement fee is paid twice (once as buyer, once as seller), violating the invariant that total credit, debt, collateral, fees, and token balances must stay solvent (fee is double-charged), causing scoped impact: insolvency — claimableSettlementFee[loanToken] accumulates 2x the expected fee for a round-trip? Proof idea: assert claimableSettlementFee delta equals exactly one settlement fee for a buy+sell round-trip at the same tick in one multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f8571e7-8fcf-4835-9caf-ce0403f08225?mode=deep",
+    "timestamp": "2026-05-31 19:54:50.730526",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: wExp / tickToPrice (unchecked shift)] Can an unprivileged taker, under the precondition that wExp uses unchecked { return uint256(expR) << uint256(q) } where q is derived from (x + offset) / ln2 and expR is a positive int256, compose a multicall of [take(offer_at_tick_0), take(offer_at_tick_1)] where wExp for tick=0 computes q≈21 and expR≈0.97e18, and the shift uint256(0.97e18) << 21 produces a value that when used in tickToPrice gives price=0 after PRICE_ROUNDING_STEP rounding, violating the invariant that every lend/take must create correct credit and asset transfer, causing scoped impact: direct loss — maker-seller at tick=0 receives 0 sellerAssets for units of debt? Proof idea: unit test tickToPrice(0) and assert result > 0; assert sellerAssets > 0 for any take that creates sellerDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de34865a-15d2-47c1-a63e-7e38e067dc5c?mode=deep",
+    "timestamp": "2026-05-31 19:55:05.161269",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: priceToTick / tickToPrice (round-trip)] Can an unprivileged periphery user, under the precondition that priceToTick(tickToPrice(t), spacing) may not return t due to PRICE_ROUNDING_STEP quantization collapsing adjacent ticks to the same price, compose a multicall of [take(offer_at_tick_T), periphery_take_at_priceToTick(tickToPrice(T), spacing)] where the second take lands on a different tick than T, violating the invariant that offers must not be filled under wrong terms, causing scoped impact: offer bug — taker fills at a different price than the maker intended due to tick/price round-trip inconsistency? Proof idea: fuzz t in [0, MAX_TICK] and spacing in {1,2,4}; assert priceToTick(tickToPrice(t), spacing) == t for all t that are multiples of spacing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_005a931b-9707-4e8a-a274-d2e0bba78cde?mode=deep",
+    "timestamp": "2026-05-31 19:55:20.172448",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / setConsumed] Can an unprivileged authorized operator, under the precondition that setConsumed requires amount >= consumed[onBehalf][group] and multicall uses delegatecall preserving msg.sender, compose a multicall of [take(offer_group_G, units=U), setConsumed(G, type(uint256).max, maker)] where the first take fills the offer and the second cancels all remaining capacity, violating the invariant that cancelled offers cannot be filled (the fill already happened before cancellation in the same tx), causing scoped impact: offer bug — maker's offer is filled and then cancelled in the same transaction, preventing any further fills but not undoing the completed fill? Proof idea: assert that setConsumed(max) after a take in the same multicall does not retroactively undo the take's accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b61f42c5-67e6-45f1-bc5f-3b2ca940bba1?mode=deep",
+    "timestamp": "2026-05-31 19:55:36.233005",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / setIsAuthorized] Can an unprivileged attacker, under the precondition that multicall uses delegatecall so msg.sender is the attacker throughout, compose a multicall of [setIsAuthorized(attacker, true, victim)] — which requires victim == msg.sender or isAuthorized[victim][attacker] — followed by [take(offer, taker=victim)] to act on behalf of victim, violating the invariant that gates, ratifiers, signatures, callbacks, and authorizations must not be bypassable, causing scoped impact: gate bypass — attacker takes on behalf of victim bypassing victim's intent? Proof idea: assert setIsAuthorized(attacker, true, victim) reverts when msg.sender != victim and !isAuthorized[victim][msg.sender]; confirm multicall cannot bootstrap authorization.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b95725c1-9726-4006-8110-63a2a44abec5?mode=deep",
+    "timestamp": "2026-05-31 19:55:53.446906",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (reduceOnly) / take (debt-increasing)] Can an unprivileged taker, under the precondition that a reduceOnly sell offer requires sellerDebtIncrease==0 and the seller has existing credit, compose a multicall of [take(sell_offer_reduceOnly, units=credit_amount), take(sell_offer_normal, units=U)] where the first take reduces seller credit to zero and the second take increases seller debt, violating the invariant that selling units must reduce existing credit before increasing debt (the reduceOnly check passes but the sequencing creates debt after credit is exhausted), causing scoped impact: bad debt — seller accumulates debt in same tx as credit exhaustion without collateral check between calls? Proof idea: assert isHealthy(market, id, seller) after any multicall sequence that includes a reduceOnly take followed by a debt-increasing take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6de3454c-d0f9-41c7-bf02-a4c1721bfa6c?mode=deep",
+    "timestamp": "2026-05-31 19:56:12.280003",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / claimContinuousFee] Can an unprivileged fee claimer, under the precondition that claimContinuousFee reduces totalUnits and withdrawable, compose a multicall of [claimContinuousFee(market, amount, receiver), take(sell_offer_at_tick_T)] where the first call reduces totalUnits (affecting lossFactor computation in subsequent _updatePosition) and the second call's _updatePosition uses the stale lastLossFactor, violating the invariant that total credit, debt, collateral, fees, and token balances must stay solvent, causing scoped impact: insolvency — continuousFeeCredit is reduced and then a take credits new units against a totalUnits that no longer reflects the fee claim? Proof idea: assert marketState.totalUnits == sum(all_lender_credits) + marketState.continuousFeeCredit after any [claimContinuousFee, take] multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e7854ce-f8d7-436f-ad7f-43a8c2e1ce55?mode=deep",
+    "timestamp": "2026-05-31 19:56:31.295865",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (two markets same loanToken)] Can an unprivileged taker, under the precondition that claimableSettlementFee[loanToken] is shared across all markets with the same loan token, compose a multicall of [take(offer_market1_tick_T1), take(offer_market2_tick_T2)] where both takes add to claimableSettlementFee[loanToken] and the total exceeds the contract's actual loanToken balance, violating the invariant that contract token balances must cover withdrawable assets, collateral claims, credit redemptions, and accrued fees, causing scoped impact: insolvency — settlement fees from two markets in one tx exceed available balance? Proof idea: invariant test that loanToken.balanceOf(midnight) >= withdrawable[m1] + withdrawable[m2] + claimableSettlementFee[loanToken] after any multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_13ffccac-4079-4c62-9db3-c33db3809d68?mode=deep",
+    "timestamp": "2026-05-31 19:56:45.694453",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (maturity boundary)] Can an unprivileged taker, under the precondition that block.timestamp == market.maturity makes timeToMaturity = zeroFloorSub(maturity, timestamp) = 0 and settlementFee uses the 0d breakpoint, compose a multicall of [take(sell_offer_at_tick_T, units=U)] at exactly block.timestamp == market.maturity where the CannotIncreaseDebtPostMaturity check is block.timestamp <= market.maturity (inclusive), violating the invariant that debt must not increase after maturity, causing scoped impact: bad debt — debt is created at the exact maturity timestamp which is simultaneously pre- and post-maturity depending on the check direction? Proof idea: warp to exact maturity; assert take with sellerDebtIncrease > 0 reverts; check the <= vs < boundary in the require.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b5bd0c0-ad6f-4781-b247-854cf6508feb?mode=deep",
+    "timestamp": "2026-05-31 19:57:00.082941",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take / liquidate (postMaturityMode)] Can an unprivileged liquidator, under the precondition that postMaturityMode liquidation uses lif = WAD + (maxLif - WAD) * (block.timestamp - maturity) / TIME_TO_MAX_LIF and TIME_TO_MAX_LIF=15 minutes, compose a multicall of [take(sell_offer_at_tick_T, seller=victim), liquidate(victim, postMaturityMode=true)] at block.timestamp == maturity+1 where lif≈WAD (minimal incentive), violating the invariant that liquidation must not leave accounting desynced between borrower debt, lender credit, protocol balances, and seized collateral, causing scoped impact: accounting corruption — liquidation at lif=WAD seizes collateral at 1:1 with debt but tick-derived debt units may not match oracle-priced collateral? Proof idea: assert seizedAssets * liquidatedCollatPrice / ORACLE_PRICE_SCALE == repaidUnits * lif / WAD within rounding after [take, liquidate] multicall at maturity+1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c480811d-d692-4a3e-bb77-135a88ac42ca?mode=deep",
+    "timestamp": "2026-05-31 19:57:14.739227",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (payer confusion)] Can an unprivileged taker, under the precondition that payer = buyerCallback != address(0) ? buyerCallback : (offer.buy ? buyer : msg.sender) and the buyerCallback is a contract that calls take again (reentrancy), compose a multicall of [take(buy_offer_with_callback)] where the buyerCallback reenters take() with a different offer before the first take's SafeTransferFrom executes, violating the invariant that multicall/callback/reentrancy must not break invariants that hold for single calls, causing scoped impact: accounting corruption — consumed state is updated for both takes but only one asset transfer occurs? Proof idea: implement reentrant buyerCallback that calls take; assert consumed[maker][group] and token balances are consistent after reentrant take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc1b3047-0d31-4802-a2ed-0ba489a4adee?mode=deep",
+    "timestamp": "2026-05-31 19:57:28.831579",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/TickLib.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: tickToPrice / take (seller callback reentrancy)] Can an unprivileged maker-seller, under the precondition that the sellerCallback is called after SafeTransferFrom(payer, address(this), buyerAssets - sellerAssets) but before the health check require(!liquidationLocked || isHealthy), compose a multicall of [take(sell_offer_with_sellerCallback)] where the sellerCallback calls withdrawCollateral to remove collateral before the health check, violating the invariant that collateral cannot be withdrawn if it would make debt unhealthy, causing scoped impact: bad debt — seller withdraws collateral during their own take callback leaving undercollateralized debt? Proof idea: implement sellerCallback that calls withdrawCollateral; assert isHealthy(market, id, seller) is true after the callback returns.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea0b2e28-9205-49b4-a389-8bbe90caa130?mode=deep",
+    "timestamp": "2026-05-31 19:57:42.279383",
+    "report_generated": false
+  }
+]
