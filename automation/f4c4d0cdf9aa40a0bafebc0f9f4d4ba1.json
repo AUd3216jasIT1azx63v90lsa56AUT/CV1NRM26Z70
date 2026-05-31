@@ -1,0 +1,56 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified / take] Can an unprivileged taker under the precondition that maker ratifies root R for offer O, trigger take() with units=0 (no-op take), causing isRatified to succeed and consumed to be updated by 0, violating the invariant that no-op takes must not consume ratifier state, causing scoped impact: low-cost DoS — attacker can call take with units=0 repeatedly to trigger ratifier callbacks without consuming offer capacity? Proof idea: unit test: ratify offer, call take with units=0, assert isRatified is called and CALLBACK_SUCCESS returned, assert consumed unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_49bbe591-f095-44f4-8394-639d3cb95047?mode=deep",
+    "timestamp": "2026-05-31 19:48:32.776673",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified] Can an unprivileged taker under the precondition that maker ratifies root R for offer O, trigger isRatified with malformed ratifierData (e.g., too short for abi.decode), causing abi.decode to revert with a generic error rather than InvalidProof, violating the invariant that invalid ratifierData must produce a clean revert, causing scoped impact: low-cost DoS — malformed ratifierData causes take() to revert with an unrecognized error, potentially breaking integrations that check for specific error selectors? Proof idea: unit test: call isRatified with ratifierData = hex'', assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b11b9480-0437-4ab6-8ea0-e3cee80c5687?mode=deep",
+    "timestamp": "2026-05-31 19:48:45.172343",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketSettlementFee / settlementFee / take] Can an unprivileged feeSetter under the precondition that market exists with TTM in [1d, 7d], trigger setMarketSettlementFee(id, 1, cbp1) and setMarketSettlementFee(id, 2, cbp2) where cbp1 > cbp2, causing settlementFee() to return feeLower * (7d - TTM) + feeUpper * (TTM - 1d) / (7d - 1d) with feeLower=cbp1*CBP > feeUpper=cbp2*CBP, violating the invariant that settlement fee must be monotonically non-decreasing with TTM within each segment, causing scoped impact: accounting corruption — inverted fee segment creates higher fees for shorter TTM, penalizing near-term takers? Proof idea: fuzz test: set cbp1 > cbp2, fuzz TTM in [1d, 7d], assert settlementFee decreases as TTM increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f82ce1ef-2fc9-4979-a812-2e8417164cfd?mode=deep",
+    "timestamp": "2026-05-31 19:48:57.648671",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified / take] Can an unprivileged taker under the precondition that maker ratifies root R for offer O with offer.market.maturity = block.timestamp (maturity is now), trigger take() where timeToMaturity = zeroFloorSub(maturity, block.timestamp) = 0, causing settlementFee() to return settlementFeeCbp0 * CBP (post-maturity fee), and sellerDebtIncrease check to revert with CannotIncreaseDebtPostMaturity if seller has no existing credit, violating the invariant that maturity boundary must not allow debt increase, causing scoped impact: fund freeze — ratified sell offers at exact maturity boundary are unfillable for new borrowers? Proof idea: unit test: ratify sell offer with maturity=block.timestamp, attempt take, assert CannotIncreaseDebtPostMaturity revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_10557e62-52da-432b-9d24-fe5b8d7468b5?mode=deep",
+    "timestamp": "2026-05-31 19:49:11.153279",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified] Can an unprivileged taker under the precondition that maker ratifies root R for offer O, trigger isRatified where the Merkle proof contains duplicate sibling hashes (same bytes32 value repeated), causing isLeaf to compute a valid root from a crafted tree structure, violating the invariant that Merkle proof must uniquely identify the offer leaf, causing scoped impact: gate bypass — crafted proof with duplicate siblings passes isLeaf for an offer not in the original tree? Proof idea: differential test: construct proof with duplicate siblings, assert isLeaf returns false for offer not in original tree.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c65bd694-19b5-4529-a863-3e1c624fd09e?mode=deep",
+    "timestamp": "2026-05-31 19:49:24.208424",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setMarketSettlementFee / claimSettlementFee / take] Can an unprivileged feeSetter under the precondition that market exists, trigger setMarketSettlementFee(id, 0, 0) setting post-maturity fee to 0, then post-maturity takes have buyerAssets == sellerAssets (zero fee), causing claimableSettlementFee[loanToken] += 0, violating the invariant that post-maturity settlement fees must be collected to fund protocol operations, causing scoped impact: fee underclaim — post-maturity unwinding generates zero settlement fees if cbp0 is set to 0? Proof idea: state-transition test: set cbp0=0, warp past maturity, take, assert claimableSettlementFee unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39c5d904-dd32-4545-b03e-c2bf9d67e7c4?mode=deep",
+    "timestamp": "2026-05-31 19:49:37.412610",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified / take] Can an unprivileged taker under the precondition that maker ratifies root R for offer O with offer.ratifier = address(setterRatifier), but Midnight checks isAuthorized[offer.maker][offer.ratifier] before calling isRatified, trigger take() reverting with RatifierUnauthorized if maker has not called setIsAuthorized(setterRatifier, true), violating the invariant that ratifier authorization in Midnight must be separate from root ratification in SetterRatifier, causing scoped impact: fund freeze — maker ratifies root in SetterRatifier but forgets to authorize SetterRatifier in Midnight, making all ratified offers unfillable? Proof idea: unit test: ratify root without setIsAuthorized(setterRatifier, true), attempt take, assert RatifierUnauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_881b65d4-b46f-4457-b82e-289ebd4f0d5d?mode=deep",
+    "timestamp": "2026-05-31 19:49:50.795489",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setIsRootRatified / isRatified / take] Can an unprivileged taker under the precondition that maker ratifies root R for offer O and authorizes setterRatifier in Midnight, trigger take() where isRatified is called with offer.maker != the maker who ratified root R (e.g., offer.maker is a different address), causing isRootRatified[offer.maker][root] to be false, violating the invariant that ratification must bind to the correct maker address in the offer, causing scoped impact: gate bypass attempt fails — maker field in offer is verified against isRootRatified mapping? Proof idea: unit test: ratify root for maker A, construct offer with maker=B, attempt take, assert NotRatified revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e6800ba-e9a4-4e95-ad3f-fc3e58babd1e?mode=deep",
+    "timestamp": "2026-05-31 19:50:04.275282",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: setDefaultSettlementFee / touchMarket / setMarketSettlementFee] Can an unprivileged feeSetter under the precondition that defaultSettlementFeeCbp[loanToken] has been set to nonzero values, trigger touchMarket creating market M, then setMarketSettlementFee(id, index, 0) overriding specific breakpoints to 0, causing M to have a mixed fee schedule (some breakpoints from defaults, some overridden to 0), violating the invariant that market fee schedule must be either fully default or fully custom, causing scoped impact: accounting corruption — partial fee override creates unexpected zero-fee windows at specific TTM ranges while other ranges retain default fees? Proof idea: state-transition test: create market with nonzero defaults, override cbp3=0, assert settlementFee at TTM=30d-90d range returns 0 while other ranges return nonzero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8c7f4cdd-bda1-413b-a5e2-541d826831e2?mode=deep",
+    "timestamp": "2026-05-31 19:50:17.327408",
+    "report_generated": false
+  }
+]
