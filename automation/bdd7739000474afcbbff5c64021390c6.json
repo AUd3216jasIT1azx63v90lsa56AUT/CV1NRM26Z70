@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker using MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral under a buy-offer with maxAssets cap whose remaining capacity is exactly 1 wei trigger consumableUnits returning a units value u such that take(offer, ..., u, ...) reverts with ConsumedAssets because mulDivUp rounding in buyerAssetsToUnits overshoots the cap, causing the bundler to silently skip the offer via try/catch and fail to fill targetUnits, violating the invariant that consumableUnits must return a units value that is safely takeable without exceeding the offer cap? Proof idea: fuzz (maxAssets, consumed, tick, settlementFee) near the rounding boundary and assert that take(offer, ..., consumableUnits(...), ...) never reverts with ConsumedAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea3075ce-dbe9-4830-81e1-b2037147dc86?mode=deep",
+    "timestamp": "2026-05-31 21:44:07.921695",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged maker who shares a group between one maxUnits-capped offer and one maxAssets-capped offer cause consumableUnits to read consumed(maker, group) in asset-denominated units for the maxUnits branch, returning maxUnits.zeroFloorSub(assetConsumed) which is a semantically wrong remaining capacity, allowing the taker to take more units than the maker intended, violating the invariant that the group budget cannot be exceeded across offers? Proof idea: create two offers sharing group g, one with maxUnits=100, one with maxAssets=50; fill the asset offer for 30 assets; assert consumableUnits for the units offer returns 70 instead of the correct cross-offer budget.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bbbe1521-ed06-4610-bd4b-9564562fecc0?mode=deep",
+    "timestamp": "2026-05-31 21:44:19.562569",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker under a buy offer (offer.buy=true) with maxAssets cap where offerPrice equals settlementFee cause consumableUnits to call sellerAssetsToUnits with sellerPrice=0, triggering a division-by-zero revert, which in MidnightBundles is NOT caught (the comment says 'Reverts if ConsumableUnitsLib reverts'), causing the entire bundle transaction to revert and freezing the taker's pre-pulled funds in the bundler? Proof idea: set tick such that tickToPrice(tick) == settlementFee(id, ttm) and call consumableUnits for a buy offer with maxAssets>0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43bd4644-218c-4bc9-89fd-22cc34627247?mode=deep",
+    "timestamp": "2026-05-31 21:44:31.838238",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to return a stale units value by calling it at block.timestamp T1 (where settlementFee is F1) and then executing take at block.timestamp T2 > T1 (where settlementFee is F2 < F1 due to time passing toward maturity), such that the units computed from F1 are smaller than the units computable from F2, causing the taker to underfill the offer and receive fewer credit units than entitled, violating the invariant that every lend/take must create correct credit? Proof idea: fuzz (T1, T2, tick, maxAssets) across fee breakpoints and assert consumableUnits(T1) < consumableUnits(T2) for the same remaining capacity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6abafc1e-7dac-47e5-bb43-e7b6b826bfbd?mode=deep",
+    "timestamp": "2026-05-31 21:44:43.916709",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged attacker front-run a MidnightBundles bundle by partially filling a shared-group offer to increase consumed(maker, group), causing consumableUnits to return 0 for all remaining offers in the bundle, making unitsToTake=0 for every iteration, so filledUnits never reaches targetUnits and the bundle reverts with OutOfOffers while the taker's maxBuyerAssets remain locked in the bundler until the transfer-back at revert, violating the invariant that valid withdraw must not be frozen? Proof idea: front-run bundle with a partial fill that exhausts group budget; assert bundle reverts and taker loses gas but not funds (confirm no stuck-funds path).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aabfde5a-c806-4f72-88bf-5b323cf34362?mode=deep",
+    "timestamp": "2026-05-31 21:44:56.456842",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged maker call setConsumed(group, maxAssets, maker) to set consumed to exactly maxAssets before a taker's bundle executes, causing consumableUnits to return zeroFloorSub(maxAssets, maxAssets)=0 for every offer in the group, silently skipping all offers in MidnightBundles and reverting with OutOfOffers, effectively cancelling the taker's trade without any on-chain offer cancellation, violating the invariant that offer cancellation must go through defined protocol paths? Proof idea: maker calls setConsumed to max; assert consumableUnits returns 0 for all group offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e9569a9b-c3b0-4219-89fb-449768466466?mode=deep",
+    "timestamp": "2026-05-31 21:45:09.310309",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker pass an id that does not correspond to offer.market to consumableUnits, causing settlementFee(id, ttm) to return a fee from a different market, computing a wrong buyerPrice or sellerPrice, and returning a units value that when used in take causes either ConsumedAssets revert (overfill) or underfill of the offer, violating the invariant that every borrow/take must create correct debt and collateral obligation? Proof idea: call consumableUnits with id of market A but offer.market = market B; assert returned units differ from correct value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc9455dc-7255-4c33-8563-e9d08a4344db?mode=deep",
+    "timestamp": "2026-05-31 21:45:22.951623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker under a sell offer (offer.buy=false) with maxAssets cap cause consumableUnits to call buyerAssetsToUnits which uses mulDivUp(targetBuyerAssets, WAD, buyerPrice), returning units u such that u.mulDivDown(buyerPrice, WAD) > targetBuyerAssets, causing newConsumed > maxAssets and a ConsumedAssets revert in take, while the offer still has remaining capacity, violating the invariant that consumableUnits must return a safely takeable amount? Proof idea: fuzz (buyerPrice, targetBuyerAssets) and assert floor(ceil(t*WAD/p)*p/WAD) <= t for all valid inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27d7fa2f-6605-4586-936b-592d2592be4e?mode=deep",
+    "timestamp": "2026-05-31 21:45:36.453664",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits for a maxUnits offer subtracts the raw consumed(maker, group) value regardless of whether that consumed value was set in asset-denominated or unit-denominated terms via a prior maxAssets fill, causing consumableUnits to return maxUnits - assetConsumed which is semantically incorrect (units minus assets), allowing the taker to take up to maxUnits units when the maker intended a lower cross-offer budget, violating the invariant that the consumption group budget cannot be exceeded? Proof idea: fill a maxAssets offer in the group for X assets; assert consumableUnits for the maxUnits offer in the same group returns maxUnits - X instead of the correct remaining budget.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fb1fbcee-2e26-40dd-b355-0ae3ccd1a051?mode=deep",
+    "timestamp": "2026-05-31 21:45:50.727825",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker cause an arithmetic overflow in buyerAssetsToUnits when targetBuyerAssets = offer.maxAssets.zeroFloorSub(consumed) is near type(uint256).max / WAD, causing mulDivUp(targetBuyerAssets, WAD, buyerPrice) to overflow and return a wrong units value, which when used in take creates incorrect credit accounting, violating the invariant that total credit and token balances must stay solvent? Proof idea: fuzz maxAssets near type(uint256).max / WAD with consumed=0 and assert no overflow in buyerAssetsToUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b92d9b40-1ec6-4f78-9e1a-69fc4e8a97ca?mode=deep",
+    "timestamp": "2026-05-31 21:46:05.070050",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker using MidnightBundles.supplyCollateralAndSellWithAssetsTarget cause consumableUnits to return 0 for a buy offer (offer.buy=true) with maxAssets cap when consumed equals maxAssets, causing unitsToTake=0, which when passed to take executes a no-op take (allowed by protocol per Midnight.sol comment), incrementing filledUnits by 0 and looping through all offers without progress, eventually reverting with OutOfOffers and leaving the taker's pre-supplied collateral locked in the market without any debt created, violating the invariant that user funds must not be frozen? Proof idea: exhaust group budget; assert bundle reverts with OutOfOffers after no-op takes; verify collateral is recoverable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3e260eeb-6f45-4305-a045-8ec428355a9b?mode=deep",
+    "timestamp": "2026-05-31 21:46:18.601842",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker exploit the settlement fee piecewise linear interpolation boundary at exactly TTM=1 day, 7 days, 30 days, 90 days, 180 days, or 360 days to cause consumableUnits to return a units value that differs by 1 from the value computed one second earlier or later, causing the bundler to take 1 fewer unit than the offer allows, leaving 1 unit of credit unissued and the taker underpaid, violating the invariant that every lend/take must create correct credit? Proof idea: warp to each fee breakpoint boundary ±1 second and assert consumableUnits is monotone and consistent with take output.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39186917-328c-4539-bdbf-c51e9121f5fb?mode=deep",
+    "timestamp": "2026-05-31 21:46:32.465374",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to revert with PriceGreaterThanOne when buyerPrice > WAD for a sell offer (offer.buy=false) with maxAssets cap, because buyerAssetsToUnits checks require(buyerPrice <= WAD), and since MidnightBundles does NOT catch ConsumableUnitsLib reverts, the entire bundle transaction reverts, freezing the taker's pre-pulled loan tokens in the bundler contract until the revert unwinds, violating the invariant that valid withdraw must not be frozen? Proof idea: construct offer with tick such that tickToPrice(tick) + settlementFee > WAD; call consumableUnits and assert revert propagates through MidnightBundles.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_76926f55-867a-4d5b-a47e-6c09e58fc1d0?mode=deep",
+    "timestamp": "2026-05-31 21:46:44.964157",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged maker create two offers in the same group with opposite directions (one buy, one sell) sharing group g, causing consumableUnits to read the same consumed(maker, g) value for both, where the consumed value was incremented in buyer-asset terms by filling the buy offer, but consumableUnits for the sell offer interprets it as seller-asset terms, returning a wrong remaining capacity that allows the sell offer to be overfilled beyond the maker's intended group budget, violating the invariant that the consumption group budget cannot be exceeded across offers? Proof idea: fill buy offer for B buyer assets; assert consumableUnits for sell offer returns sellerAssetsToUnits(maxAssets - B) instead of the correct cross-direction budget.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b1a00f11-842f-43fe-950f-6ca10fbbc380?mode=deep",
+    "timestamp": "2026-05-31 21:46:58.421606",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker cause consumableUnits and TakeAmountsLib.buyerAssetsToUnits to compute inconsistent units values for the same offer in the same transaction because both are called sequentially with the same block.timestamp but the min() of their results is used, causing the taker to take fewer units than the offer allows and receive fewer credit units than the assets paid would entitle, violating the invariant that every lend/take must create correct credit and asset transfer? Proof idea: assert min(buyerAssetsToUnits(remaining_target), consumableUnits) == consumableUnits when consumableUnits is the binding constraint, and verify no credit shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be155e54-4c33-4061-9d38-4146a4111be2?mode=deep",
+    "timestamp": "2026-05-31 21:47:11.350063",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits does not validate that offer.maxAssets and offer.maxUnits are not both nonzero (Midnight.sol requires atMostOneNonZero), causing consumableUnits to enter the maxUnits branch (since maxUnits > 0 is checked first) and return maxUnits.zeroFloorSub(consumed) even when maxAssets is also set, while take would use the maxAssets branch for consumption tracking, creating a mismatch between the units returned by consumableUnits and the actual offer capacity, violating the invariant that offer fill amount cannot exceed remaining offer capacity? Proof idea: construct offer with both maxUnits=100 and maxAssets=50; assert consumableUnits returns 100 - consumed but take enforces maxAssets cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f3adf93-d886-47b6-9ff9-383f51dd2ed3?mode=deep",
+    "timestamp": "2026-05-31 21:47:24.157500",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to return a nonzero value for an offer that has already been fully consumed (consumed == maxAssets) due to a rounding artifact where zeroFloorSub(maxAssets, consumed) returns 0 but buyerAssetsToUnits(0) returns 0 units, and then take with 0 units is a no-op that still succeeds, causing the bundler to count 0 filled units and loop indefinitely through the offer list, violating the invariant that cancelled or fully consumed offers cannot be filled? Proof idea: fully consume an offer; assert consumableUnits returns 0; assert take(0 units) is a no-op; assert bundler loop terminates correctly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7bb4da70-ff69-4d71-af5c-4f7280dfb8c2?mode=deep",
+    "timestamp": "2026-05-31 21:47:38.052380",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / TakeAmountsLib.sellerAssetsToUnits] Can an unprivileged taker under a buy offer (offer.buy=true) with maxAssets cap cause sellerAssetsToUnits to return units u such that u.mulDivUp(sellerPrice, WAD) > targetSellerAssets, because sellerAssetsToUnits uses mulDivUp for buy offers, causing the actual sellerAssets in take to exceed the remaining capacity and triggering ConsumedAssets revert, while consumableUnits claimed the offer had capacity, violating the invariant that consumableUnits must return a safely takeable amount? Proof idea: fuzz (sellerPrice, targetSellerAssets) and assert ceil(floor(t*WAD/p)*p/WAD) <= t for all valid inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81602320-6bcc-4106-8e93-2639f4314776?mode=deep",
+    "timestamp": "2026-05-31 21:47:52.089237",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker exploit the fact that consumableUnits reads settlementFee at block.timestamp while Midnight.sol computes settlementFee at take-time using the same block.timestamp, but in a multicall where touchMarket is called first (potentially changing fee state) and take is called second, causing the fee used in consumableUnits (called before the multicall) to differ from the fee used in take, resulting in a units value that causes ConsumedAssets revert or underfill, violating the invariant that every borrow/take must create correct debt and collateral obligation? Proof idea: simulate multicall with fee-changing touchMarket followed by take; assert consumableUnits pre-multicall matches take-time fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc28aedf-e4f4-4c4f-9584-b38f63fbc9da?mode=deep",
+    "timestamp": "2026-05-31 21:48:05.511515",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to return a value larger than the actual remaining offer capacity for a maxUnits offer when consumed(maker, group) was set via setConsumed to a value less than the current fill level (which is impossible since setConsumed requires amount >= consumed), or alternatively, can a maker use setConsumed to set consumed to type(uint256).max to cancel all group offers, causing consumableUnits to return zeroFloorSub(maxUnits, type(uint256).max) = 0 for all offers in the group, effectively cancelling them without emitting a per-offer cancellation event, violating the invariant that offer cancellation must be detectable? Proof idea: maker calls setConsumed(group, type(uint256).max, maker); assert consumableUnits returns 0 for all group offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_241c8e24-c85c-43d7-95dc-28b7d5d3723d?mode=deep",
+    "timestamp": "2026-05-31 21:48:19.740784",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / MidnightBundles] Can an unprivileged taker cause MidnightBundles.supplyCollateralAndSellWithUnitsTarget to supply collateral and then fail to fill targetUnits because consumableUnits returns 0 for all offers (due to group exhaustion), reverting with OutOfOffers, but the collateral supplied in the same transaction is NOT refunded (it was already transferred to Midnight), leaving the taker with collateral locked in the market and no debt created, violating the invariant that user funds must not be frozen outside valid protocol rules? Proof idea: exhaust group budget before bundle; assert bundle reverts with OutOfOffers; assert collateral is in market but taker has no debt and cannot withdraw without health check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1f608965-fa0c-4ca2-a7a0-98aea9f31daf?mode=deep",
+    "timestamp": "2026-05-31 21:48:33.153731",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to return a units value that is 1 higher than the true remaining capacity for a maxUnits offer due to the fact that consumed is read before the take increments it, and in a same-block scenario where two takers race to fill the last unit, both compute consumableUnits=1 and both attempt take, causing the second take to revert with ConsumedUnits, but the first take succeeds and the second taker's transaction reverts with no fund loss (confirm no partial state), violating the invariant that partial fills must update consumed state before any exploitable reentry point? Proof idea: simulate two concurrent takes of the last unit; assert exactly one succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0abe36fc-460a-4df4-9074-6daf3b12292c?mode=deep",
+    "timestamp": "2026-05-31 21:48:47.608725",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker cause consumableUnits to return a wrong value for a post-maturity offer because settlementFee uses the 0-day breakpoint fee post-maturity (per Midnight.sol comment 'Post-maturity, the settlement fee is the fee at the 0d breakpoint'), but consumableUnits passes zeroFloorSub(offer.market.maturity, block.timestamp) = 0 as timeToMaturity, which correctly maps to the 0d fee, and verify that the units computation is consistent with the actual take output post-maturity? Proof idea: warp past maturity; assert consumableUnits uses fee at index 0; assert take output matches.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_066ea203-9117-4a13-b35a-0ab73c0f037c?mode=deep",
+    "timestamp": "2026-05-31 21:49:01.341845",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits / TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged taker cause buyerAssetsToUnits to revert with TickOutOfRange when offer.tick > MAX_TICK=5820, because tickToPrice(offer.tick) reverts, and since MidnightBundles does NOT catch ConsumableUnitsLib reverts, the entire bundle reverts, freezing pre-pulled funds, violating the invariant that valid withdraw must not be frozen? Proof idea: construct offer with tick=5821; call consumableUnits via MidnightBundles; assert bundle reverts and funds are returned via revert unwind.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80a55c11-fca4-468d-8b8f-b022e96a9baa?mode=deep",
+    "timestamp": "2026-05-31 21:49:15.045044",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/ConsumableUnitsLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: consumableUnits] Can an unprivileged taker exploit the PRICE_ROUNDING_STEP=1e12 quantization in tickToPrice to cause buyerAssetsToUnits or sellerAssetsToUnits to compute a units value that is off by 1 due to the rounded price, such that the actual take produces buyerAssets or sellerAssets that differ from the expected value by up to PRICE_ROUNDING_STEP * units / WAD, causing systematic underpayment or overpayment of settlement fees, violating the invariant that total credit, debt, fees, and token balances must stay solvent? Proof idea: fuzz tick values near PRICE_ROUNDING_STEP boundaries and assert fee accounting is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8af72dc0-b014-4651-9c8f-8e52d33ce235?mode=deep",
+    "timestamp": "2026-05-31 21:49:27.929591",
+    "report_generated": false
+  }
+]
