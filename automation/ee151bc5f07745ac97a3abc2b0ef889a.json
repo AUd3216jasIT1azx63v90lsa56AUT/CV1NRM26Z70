@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market settlement fee increases between the off-chain view call and the on-chain take execution trigger TakeAmountsLib.buyerAssetsToUnits(view) -> MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral -> Midnight.take, violating the invariant that filledBuyerAssets == targetFilledBuyerAssets, causing scoped impact: position desynchronization where the buyer acquires more debt units than the target buyer assets imply? Proof idea: fuzz settlementFee delta between view block and tx block, assert debtOf(buyer) > expected units from targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_83c771bb-f2bd-4810-b83a-800e362167c8?mode=deep",
+    "timestamp": "2026-05-31 21:43:20.465739",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market settlement fee decreases between the off-chain view call and the on-chain take execution trigger TakeAmountsLib.buyerAssetsToUnits(view) -> MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral -> Midnight.take (loop continues), violating the invariant that each offer is filled at most once per bundler call, causing scoped impact: unfair debt reduction where the buyer's debt is reduced by fewer units than the buyer assets paid? Proof idea: fuzz settlementFee decrease, assert creditOf(buyer) after take < expected from targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b3568d41-7467-4242-beb7-833d0901921c?mode=deep",
+    "timestamp": "2026-05-31 21:43:32.670789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower-seller under the precondition that the market settlement fee increases between the off-chain view call and the on-chain take execution trigger TakeAmountsLib.sellerAssetsToUnits(view) -> MidnightBundles.supplyCollateralAndSellWithAssetsTarget -> Midnight.take, violating the invariant that filledSellerAssets == targetFilledSellerAssets, causing scoped impact: position desynchronization where the seller incurs more debt than the target seller assets imply? Proof idea: fuzz settlementFee increase, assert debtOf(seller) > expected from targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee1128b4-17bc-4e09-8e07-17fe159f7af4?mode=deep",
+    "timestamp": "2026-05-31 21:43:45.013323",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that a buy offer (offer.buy=true) has maxAssets cap and ConsumableUnitsLib.consumableUnits calls buyerAssetsToUnits trigger ConsumableUnitsLib.consumableUnits -> TakeAmountsLib.buyerAssetsToUnits -> Midnight.take, violating the invariant that consumed[maker][group] <= offer.maxAssets after take, causing scoped impact: offer overfill by one rounding unit leading to ConsumedAssets revert and position desynchronization in the bundler? Proof idea: fuzz remaining=offer.maxAssets-consumed near 1, assert mulDivDown(mulDivUp(remaining, WAD, buyerPrice), buyerPrice, WAD) > remaining.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_76a2b0af-cd12-4c72-b5ba-af77c9fbe6ef?mode=deep",
+    "timestamp": "2026-05-31 21:43:57.530836",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged lender under the precondition that the lender has stale lastLossFactor (bad debt realized but updatePosition not yet called) trigger TakeAmountsLib.buyerAssetsToUnits(view) -> Midnight.take (which calls _updatePosition for buyer if hasCredit), violating the invariant that the buyer's post-slash credit equals the pre-computed units, causing scoped impact: credit destruction where the buyer's credit after slash is less than the units they expected to receive? Proof idea: fuzz lossFactor delta, assert creditOf(buyer) after take < units computed by buyerAssetsToUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86da3069-e00d-456b-86ea-e771ee9d94df?mode=deep",
+    "timestamp": "2026-05-31 21:44:11.055829",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged lender-seller under the precondition that the seller has stale lastLossFactor and credit > 0 trigger TakeAmountsLib.sellerAssetsToUnits(view) -> Midnight.take (which calls _updatePosition for seller if hasCredit), violating the invariant that sellerCreditDecrease equals the units computed by sellerAssetsToUnits, causing scoped impact: unfair debt reduction where the seller's credit is slashed mid-take causing sellerDebtIncrease > 0 when the seller intended a pure credit reduction? Proof idea: fuzz credit and lossFactor, assert debtOf(seller) > 0 after take when seller expected zero new debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3471318d-6aaa-4f77-9a88-9fd2e167bc59?mode=deep",
+    "timestamp": "2026-05-31 21:44:24.537057",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that targetBuyerAssets=0 trigger TakeAmountsLib.buyerAssetsToUnits returning 0 -> Midnight.take(units=0) where hasCredit(buyer)=false and buyerPos.debt>0, violating the invariant that lastLossFactor[buyer] is synced after any interaction that could affect buyer's position, causing scoped impact: position desynchronization where buyer's lastLossFactor remains stale after a no-op take? Proof idea: unit test with lossFactor > lastLossFactor[buyer], call take(0), assert lastLossFactor[buyer] unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_109211f3-d82f-45bb-a5b8-9b27ad97b9c5?mode=deep",
+    "timestamp": "2026-05-31 21:44:38.741444",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that offer.buy=false and buyerPrice=WAD (tick at MAX_TICK with zero settlement fee) trigger TakeAmountsLib.buyerAssetsToUnits returning targetBuyerAssets.mulDivDown(WAD, WAD)=targetBuyerAssets -> Midnight.take computing buyerAssets=units.mulDivUp(WAD, WAD)=units, violating the invariant that buyerAssets from take equals targetBuyerAssets, causing scoped impact: accounting desync where filledBuyerAssets != targetFilledBuyerAssets in the bundler? Proof idea: unit test with buyerPrice=WAD, assert take returns buyerAssets == targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8b2d3071-f8e8-44f6-9158-074ff68173f9?mode=deep",
+    "timestamp": "2026-05-31 21:44:54.632790",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower under the precondition that offer.buy=true and sellerPrice approaches 0 (offerPrice barely above settlementFee) trigger TakeAmountsLib.sellerAssetsToUnits returning a very large units value -> Midnight.take creating massive debt, violating the invariant that debt increase is bounded by collateral health, causing scoped impact: bad debt misallocation where the borrower's debt far exceeds their collateral value? Proof idea: fuzz sellerPrice near 1, assert debtOf(seller) after take <= maxDebt from collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a3c72d8-9309-4805-ad78-986e8f118080?mode=deep",
+    "timestamp": "2026-05-31 21:45:09.375455",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market is post-maturity (block.timestamp > offer.market.maturity) trigger TakeAmountsLib.buyerAssetsToUnits using zeroFloorSub returning 0 for TTM -> settlementFee(id, 0) (0-day breakpoint) while Midnight.take also uses zeroFloorSub=0, violating the invariant that the settlement fee used in TakeAmountsLib matches the fee used in take, causing scoped impact: position desynchronization if the 0-day fee differs from the fee at the exact maturity timestamp? Proof idea: fuzz maturity boundary, assert settlementFee(id, 0) == settlementFee used in take post-maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2d411b8-4f8c-45c8-a3ff-3ca586b9a9f2?mode=deep",
+    "timestamp": "2026-05-31 21:45:25.889334",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the id passed to TakeAmountsLib does not match offer.market (e.g., wrong market id from a different touchMarket call) trigger TakeAmountsLib.buyerAssetsToUnits reading wrong settlementFee -> Midnight.take using correct settlementFee, violating the invariant that units computed by TakeAmountsLib produce exactly targetBuyerAssets in take, causing scoped impact: position desynchronization where buyer pays wrong amount relative to their debt reduction? Proof idea: unit test with mismatched id, assert buyerAssets from take != targetBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23bfea66-83ea-4a9c-bcab-7609fbc979ed?mode=deep",
+    "timestamp": "2026-05-31 21:45:42.137798",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower under the precondition that the id passed to TakeAmountsLib does not match offer.market trigger TakeAmountsLib.sellerAssetsToUnits reading wrong settlementFee -> Midnight.take using correct settlementFee, violating the invariant that units computed by sellerAssetsToUnits produce exactly targetSellerAssets in take, causing scoped impact: unfair debt reduction where seller receives wrong assets relative to their debt increase? Proof idea: unit test with mismatched id, assert sellerAssets from take != targetSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04504b17-112f-4e1d-b9ab-030facb2d1ab?mode=deep",
+    "timestamp": "2026-05-31 21:45:57.100330",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that multiple offers share the same consumption group and TakeAmountsLib.buyerAssetsToUnits is called for each offer in sequence trigger MidnightBundles.buyWithAssetsTargetAndWithdrawCollateral looping over offers, violating the invariant that the sum of buyerAssets across all takes equals targetFilledBuyerAssets, causing scoped impact: accounting desync where accumulated per-offer rounding causes filledBuyerAssets to overshoot or undershoot targetFilledBuyerAssets? Proof idea: fuzz N offers with varying ticks and fees, assert sum(buyerAssets_i) == targetFilledBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ee87953-918c-4674-918f-57e0f0747d94?mode=deep",
+    "timestamp": "2026-05-31 21:46:11.876691",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower under the precondition that multiple offers share the same consumption group and TakeAmountsLib.sellerAssetsToUnits is called for each offer in sequence trigger MidnightBundles.supplyCollateralAndSellWithAssetsTarget looping over offers, violating the invariant that the sum of sellerAssets across all takes equals targetFilledSellerAssets, causing scoped impact: position desynchronization where accumulated per-offer rounding causes the borrower to incur more or less debt than intended? Proof idea: fuzz N offers with varying ticks and fees, assert sum(sellerAssets_i) == targetFilledSellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bab4fcd4-3237-4e4f-b06a-7286a1ede8cd?mode=deep",
+    "timestamp": "2026-05-31 21:46:27.400092",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market has a non-zero lossFactor and the buyer has credit > 0 trigger TakeAmountsLib.buyerAssetsToUnits(view) -> Midnight.take -> _updatePosition(buyer) slashing credit -> buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) computed on post-slash credit, violating the invariant that the buyer's net credit increase equals the units computed by buyerAssetsToUnits minus their pre-slash debt, causing scoped impact: credit destruction where the buyer's credit after take is less than expected? Proof idea: fuzz lossFactor and buyer credit, assert creditOf(buyer) after take == expected post-slash credit + creditIncrease.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1c32328d-76d5-4db1-bfbf-849587a3dba3?mode=deep",
+    "timestamp": "2026-05-31 21:46:41.712366",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged lender-seller under the precondition that the seller has credit > 0 and a pending loss factor slash trigger TakeAmountsLib.sellerAssetsToUnits(view) -> Midnight.take -> _updatePosition(seller) slashing credit -> sellerCreditDecrease = min(units, post-slash credit), violating the invariant that sellerCreditDecrease equals min(units, pre-slash credit), causing scoped impact: unfair debt reduction where the seller's debt increases more than expected because their credit was slashed before the credit decrease? Proof idea: fuzz lossFactor and seller credit, assert debtOf(seller) after take == expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4bead869-8f74-4455-8f5e-8e463b250b14?mode=deep",
+    "timestamp": "2026-05-31 21:46:56.649875",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the buyer has exactly units of debt (buyerPos.debt == units) and hasCredit(buyer)=false trigger TakeAmountsLib.buyerAssetsToUnits -> Midnight.take where the condition (hasCredit(buyer) || units > buyerPos.debt) is false, violating the invariant that _updatePosition is called for any party whose position may be affected by a loss factor change, causing scoped impact: position desynchronization where buyer's lastLossFactor is not synced even though bad debt was realized? Proof idea: unit test with debt==units and lossFactor>lastLossFactor[buyer], call take, assert lastLossFactor[buyer] unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c90c279c-d0c0-4c46-bbe0-909710bb5674?mode=deep",
+    "timestamp": "2026-05-31 21:47:10.271933",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that offer.buy=false and buyerPrice is just above WAD (causing buyerAssetsToUnits to revert with PriceGreaterThanOne) trigger TakeAmountsLib.buyerAssetsToUnits reverting -> MidnightBundles skipping the offer (try/catch), violating the invariant that the bundler can always fill offers where take would succeed, causing scoped impact: position desynchronization where the bundler fails to fill a valid offer due to TakeAmountsLib's stricter buyerPrice <= WAD check? Proof idea: unit test with buyerPrice = WAD+1, assert buyerAssetsToUnits reverts but take succeeds with units=0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c75db3d9-c2bb-4403-b400-b8dde147d65a?mode=deep",
+    "timestamp": "2026-05-31 21:47:24.430043",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower under the precondition that offer.buy=true and offerPrice == settlementFee (sellerPrice=0) trigger TakeAmountsLib.sellerAssetsToUnits dividing by zero and reverting -> MidnightBundles.supplyCollateralAndSellWithAssetsTarget reverting (not caught), violating the invariant that ConsumableUnitsLib.consumableUnits should not revert for valid market states, causing scoped impact: position desynchronization where the bundler is permanently bricked for this offer? Proof idea: unit test with offerPrice=settlementFee, assert sellerAssetsToUnits reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8af6ebe3-ea79-4bb7-afde-d9dccab9a90f?mode=deep",
+    "timestamp": "2026-05-31 21:47:38.980121",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market's tick spacing is decreased between the off-chain view call and the on-chain take execution trigger TakeAmountsLib.buyerAssetsToUnits using old tick spacing -> Midnight.take using new tick spacing, violating the invariant that the tick used in TakeAmountsLib is accessible in take, causing scoped impact: position desynchronization where take reverts with TickNotAccessible for a tick that was valid at view time? Proof idea: unit test with tick spacing decrease between view and tx, assert take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60caa74f-4377-4d39-a0ee-9095c3548fad?mode=deep",
+    "timestamp": "2026-05-31 21:47:53.672552",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the market lossFactor is at type(uint128).max-1 and a bad debt liquidation occurs between the view call and the take execution trigger TakeAmountsLib.buyerAssetsToUnits(view) -> liquidate (lossFactor maxed) -> Midnight.take reverting with MarketLossFactorMaxedOut, violating the invariant that a valid TakeAmountsLib result always leads to a successful take, causing scoped impact: position desynchronization where the buyer cannot reduce their debt? Proof idea: unit test with lossFactor near max, liquidate to max, assert take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2e4b252-9c32-42a4-9f9d-30be214818a9?mode=deep",
+    "timestamp": "2026-05-31 21:48:10.600225",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits / sellerAssetsToUnits] Can an unprivileged market creator under the precondition that two markets have the same id (hash collision or same parameters) trigger TakeAmountsLib reading settlementFee from the wrong market state, violating the invariant that settlementFee(id, ttm) corresponds to the market identified by offer.market, causing scoped impact: bad debt misallocation where wrong settlement fees cause wrong unit calculations leading to incorrect debt/credit accounting? Proof idea: differential test with two markets sharing id, assert settlementFee diverges.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_090b84e5-5689-49a5-80ec-f36d50c5c03c?mode=deep",
+    "timestamp": "2026-05-31 21:48:25.343659",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that targetBuyerAssets is at the maximum uint256 value trigger TakeAmountsLib.buyerAssetsToUnits computing targetBuyerAssets.mulDivDown(WAD, buyerPrice) overflowing, violating the invariant that TakeAmountsLib never produces incorrect units due to arithmetic overflow, causing scoped impact: position desynchronization where the returned units value is wrong? Proof idea: fuzz targetBuyerAssets near type(uint256).max, assert mulDivDown does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_76e2aa0b-9b13-4e06-aab2-f1b903268e07?mode=deep",
+    "timestamp": "2026-05-31 21:48:40.326678",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: sellerAssetsToUnits] Can an unprivileged borrower under the precondition that targetSellerAssets is at the maximum uint256 value trigger TakeAmountsLib.sellerAssetsToUnits computing targetSellerAssets.mulDivUp(WAD, sellerPrice) overflowing, violating the invariant that TakeAmountsLib never produces incorrect units due to arithmetic overflow, causing scoped impact: position desynchronization where the returned units value is wrong? Proof idea: fuzz targetSellerAssets near type(uint256).max, assert mulDivUp does not overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a84cf50c-d5d8-4928-8425-4cdc22da9391?mode=deep",
+    "timestamp": "2026-05-31 21:48:54.644874",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'File Name: src/periphery/TakeAmountsLib.sol -> Scope: High Incorrect loss-factor accounting causing unfair debt reduction, credit destruction, bad debt misallocation, or position desynchronization'] [Function: buyerAssetsToUnits] Can an unprivileged taker under the precondition that the settlement fee breakpoint is at a boundary (e.g., exactly 1 day, 7 days, 30 days TTM) trigger TakeAmountsLib.buyerAssetsToUnits computing settlementFee at the boundary -> Midnight.take computing settlementFee at the same boundary, violating the invariant that the settlement fee is continuous at breakpoints, causing scoped impact: position desynchronization where a 1-second TTM difference causes a large fee jump and wrong unit calculation? Proof idea: fuzz TTM at each breakpoint boundary, assert settlementFee is continuous.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_22507549-935c-4158-b0ce-101cd21891d4?mode=deep",
+    "timestamp": "2026-05-31 21:49:10.439389",
+    "report_generated": false
+  }
+]
