@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker under a market where the collateralSupplies[i].collateralIndex is out of bounds for market.collateralParams trigger market.collateralParams[collateralSupplies[i].collateralIndex].token causing array out-of-bounds revert, violating the invariant that valid sell paths must not be blocked, causing scoped impact: an invalid collateralIndex in collateralSupplies permanently blocks the sell flow before any takes are attempted? Proof idea: set collateralSupplies[0].collateralIndex >= market.collateralParams.length and assert supplyCollateralAndSellWithUnitsTarget reverts with array out-of-bounds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_99084f1f-13a5-4f0b-8233-a46278de5e3f?mode=deep",
+    "timestamp": "2026-05-31 21:39:32.397149",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged taker under a market where targetBuyerAssets * referralFeePct overflows uint256 in mulDivDown trigger mulDivDown(targetBuyerAssets, referralFeePct, WAD) = (targetBuyerAssets * referralFeePct) / WAD where targetBuyerAssets * referralFeePct > type(uint256).max, violating the invariant that valid buy paths must not be blocked, causing scoped impact: uint256 overflow in the referral fee computation causes a panic revert before any takes are attempted, permanently blocking the assets-target buy+withdraw flow for large targetBuyerAssets values? Proof idea: fuzz targetBuyerAssets > type(uint256).max / referralFeePct and assert mulDivDown reverts with overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_630455e2-2ed2-469c-a1d4-746ab31f0301?mode=deep",
+    "timestamp": "2026-05-31 21:39:44.366182",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/MidnightBundles.sol -> Scope: High Permanent or long-term freezing of user funds caused by broken withdraw, repay, liquidate, claim fee, or settlement paths'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged taker under a market where the offer's reduceOnly flag is true and the taker's debt would increase trigger take(offer, ...) which calls require(!offer.reduceOnly || (offer.buy ? buyerCreditIncrease == 0 : sellerDebtIncrease == 0), MakerCreditOrDebtIncreased()) reverting (caught by try-catch) -> all takes skipped -> require(filledUnits == targetUnits, OutOfOffers()), violating the invariant that valid sell paths must not be blocked, causing scoped impact: reduceOnly offers that would increase the taker's debt cause all takes to be silently skipped, triggering OutOfOffers and permanently blocking the sell flow after collateral is supplied? Proof idea: set offer.reduceOnly = true for all buy offers and ensure taker has no credit to reduce, then assert supplyCollateralAndSellWithUnitsTarget reverts with OutOfOffers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5d60852c-1918-4f6a-9d82-9356a0bf6f84?mode=deep",
+    "timestamp": "2026-05-31 21:39:57.089339",
+    "report_generated": false
+  }
+]
