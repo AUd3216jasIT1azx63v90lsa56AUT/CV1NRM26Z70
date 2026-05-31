@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee + continuous fee crystallization] Can the FEESETTER change setMarketContinuousFee(id, newFee) after lenders have entered positions, under the precondition that existing lenders' pendingFee is fixed at entry but new lenders use the updated fee, verifying whether the fee change creates an accounting inconsistency where totalUnits and continuousFeeCredit diverge from individual position pendingFee sums, violating the invariant that sum of all pendingFee must equal continuousFeeCredit, causing scoped impact: fee accounting corruption enabling over- or under-claiming of continuous fees? Proof idea: invariant fuzz test asserting sum(position.pendingFee) == continuousFeeCredit after fee changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_24daa1c3-9693-4802-9fb8-c1555bed9ae9?mode=deep",
+    "timestamp": "2026-05-31 21:03:53.571898",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee to maximum at all breakpoints] Can the FEESETTER set all 7 settlement fee breakpoints to their maximum values (50 bps at 360d, scaled linearly), under the precondition that feeSetter is a legitimate role holder acting adversarially, triggering setMarketSettlementFee for all indices -> take with high TTM -> buyerAssets - sellerAssets = maximum fee -> claimableSettlementFee accumulates maximum, violating the invariant that settlement fees must not exceed documented caps and must not make offers economically unfillable, causing scoped impact: all existing signed offers with low tick prices become implicitly canceled as buyerPrice < settlementFee? Proof idea: set max fees, attempt take on low-tick offer, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8bc97996-d546-4044-8c83-5391ac8aad22?mode=deep",
+    "timestamp": "2026-05-31 21:04:05.639449",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + claimSettlementFee path] Can an AUTHORIZED OPERATOR (isAuthorized[feeClaimer][operator]=true) call claimSettlementFee on behalf of feeClaimer, under the precondition that claimSettlementFee checks msg.sender == feeClaimer and not isAuthorized, verifying whether the authorization system creates a false expectation that operators can claim fees, violating the invariant that only the feeClaimer address itself (not its operators) can claim fees, causing scoped impact: if the check is msg.sender only, authorized operators cannot claim — but if there is a path where isAuthorized is checked, unauthorized fee withdrawal occurs? Proof idea: assert claimSettlementFee reverts for isAuthorized[feeClaimer][attacker]=true callers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_865455c7-d92d-4444-8130-c93a4d70910c?mode=deep",
+    "timestamp": "2026-05-31 21:04:17.847642",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.isRatified Merkle proof with height=0] Can an ATTACKER forge a ratification by providing an empty proof (proof.length=0) where root == hashOffer(offer), under the precondition that isLeaf with empty proof returns currentHash == root == leafHash, triggering isLeaf(root, leafHash, leafIndex=0, proof=[]) -> returns true if root==leafHash -> isRootCanceled check -> ecrecover check, violating the invariant that a single-offer tree (height=0) must still require a valid signature over the root, causing scoped impact: if the signature check is the only remaining guard, this is expected behavior — but verify no path skips ecrecover? Proof idea: unit test height=0 proof and assert ecrecover is still required.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70385b8a-142f-4df0-9ce3-8956b05d773b?mode=deep",
+    "timestamp": "2026-05-31 21:04:30.917540",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.isRatified EIP-712 domain with dynamic chainid] Can an ATTACKER replay a signature on a forked chain where block.chainid has changed, under the precondition that the domain separator is computed dynamically using block.chainid at call time (not cached), triggering isRatified -> domainSeparator = keccak256(EIP712_DOMAIN_TYPEHASH, block.chainid, address(this)) -> different chainid -> different digest -> ecrecover returns different signer, verifying whether the dynamic chainid prevents replay or creates unexpected signature invalidity, violating the invariant that signatures must be chain-specific and non-replayable, causing scoped impact: post-fork signature invalidity DoS or cross-chain replay? Proof idea: simulate chainid change and assert signature validity changes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_45031eb6-bd2e-4db3-9d08-a1ff8e6cfdf9?mode=deep",
+    "timestamp": "2026-05-31 21:04:43.905351",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.isRatified vs Midnight.INITIAL_CHAIN_ID] Can an ATTACKER exploit the inconsistency between EcrecoverRatifier using dynamic block.chainid for domain separation and Midnight using INITIAL_CHAIN_ID for market IDs, under the precondition of a hard fork that changes chainid, triggering a state where market IDs are stable (INITIAL_CHAIN_ID) but EcrecoverRatifier signatures become invalid (new chainid), violating the invariant that offer ratification must remain consistent with market state across chain forks, causing scoped impact: all existing signed offers become permanently unratifiable post-fork while market state persists? Proof idea: simulate fork, assert isRatified fails for pre-fork signatures while market state is intact.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be2e563f-195c-47ca-bfdd-216b694d158d?mode=deep",
+    "timestamp": "2026-05-31 21:04:57.096587",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: cancelRoot with maker=address(0)] Can an ATTACKER call cancelRoot(address(0), root) under the precondition that msg.sender == address(0) is impossible but isAuthorized[address(0)][attacker] could be set, verifying whether cancelRoot(address(0), root) is callable by any attacker who has isAuthorized[address(0)][attacker]=true, violating the invariant that address(0) maker state should not be modifiable, causing scoped impact: isRootCanceled[address(0)][root]=true could affect offers where maker is address(0) if any such offers exist? Proof idea: set isAuthorized[address(0)][attacker]=true, call cancelRoot(address(0), root), assert state change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fbbac7f7-f25b-42f5-b9d7-8aef355676e7?mode=deep",
+    "timestamp": "2026-05-31 21:05:09.999953",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketTickSpacing divisor check] Can the TICKSPACINGSETTER call setMarketTickSpacing(id, newTickSpacing) where newTickSpacing does not divide the current spacing evenly, under the precondition that the check is marketState[id].tickSpacing % newTickSpacing == 0, verifying whether a newTickSpacing=0 bypasses the divisor check (division by zero) or whether newTickSpacing > currentSpacing is correctly rejected, violating the invariant that tick spacing can only decrease to a valid divisor, causing scoped impact: invalid tick spacing set, making all existing offers at valid ticks inaccessible? Proof idea: fuzz newTickSpacing values including 0, primes, and values > currentSpacing and assert correct revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc0bbd7a-05e0-4498-bbc1-88f2223fa9c8?mode=deep",
+    "timestamp": "2026-05-31 21:05:22.716646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee CBP alignment] Can the FEESETTER call setMarketSettlementFee(id, index, newFee) with newFee not a multiple of CBP (1e12), under the precondition that the check newFee % CBP == 0 is present, verifying whether the uint16 cast of newFee/CBP truncates silently or reverts, violating the invariant that settlement fees must be stored exactly as multiples of CBP, causing scoped impact: fee stored incorrectly as truncated uint16, causing systematic fee undercollection or overcollection? Proof idea: fuzz newFee values near CBP boundaries and assert stored fee equals input fee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_60461532-0038-474a-867e-31dc84135f86?mode=deep",
+    "timestamp": "2026-05-31 21:05:35.877784",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setDefaultSettlementFee affects market creation] Can the FEESETTER call setDefaultSettlementFee(loanToken, index, newFee) to change the default fee for a loan token, under the precondition that new markets for that loan token inherit the default fee at creation time, verifying whether markets created before the change are unaffected and whether the change can be used to front-run market creation to impose unexpected fees, violating the invariant that market creators should be able to predict the fee schedule at creation time, causing scoped impact: market created with unexpectedly high default fees, affecting all takers? Proof idea: change default fee, create market, assert market inherits new default.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a82d3095-0dcf-4327-9a91-ac77ce8faf6c?mode=deep",
+    "timestamp": "2026-05-31 21:05:48.954554",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee + withdrawable underflow] Can the FEECLAIMER call claimContinuousFee(market, amount, receiver) where amount > withdrawable but amount <= continuousFeeCredit, under the precondition that the check is amount <= withdrawable AND amount <= totalUnits AND amount <= continuousFeeCredit, verifying whether all three checks are enforced or only some, violating the invariant that withdrawable must remain non-negative after fee claims, causing scoped impact: withdrawable underflows, making lender withdrawals revert permanently? Proof idea: fuzz amount against each of the three bounds independently and assert all three checks are enforced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee88b06f-b005-40e0-a863-5d91482648aa?mode=deep",
+    "timestamp": "2026-05-31 21:06:01.392659",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized self-authorization loop] Can a USER call setIsAuthorized(user, user, true) to authorize themselves, under the precondition that no check prevents self-authorization, verifying whether self-authorization creates any unexpected behavior in cancelRoot (maker == msg.sender already passes) or in take (offer.maker != taker check), violating the invariant that self-authorization should be a no-op and not create privilege escalation, causing scoped impact: self-authorization enables unexpected double-path access in ratifier or authorization checks? Proof idea: set isAuthorized[user][user]=true and assert all access control checks behave identically to the non-authorized case.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7dc90f4e-e7f0-41ea-ab53-6f95149beb4f?mode=deep",
+    "timestamp": "2026-05-31 21:06:14.198529",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setRoleSetter to address(0)] Can the ROLESETTER call setRoleSetter(address(0)) to permanently lock all role management, under the precondition that no zero-address check exists in setRoleSetter, triggering setRoleSetter(address(0)) -> roleSetter = address(0) -> all subsequent setFeeSetter/setFeeClaimer/setTickSpacingSetter calls revert with OnlyRoleSetter, violating the invariant that protocol governance must remain operable, causing scoped impact: permanent DoS of all role management — feeSetter, feeClaimer, tickSpacingSetter can never be changed? Proof idea: call setRoleSetter(address(0)) and assert all role-setter functions revert permanently.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a4f04a9-81c6-410f-bbf0-9021223ad198?mode=deep",
+    "timestamp": "2026-05-31 21:06:27.329793",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setFeeClaimer replaces active claimer] Can the ROLESETTER call setFeeClaimer(newClaimer) while the old claimer has unclaimed fees, under the precondition that the protocol comment states 'when the claimer is set, the old claimer loses the unclaimed fees', verifying whether this is enforced or whether the old claimer can still call claimSettlementFee after being replaced, violating the invariant that only the current feeClaimer can claim fees, causing scoped impact: old feeClaimer loses access to fees they are entitled to, or new feeClaimer can claim fees accumulated under old claimer? Proof idea: replace feeClaimer mid-accumulation and assert old claimer reverts on claim.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e9672fe-e9a0-42ee-9808-0bc65d9f5d9f?mode=deep",
+    "timestamp": "2026-05-31 21:06:39.881769",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.isRatified leafIndex manipulation] Can an ATTACKER provide a valid Merkle proof for offer A but with a different leafIndex that places offer B's hash at the same position, under the precondition that the Merkle tree has multiple offers and the attacker controls leafIndex, triggering isLeaf(root, hashOffer(offerA), manipulatedLeafIndex, proof) -> returns true for a different tree position, violating the invariant that the Merkle proof must bind the specific offer to its correct position in the signed tree, causing scoped impact: offer A is ratified using a proof intended for offer B, enabling unauthorized offer fills? Proof idea: construct a two-leaf tree, swap leafIndex, assert isLeaf returns false for incorrect position.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_420aad3b-e109-46ab-a566-6de0dbb48134?mode=deep",
+    "timestamp": "2026-05-31 21:06:53.401774",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: EcrecoverRatifier.isRatified proof.length manipulation] Can an ATTACKER provide a proof with a different length than the tree height the maker signed, under the precondition that offerTreeTypeHash(proof.length) returns a different typehash for each height, triggering a different structHash and digest, verifying whether ecrecover returns address(0) or a different signer, violating the invariant that the proof length must match the signed tree height, causing scoped impact: signature becomes invalid for wrong proof length — but verify no length that produces a valid ecrecover result for a different signer? Proof idea: fuzz proof.length from 0 to 20 and assert ecrecover never returns a valid unauthorized signer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c1b4577e-94e5-4b36-9937-24c5fba3c29d?mode=deep",
+    "timestamp": "2026-05-31 21:07:07.029386",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee for non-created market] Can the FEESETTER call setMarketSettlementFee(id, index, newFee) for a market ID that has not been created (tickSpacing == 0), under the precondition that the check requires marketState[id].tickSpacing > 0, verifying whether the revert is correctly triggered, violating the invariant that fee parameters can only be set for existing markets, causing scoped impact: if the check is missing or bypassable, fee state is set for a non-existent market that could be created later with unexpected fees? Proof idea: call setMarketSettlementFee with a non-existent market ID and assert MarketNotCreated revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fd2bca1d-6620-4210-90fc-e858689be0df?mode=deep",
+    "timestamp": "2026-05-31 21:07:19.491823",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketContinuousFee MAX_CONTINUOUS_FEE boundary] Can the FEESETTER call setMarketContinuousFee(id, MAX_CONTINUOUS_FEE + 1) under the precondition that the check is newContinuousFee <= MAX_CONTINUOUS_FEE, verifying whether the boundary is inclusive and whether the uint32 cast of MAX_CONTINUOUS_FEE (317097919) can overflow, violating the invariant that continuous fees must not exceed the 1% annualized cap, causing scoped impact: continuous fee set above cap, causing lenders to lose more than documented maximum to fee accrual? Proof idea: fuzz newContinuousFee at MAX_CONTINUOUS_FEE, MAX_CONTINUOUS_FEE+1, and type(uint32).max and assert correct revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbdf3fec-a418-49df-93bd-32a89f38c00b?mode=deep",
+    "timestamp": "2026-05-31 21:07:32.861148",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: multicall + claimSettlementFee reentrancy] Can the FEECLAIMER use multicall to call claimSettlementFee twice in the same transaction for the same token, under the precondition that claimableSettlementFee[token] is decremented in the first call and the second call uses the updated value, verifying whether the two calls can together drain more than the available balance, violating the invariant that total claimed fees must not exceed claimableSettlementFee, causing scoped impact: double-claim drains protocol token balance below accounting? Proof idea: multicall([claimSettlementFee(token, X, r), claimSettlementFee(token, Y, r)]) and assert total claimed <= initial claimableSettlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f364d800-4189-4643-86c9-eb5eec37962d?mode=deep",
+    "timestamp": "2026-05-31 21:07:45.705680",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setIsAuthorized + EcrecoverRatifier.cancelRoot cross-module] Can an ATTACKER who is authorized by a maker in Midnight call cancelRoot on EcrecoverRatifier, then also call setIsRootRatified(maker, root, false) on SetterRatifier, under the precondition that both ratifiers use IMidnight.isAuthorized for access control, triggering a single authorization granting access to both ratifier contracts' cancellation functions, violating the invariant that authorization in Midnight should not implicitly grant control over all external contracts that use Midnight's isAuthorized, causing scoped impact: authorized operator can simultaneously cancel offers across all ratifier types? Proof idea: assert that isAuthorized[maker][attacker]=true enables cancelRoot on EcrecoverRatifier AND setIsRootRatified(false) on SetterRatifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ce1d649-41e2-4b2d-90c7-dfa1cdec4730?mode=deep",
+    "timestamp": "2026-05-31 21:07:59.168007",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: SetterRatifier.setIsRootRatified unauthorized] Can an unprivileged ATTACKER call setIsRootRatified(maker, root, false) on SetterRatifier under the precondition that msg.sender != maker and isAuthorized[maker][msg.sender]=false, triggering the Unauthorized revert, and verify whether any path bypasses this check, violating the invariant that only the maker or their authorized operator can ratify or unratify roots in SetterRatifier, causing scoped impact: unauthorized cancellation of maker's SetterRatifier offer batch? Proof idea: fuzz all callers and assert revert for non-maker non-authorized addresses.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b53bdf23-7beb-4c37-91ba-2cbe2e53c22d?mode=deep",
+    "timestamp": "2026-05-31 21:08:11.858187",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: SetterRatifier.setIsRootRatified replay] Can an ATTACKER or AUTHORIZED OPERATOR call setIsRootRatified(maker, root, false) to unratify a root, then setIsRootRatified(maker, root, true) to re-ratify it, under the precondition that isRootRatified is a simple boolean that can be toggled, verifying whether this creates any inconsistency with consumed offer state in Midnight, violating the invariant that once offers are consumed they cannot be replayed even if the root is re-ratified, causing scoped impact: re-ratification of a root does not reset consumed amounts, so no replay — but verify consumed state is in Midnight not SetterRatifier? Proof idea: toggle isRootRatified, attempt to fill a fully consumed offer, assert ConsumedUnits/ConsumedAssets revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28861103-7643-4098-96ec-2c839c5642dc?mode=deep",
+    "timestamp": "2026-05-31 21:08:25.126439",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: claimContinuousFee + totalUnits desync] Can the FEECLAIMER call claimContinuousFee(market, amount, receiver) where amount equals continuousFeeCredit but is greater than totalUnits, under the precondition that the check enforces amount <= totalUnits separately, verifying whether the three-way check (continuousFeeCredit, totalUnits, withdrawable) is enforced atomically, violating the invariant that totalUnits must equal sum of all credit positions plus continuousFeeCredit, causing scoped impact: totalUnits underflows below actual credit obligations, making future credit redemptions impossible? Proof idea: fuzz amount against each bound and assert all three checks are enforced before any state mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9ce80bc8-9e7c-4a70-a86a-6eb598aa25b8?mode=deep",
+    "timestamp": "2026-05-31 21:08:37.891802",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: setMarketSettlementFee index=6 at 360d boundary] Can the FEESETTER set settlementFee at index 6 (360d breakpoint) to exactly maxSettlementFee(6) = 50 bps, under the precondition that the fee is stored as uint16 in CBP units, verifying whether 50 bps / CBP fits in uint16 (50e13 / 1e12 = 500, fits in uint16), and whether the piecewise linear interpolation between breakpoints correctly caps at 50 bps for TTM > 360d, violating the invariant that settlement fees must not exceed 50 bps annualized, causing scoped impact: fee exceeds cap due to interpolation rounding at boundary? Proof idea: set index-6 fee to max, compute settlementFee at TTM=360d+1s, assert fee equals index-6 value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d55dc041-c526-457c-aecf-fc883f2abc81?mode=deep",
+    "timestamp": "2026-05-31 21:08:51.126688",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Access-control failure in fee setter, role setter, tick-spacing setter, fee claimer, market parameter setter, or authorization setter'] [Function: take + isAuthorized[offer.maker][offer.ratifier] check] Can an ATTACKER craft an offer where offer.ratifier is set to address(0) and isAuthorized[offer.maker][address(0)]=false, under the precondition that the check is isAuthorized[offer.maker][offer.ratifier], verifying whether a zero-address ratifier causes a revert at the IRatifier(address(0)).isRatified call or at the isAuthorized check, violating the invariant that offers with invalid ratifiers must not be fillable, causing scoped impact: if address(0) call succeeds (returns empty), take proceeds without ratification? Proof idea: craft offer with ratifier=address(0) and assert take reverts at RatifierUnauthorized or RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0f60d61-00d8-4045-b597-8d05f5d81d6c?mode=deep",
+    "timestamp": "2026-05-31 21:09:04.189165",
+    "report_generated": false
+  }
+]
