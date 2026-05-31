@@ -1,0 +1,68 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: buyWithUnitsTargetAndWithdrawCollateral / buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged caller pass a takes array where all entries have the same offer.market but different toId results due to a market struct field ordering or encoding difference, causing the InconsistentMarket check to revert on a valid offer that belongs to the same logical market, causing scoped impact: non-critical behavior divergence (spurious InconsistentMarket revert due to struct encoding sensitivity)? Proof idea: unit test with two offers for the same market where one has a different in-memory struct layout and assert toId returns the same id.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e6590e2c-7206-4478-8a24-229fa44f0d89?mode=deep",
+    "timestamp": "2026-05-31 20:18:38.645055",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged caller observe that toId(takes[i].offer.market) is called inside the loop for every take iteration rather than being cached, causing O(N) external calls to MIDNIGHT.toId for N takes, each consuming gas for an external call and ABI encoding, causing scoped impact: unnecessary gas cost (O(N) toId calls instead of O(1))? Proof idea: unit test with N = 20 takes and measure gas vs a version that caches id outside the loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcc6efae-f7a2-4e8a-b5b8-02618bb50a9f?mode=deep",
+    "timestamp": "2026-05-31 20:18:50.656759",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: ConsumableUnitsLib.consumableUnits (maxAssets path)] Can an unprivileged caller trigger consumableUnits on an offer with maxUnits == 0 and maxAssets > 0 where offer.maxAssets - consumed is a tiny residual (e.g., 1 wei), causing buyerAssetsToUnits(midnight, id, offer, 1) to return 0 units (because 1 * WAD / buyerPrice rounds down to 0), causing the min(targetUnits - filledUnits, takes[i].units, 0) to be 0, causing the take to be silently skipped even though the offer has 1 wei of remaining capacity, causing scoped impact: non-critical behavior divergence (valid offer silently skipped due to dust residual)? Proof idea: unit test with offer.maxAssets = consumed + 1 and assert the offer is skipped.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_50dc0d8e-3156-4113-b403-b0085e3b3759?mode=deep",
+    "timestamp": "2026-05-31 20:19:03.209189",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: ConsumableUnitsLib.consumableUnits (maxAssets path)] Can an unprivileged caller trigger consumableUnits on a sell offer (offer.buy == false) with maxUnits == 0 and maxAssets > 0 where sellerAssetsToUnits rounds up, causing consumableUnits to return more units than the offer can actually fill in assets, causing the subsequent take to consume more assets than maxAssets - consumed, violating the invariant that consumableUnits returns a safe upper bound on fillable units, causing scoped impact: minor precision divergence (offer slightly overfilled in assets relative to maxAssets)? Proof idea: unit test with offer.maxAssets set to a non-round value and assert consumed assets after take <= offer.maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b3ab5ae-22d3-4de0-8b8b-e6b73f9b8835?mode=deep",
+    "timestamp": "2026-05-31 20:19:16.398759",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: TakeAmountsLib.buyerAssetsToUnits] Can an unprivileged caller trigger buyerAssetsToUnits on a sell offer at a tick where settlementFee changes between the touchMarket call and the buyerAssetsToUnits call (e.g., at a fee breakpoint boundary where block.timestamp crosses a breakpoint), causing buyerAssetsToUnits to use a different settlementFee than what Midnight uses in the actual take, causing the computed unitsToTake to be based on a stale fee, causing scoped impact: minor precision divergence (unit count computed with wrong fee, leading to OutOfOffers or overshoot)? Proof idea: unit test at a fee breakpoint boundary with a warp between touchMarket and the take loop.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcabfc77-6afe-44cd-bd55-fb9b5f0113d3?mode=deep",
+    "timestamp": "2026-05-31 20:19:29.771317",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: supplyCollateralAndSellWithUnitsTarget] Can an unprivileged caller trigger a scenario where all takes in the loop fail (caught by try/catch) after collateral has already been supplied via supplyCollateral, causing the call to revert with OutOfOffers after the collateral supply is complete, leaving the taker with collateral deposited in the market but no debt created, causing scoped impact: non-critical behavior divergence (partial state: collateral supplied but no sell executed, though atomically reverted)? Proof idea: unit test where all offers revert (e.g., expired deadline) and assert the transaction reverts entirely with no collateral deposited.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3e527ef-cbe3-4740-a9de-d51992fdf7a0?mode=deep",
+    "timestamp": "2026-05-31 20:19:42.485492",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: buyWithAssetsTargetAndWithdrawCollateral] Can an unprivileged caller observe that after a successful call, the bundler holds exactly 0 loan tokens (targetBuyerAssets = targetFilledBuyerAssets + referralFeeAssets due to integer arithmetic), but due to mulDivDown rounding, targetFilledBuyerAssets + referralFeeAssets = targetBuyerAssets - floor(targetBuyerAssets * referralFeePct / WAD) + floor(targetBuyerAssets * referralFeePct / WAD) = targetBuyerAssets exactly, meaning no dust accumulates, but verify this holds for all (targetBuyerAssets, referralFeePct) pairs including edge cases where referralFeePct = WAD - 1, causing scoped impact: minor precision loss (dust accumulation if invariant breaks)? Proof idea: fuzz (targetBuyerAssets, referralFeePct) and assert loanToken.balanceOf(address(midnightBundles)) == 0 after every call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_33345d9c-4d8e-4c32-b248-b7d8603e95be?mode=deep",
+    "timestamp": "2026-05-31 20:19:55.642476",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged caller observe that after a successful call, the bundler holds exactly 0 loan tokens (refund = maxBuyerAssets - filledBuyerAssets - referralFeeAssets), but due to mulDivDown rounding of referralFeeAssets, the refund may be 1 wei more than the exact proportional refund, causing the bundler to send 1 extra wei to msg.sender rather than to the referral recipient, causing scoped impact: minor precision loss to referral recipient (1 wei redirected to caller)? Proof idea: fuzz (filledBuyerAssets, referralFeePct) and assert referralFeeAssets + refund == maxBuyerAssets - filledBuyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3912cc58-5c33-403a-a039-316d7d5adda8?mode=deep",
+    "timestamp": "2026-05-31 20:20:10.090315",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: repayAndWithdrawCollateral] Can an unprivileged caller pass assets = 0 with referralFeePct = 0, causing referralFeeAssets = 0, units = 0, pullToken(loanToken, msg.sender, 0, ...) to execute a safeTransferFrom of 0 tokens, forceApproveMax to execute an allowance check and potentially two approve calls, and repay(market, 0, ...) to execute a no-op repay, all consuming gas without any meaningful state change, causing scoped impact: unnecessary gas cost (no-op bundle call with full gas overhead)? Proof idea: unit test with assets = 0 and measure gas consumed vs expected no-op cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cbd9d608-b0b3-44ee-a1e8-86bf2f2696d1?mode=deep",
+    "timestamp": "2026-05-31 20:20:22.822646",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: supplyCollateralAndSellWithAssetsTarget] Can an unprivileged caller pass targetSellerAssets = 0 with referralFeePct = 0, causing referralFeeAssets = 0, targetFilledSellerAssets = 0, the take loop to exit immediately (filledSellerAssets = 0 < 0 is false), require(0 == 0) to pass, require(0 <= maxUnits) to pass, and safeTransfer(loanToken, receiver, 0) to execute, all after collateral has been supplied, causing scoped impact: unnecessary gas cost (collateral supplied but no sell executed, no revert)? Proof idea: unit test with targetSellerAssets = 0 and non-empty collateralSupplies and assert collateral is deposited but no debt is created.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1126f47-c155-44d5-a1d1-ba066be3fe2d?mode=deep",
+    "timestamp": "2026-05-31 20:20:35.429916",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: Low Minor precision loss, unnecessary gas cost, or non-critical behavior divergence that does not directly create loss or freezing'] [Function: forceApproveMax] Can an unprivileged caller trigger forceApproveMax on a token that returns non-standard returndata from approve (e.g., returns 32 bytes of non-bool data like a uint256 error code), causing abi.decode(returndata, (bool)) to decode the first byte as true even when the token intended to signal failure, causing safeApprove to succeed silently and the subsequent transfer to fail with a less informative error, causing scoped impact: non-critical behavior divergence (misleading success from non-standard approve return)? Proof idea: deploy a mock token whose approve returns abi.encode(uint256(2)) and assert forceApproveMax does not revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f8009b5f-6056-412d-a173-719cbb0f0ab4?mode=deep",
+    "timestamp": "2026-05-31 20:20:48.318303",
+    "report_generated": false
+  }
+]
