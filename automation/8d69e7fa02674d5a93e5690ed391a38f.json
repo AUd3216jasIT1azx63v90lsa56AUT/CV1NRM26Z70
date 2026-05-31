@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.setIsRootRatified + Midnight.multicall] Can an unprivileged attacker under the precondition that attacker is authorized by maker call Midnight.multicall to atomically call setIsAuthorized(attacker2, true, maker) and then use attacker2 to call setIsRootRatified(maker, root, true), violating the invariant that authorization delegation should not transitively enable ratification of arbitrary roots, causing scoped impact: attacker chains authorization grants through multicall to ratify roots the maker never approved, enabling unauthorized offer fills? Proof idea: multicall [setIsAuthorized(attacker2, true, maker), ...]; have attacker2 call setIsRootRatified; assert root is ratified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d2a1ae8-bb8d-46f0-ba31-cc52fcc5bf52?mode=deep",
+    "timestamp": "2026-05-31 18:30:22.291665",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.isRatified + HashLib.isLeaf] Can a taker under the precondition that a root is ratified call isRatified with a proof where leafIndex >= 2^proof.length, violating the invariant that the LeafIndexOutOfRange check in HashLib.isLeaf should prevent invalid proofs, causing scoped impact: if the check leafIndex >> proof.length == 0 has an off-by-one or overflow, an attacker could supply a crafted leafIndex to make an invalid offer hash verify against a valid root? Proof idea: fuzz leafIndex and proof.length combinations near 2^proof.length boundary; assert LeafIndexOutOfRange reverts for all leafIndex >= 2^proof.length.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f4c8312d-907d-4eba-ba0e-0bb199b6ff42?mode=deep",
+    "timestamp": "2026-05-31 18:30:34.181169",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.isRatified + HashLib.isLeaf] Can a taker under the precondition that a root is ratified for a single-offer tree (proof.length == 0) call isRatified with leafIndex == 0 and empty proof, violating the invariant that a height-0 tree root should equal the single offer's hash, causing scoped impact: if hashOffer produces the same value as the root for a crafted offer, any ratified single-offer root could be used to fill a different offer with the same hash? Proof idea: ratify root == hashOffer(offer); call isRatified with empty proof and leafIndex=0; assert only the exact offer passes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56a518c8-d4a9-49a2-bde3-369a2397d9aa?mode=deep",
+    "timestamp": "2026-05-31 18:30:46.696132",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.touchMarket + SetterRatifier.setIsRootRatified] Can a maker under the precondition that a market does not yet exist call setIsRootRatified(maker, root, true) to ratify a root for offers in an uncreated market, then any actor calls touchMarket with different market parameters that produce the same market id, violating the invariant that market id should uniquely identify market parameters, causing scoped impact: if two different Market structs produce the same id (collision in IdLib.toId), the ratified root's offers execute under wrong market parameters? Proof idea: attempt to find two Market structs with same toId output; assert IdLib.toId is collision-resistant for all valid market param combinations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32a9024e-67b8-474b-a49b-16d3a7d76b74?mode=deep",
+    "timestamp": "2026-05-31 18:30:59.311421",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setDefaultContinuousFee + Midnight.updatePositionView] Can the feeSetter under the precondition that a market exists with continuousFee=X and lenders have credit call setMarketContinuousFee(id, Y) to change the fee, violating the invariant that existing lenders' pendingFee should be fixed at credit-creation time and not retroactively recalculated, causing scoped impact: updatePositionView uses the stored pendingFee (crystallized at take time) not the current continuousFee, so existing lenders are unaffected, but new lenders entering after the change get different fee terms, creating a two-tier fee structure within the same market? Proof idea: lender A takes at fee X; change fee to Y; lender B takes; assert A.pendingFee/A.credit != B.pendingFee/B.credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fbd9648a-f94e-4682-9333-d6f5cfcbb214?mode=deep",
+    "timestamp": "2026-05-31 18:31:13.291647",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setFeeSetter] Can the roleSetter under the precondition that feeSetter == currentSetter call setFeeSetter(address(0)) to zero out the feeSetter role, violating the invariant that settlement and continuous fees should always be adjustable by some authorized party, causing scoped impact: all setMarketSettlementFee, setDefaultSettlementFee, setMarketContinuousFee, setDefaultContinuousFee calls permanently revert with OnlyFeeSetter, freezing all fee parameters at their current values for all existing and future markets? Proof idea: set feeSetter to address(0); assert all fee-setting functions revert; assert markets created after this inherit frozen default fees.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_00213d72-a81a-4618-b7c4-098736d68468?mode=deep",
+    "timestamp": "2026-05-31 18:31:28.182612",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setTickSpacingSetter + Midnight.setMarketTickSpacing] Can the roleSetter under the precondition that tickSpacingSetter is set call setTickSpacingSetter(address(0)) to zero the tick spacing setter, violating the invariant that tick spacing should always be reducible by an authorized party, causing scoped impact: all markets are permanently frozen at DEFAULT_TICK_SPACING=4, preventing any future tick spacing reductions, which means offers at finer tick granularities (spacing 1 or 2) can never be enabled for any market? Proof idea: set tickSpacingSetter to address(0); assert setMarketTickSpacing reverts for all markets; assert no market can ever have tickSpacing < 4.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_869ea3d2-5a8f-44d7-b975-00ea78736808?mode=deep",
+    "timestamp": "2026-05-31 18:31:41.839095",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.touchMarket + Midnight.setDefaultSettlementFee] Can an unprivileged market creator under the precondition that defaultSettlementFeeCbp[loanToken] is all zeros (never set by feeSetter) call touchMarket to create a market, violating the invariant that newly created markets should have a meaningful settlement fee schedule, causing scoped impact: market is created with all-zero settlement fees, all takes in this market have buyerAssets == sellerAssets (zero spread), and claimableSettlementFee never accrues, permanently depriving the protocol of settlement fee revenue for this market? Proof idea: never call setDefaultSettlementFee; create market; assert all settlementFeeCbp fields are 0; take offer; assert claimableSettlementFee delta == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9c48c3e6-7282-4ef0-b50f-71542f287e8e?mode=deep",
+    "timestamp": "2026-05-31 18:31:56.393192",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setMarketSettlementFee + Midnight.settlementFee] Can the feeSetter under the precondition that a market exists call setMarketSettlementFee(id, 6, maxSettlementFee(6)) to set the 360-day breakpoint to maximum, violating the invariant that the settlement fee for TTM >= 360 days should be capped at MAX_SETTLEMENT_FEE_360_DAYS == 0.005e18, causing scoped impact: for offers with very long TTM, the settlement fee consumes up to 0.5% of the trade value, and if offer.tick is close to the settlement fee, take reverts with arithmetic underflow in sellerPrice = offerPrice - settlementFee? Proof idea: set fee to max; create offer at tick where tickToPrice(tick) < maxSettlementFee(6); assert take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_180c7cc5-b9f9-4068-8bab-5b3df9c3bfd9?mode=deep",
+    "timestamp": "2026-05-31 18:32:11.338634",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.setIsRootRatified + Midnight.isAuthorized] Can a maker under the precondition that maker has previously authorized an operator call Midnight.setIsAuthorized(operator, false) to revoke authorization, but the operator has already called setIsRootRatified(maker, root, true) before revocation, violating the invariant that revoking authorization should prevent future unauthorized actions but cannot undo past ratifications, causing scoped impact: roots ratified by the operator before revocation remain permanently ratified, enabling fills of offers the maker no longer wants to honor? Proof idea: authorize operator; operator ratifies root; revoke authorization; assert isRootRatified[maker][root] still true; assert take still succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_12a03bcc-d9bc-477f-9e83-5d30c2dfc184?mode=deep",
+    "timestamp": "2026-05-31 18:32:23.840709",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.claimContinuousFee + Midnight.withdrawable] Can the feeClaimer under the precondition that withdrawable < continuousFeeCredit call claimContinuousFee(market, continuousFeeCredit, receiver) which decrements withdrawable by continuousFeeCredit, violating the invariant that withdrawable should always be >= 0 and represent actual withdrawable loan token assets, causing scoped impact: if continuousFeeCredit > withdrawable, the subtraction underflows (Solidity 0.8 reverts), but if continuousFeeCredit was inflated by a bug, the feeClaimer could drain withdrawable below what lenders can legitimately withdraw? Proof idea: fuzz continuousFeeCredit and withdrawable values; assert claimContinuousFee reverts when amount > withdrawable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2aa9ad5b-1c8c-4d57-a227-5c4b276ddc0c?mode=deep",
+    "timestamp": "2026-05-31 18:32:36.758991",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setDefaultSettlementFee + Midnight.setMarketSettlementFee] Can the feeSetter under the precondition that a market exists call setMarketSettlementFee(id, index, newFee) for index in [0,6] independently, violating the invariant that the piecewise linear fee schedule should be monotonically non-decreasing from index 0 to 6 (longer TTM = higher fee), causing scoped impact: feeSetter sets a higher fee at index 2 (7 days) than index 3 (30 days), creating a non-monotonic fee schedule where offers at 8-29 day TTM pay more than offers at 30-89 day TTM, breaking maker expectations about fee behavior? Proof idea: set settlementFeeCbp2 > settlementFeeCbp3; assert settlementFee at TTM=8days > settlementFee at TTM=30days.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bec484ad-6efc-46b5-aa92-bbda33d0fc8e?mode=deep",
+    "timestamp": "2026-05-31 18:32:49.716541",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.touchMarket + Midnight.setDefaultContinuousFee] Can the feeSetter under the precondition that defaultContinuousFee[loanToken] == 0 call setDefaultContinuousFee(loanToken, MAX_CONTINUOUS_FEE) after a market is created, violating the invariant that the default change should not affect already-created markets, causing scoped impact: the created market retains continuousFee == 0 while all subsequently created markets for the same loanToken get MAX_CONTINUOUS_FEE, creating permanent fee divergence between markets of the same loan token based solely on creation order? Proof idea: create market A; set defaultContinuousFee to max; create market B; assert marketState[idA].continuousFee == 0 and marketState[idB].continuousFee == MAX_CONTINUOUS_FEE.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f770e089-af93-483b-bfff-38d89c2b85e1?mode=deep",
+    "timestamp": "2026-05-31 18:33:03.646896",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.isRatified + Midnight.take] Can a taker under the precondition that isRootRatified[maker][root] == true and the offer's market has not been created call Midnight.take which calls touchMarket (creating the market) before calling isRatified, violating the invariant that the market's fee state at ratification time should match the fee state at fill time, causing scoped impact: the market is created with current default fees during the take transaction itself, meaning the maker ratified offers without knowing what fees the market would have, and the take succeeds with potentially unexpected fees? Proof idea: ratify root; change defaults; take offer (which creates market); assert market fees match new defaults not old defaults.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_940b7430-1543-4e2b-897c-0ea9b25eea8c?mode=deep",
+    "timestamp": "2026-05-31 18:33:18.246178",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setMarketSettlementFee + Midnight.take] Can the feeSetter under the precondition that a buy offer with low tick is in a ratified root call setMarketSettlementFee(id, index, newFee) to increase the settlement fee such that settlementFee > tickToPrice(offer.tick), violating the invariant that increasing settlement fees should not silently invalidate existing ratified offers, causing scoped impact: take reverts with arithmetic underflow at sellerPrice = offerPrice - settlementFee when offerPrice < settlementFee, effectively canceling all low-price buy offers in ratified roots without the maker being able to prevent it? Proof idea: ratify root with buy offer at minimum tick; increase settlement fee above tickToPrice(minTick); assert take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0d7c9ea-1d55-42b1-a2f5-1392f7002cc4?mode=deep",
+    "timestamp": "2026-05-31 18:33:34.312639",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setFeeClaimer] Can the roleSetter under the precondition that feeClaimer has unclaimed continuousFeeCredit call setFeeClaimer(newClaimer) to change the claimer, violating the invariant that the old claimer should be able to claim all fees they are entitled to before being replaced, causing scoped impact: old feeClaimer permanently loses access to all accumulated continuousFeeCredit and claimableSettlementFee, which remain in the contract but can only be claimed by the new feeClaimer, constituting a forced transfer of earned fee rights? Proof idea: accumulate fees; change feeClaimer; assert old claimer's claimSettlementFee and claimContinuousFee revert with OnlyFeeClaimer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d41b49d-0f04-4e98-ae5a-4bc9d37755cd?mode=deep",
+    "timestamp": "2026-05-31 18:33:48.238906",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setMarketTickSpacing + SetterRatifier.isRatified] Can the tickSpacingSetter under the precondition that a root is ratified containing offers at ticks that are multiples of DEFAULT_TICK_SPACING=4 call setMarketTickSpacing(id, 1) to reduce spacing to 1, violating the invariant that reducing tick spacing should only unlock new ticks and not invalidate existing ones, causing scoped impact: all offers in the ratified root at ticks that are multiples of 4 remain valid (since 4 % 1 == 0), but new offers at non-multiple-of-4 ticks can now be ratified and filled, potentially front-running or sandwiching the original ratified offers? Proof idea: ratify root at tick=4; reduce spacing to 1; assert original offer still fillable; assert new offer at tick=1 also fillable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5817b9c-5c64-46af-be77-bc8af37e3dee?mode=deep",
+    "timestamp": "2026-05-31 18:34:02.036137",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.touchMarket] Can an unprivileged attacker under the precondition that a market does not exist call touchMarket(market) with valid market parameters to create the market before the intended creator, violating the invariant that market creation should be controlled by the intended deployer, causing scoped impact: the market is created with current default fees (which may differ from what the intended creator expected), and all makers who ratified roots for this market now have their offers subject to fees they did not anticipate? Proof idea: set non-zero defaults; have attacker call touchMarket before intended creator; assert market created with attacker-timed defaults.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ebda9e2-b72c-4395-9809-cda67d7d2a90?mode=deep",
+    "timestamp": "2026-05-31 18:34:16.898131",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.setIsRootRatified + Midnight.setIsAuthorized] Can a maker under the precondition that maker calls setIsAuthorized(setterRatifier, true) inadvertently allow SetterRatifier itself to call setIsRootRatified on behalf of the maker, violating the invariant that the ratifier contract should not be able to modify its own ratification state, causing scoped impact: if SetterRatifier is authorized by the maker in Midnight, any external actor who can trigger SetterRatifier to call setIsRootRatified (e.g., via a fallback or callback) can ratify or deratify roots on the maker's behalf? Proof idea: authorize SetterRatifier in Midnight; attempt to trigger setIsRootRatified via SetterRatifier's own execution context; assert no path exists.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5af9f55b-0a63-4535-a44f-fc6f29a28012?mode=deep",
+    "timestamp": "2026-05-31 18:34:31.703018",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setDefaultSettlementFee + Midnight.settlementFee] Can the feeSetter under the precondition that a market exists with non-zero settlement fees call setDefaultSettlementFee(loanToken, index, 0) to zero the default for new markets, violating the invariant that per-market fees and default fees should be independently tracked without cross-contamination, causing scoped impact: the existing market's fees are unaffected (correct), but settlementFeeCbps(id) for the existing market still returns the old values while defaultSettlementFeeCbp[loanToken][index] returns 0, creating a permanent divergence between per-market and default fee state? Proof idea: create market; zero default; assert marketState[id].settlementFeeCbp[i] unchanged; assert defaultSettlementFeeCbp[loanToken][i] == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8791dd4e-e687-40d8-aeff-31b23f6ca750?mode=deep",
+    "timestamp": "2026-05-31 18:34:46.437506",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.claimContinuousFee + Midnight.totalUnits] Can the feeClaimer under the precondition that totalUnits == continuousFeeCredit (all units are fee credit, no lender credit) call claimContinuousFee(market, continuousFeeCredit, receiver) which sets totalUnits to 0 and withdrawable to 0, violating the invariant that totalUnits == sum(lender credits) + continuousFeeCredit, causing scoped impact: after the claim, totalUnits == 0 but if any lender still has credit (due to accounting lag), their subsequent withdraw will revert because withdrawable was decremented to 0? Proof idea: engineer state where continuousFeeCredit == totalUnits; claim all; assert any remaining lender credit cannot be withdrawn.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_543c4507-691e-40d3-90c0-8c46b6ddcd42?mode=deep",
+    "timestamp": "2026-05-31 18:35:01.368472",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setMarketSettlementFee + Midnight.setDefaultSettlementFee] Can the feeSetter under the precondition that both per-market and default fees exist call setMarketSettlementFee for all 7 indices of a created market to values different from the defaults, then call setDefaultSettlementFee to change defaults, violating the invariant that per-market fee overrides should be fully independent of default changes, causing scoped impact: fuzz test should confirm that no code path in settlementFee(id, ttm) reads defaultSettlementFeeCbp instead of marketState[id].settlementFeeCbp after per-market override? Proof idea: override all 7 market fees; change all 7 defaults; assert settlementFee(id, ttm) uses only market-level values for all TTM values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66cd02c3-31d3-4286-8c94-7b2b4121a23a?mode=deep",
+    "timestamp": "2026-05-31 18:35:16.603733",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: SetterRatifier.setIsRootRatified] Can a maker under the precondition that maker calls setIsRootRatified(maker, root, true) and then setIsRootRatified(maker, root, false) in the same block call setIsRootRatified(maker, root, true) again in a subsequent transaction, violating the invariant that root ratification state should be monotonically final once deratified, causing scoped impact: the toggle behavior of setIsRootRatified allows a maker to re-ratify a previously deratified root, potentially re-enabling offers that were intentionally canceled, if the maker's key is compromised or the maker makes an error? Proof idea: ratify; deratify; re-ratify; assert isRootRatified[maker][root] == true; assert take succeeds after re-ratification.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be75d342-7ae9-4184-ba22-165490e808c3?mode=deep",
+    "timestamp": "2026-05-31 18:35:32.220708",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.setMarketContinuousFee + Midnight.claimContinuousFee] Can the feeSetter under the precondition that continuousFeeCredit > 0 call setMarketContinuousFee(id, 0) to zero the continuous fee, then feeClaimer calls claimContinuousFee for the already-accrued continuousFeeCredit, violating the invariant that zeroing the continuous fee should not affect already-accrued continuousFeeCredit, causing scoped impact: the claim succeeds and drains totalUnits and withdrawable by the accrued amount, confirming no inconsistency, but fuzz should verify that continuousFeeCredit cannot exceed totalUnits after any sequence of fee changes and claims? Proof idea: invariant test: for all sequences of setMarketContinuousFee and claimContinuousFee, assert continuousFeeCredit <= totalUnits always.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_04ff8cc5-24c9-4188-bdbb-9258a82dc1e3?mode=deep",
+    "timestamp": "2026-05-31 18:35:45.780806",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Medium State inconsistency between created and uncreated markets, default fees and market fees, or role-controlled parameters'] [Function: Midnight.touchMarket + Midnight.setDefaultSettlementFee + Midnight.setDefaultContinuousFee] Can an unprivileged attacker under the precondition that feeSetter has set all defaults to zero call touchMarket for a market where makers have ratified roots expecting non-zero fees (e.g., to ensure protocol solvency), violating the invariant that market creation should reflect the protocol's intended fee schedule, causing scoped impact: market is created with zero fees, all takes are fee-free, and the protocol cannot retroactively impose fees on this market since setMarketSettlementFee requires the market to already exist and feeSetter must act after creation? Proof idea: zero all defaults; create market; assert feeSetter can still call setMarketSettlementFee to restore fees post-creation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4a593639-c54b-4919-82db-1214fe458bb6?mode=deep",
+    "timestamp": "2026-05-31 18:35:59.134906",
+    "report_generated": false
+  }
+]
