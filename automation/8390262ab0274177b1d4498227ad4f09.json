@@ -1,0 +1,62 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / bitmap corruption via authorized operator in repay callback] Can an authorized operator (acting as repay callback) call withdrawCollateral(market, i, fullAmount, borrower, receiver) inside onRepay, under preconditions: borrower has debt, bit i is set, collateral[i] > 0, operator is authorized and is the repay callback; call sequence: repay(market, units, borrower, operatorCallback, data) -> onRepay calls withdrawCollateral(i, fullAmount, borrower, receiver); violating invariant: repay reduces debt before the callback, so after callback the borrower has less debt — does the withdrawal pass the health check? Proof idea: assert that withdrawCollateral inside onRepay correctly checks health with the reduced debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e9d9f47f-99d0-4ff6-b2c9-533cde2a6d6b?mode=deep",
+    "timestamp": "2026-05-31 19:39:56.418385",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / bitmap state during liquidate callback (onLiquidate) reentrancy into isHealthy] Can a liquidate callback (onLiquidate) call isHealthy(market, id, borrower) to observe the intermediate bitmap state (after bit i cleared but before loan token transfer), under preconditions: liquidation clears bit i at line 673, callback is called at lines 698-714; call sequence: liquidate(market, i, seizedAssets, 0, borrower, false, receiver, maliciousCallback, data) -> onLiquidate calls isHealthy(market, id, borrower); violating invariant: isHealthy must reflect the post-seizure collateral state; causing scoped impact: if the callback observes a different health state than the final state, it could be used to trigger a second liquidation? Proof idea: assert isHealthy inside onLiquidate returns the same value as after the liquidation completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c7e5f45-f807-498e-8e65-d71bcc4d720e?mode=deep",
+    "timestamp": "2026-05-31 19:40:08.283325",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / multi-market bitmap isolation] Can an authorized operator's supplyCollateral call on market A affect the collateralBitmap of the same borrower on market B (different market id), under preconditions: borrower has positions on two markets, operator is authorized; call sequence: supplyCollateral(marketA, i, amount, borrower); violating invariant: position[idA][borrower].collateralBitmap must be independent of position[idB][borrower].collateralBitmap; causing scoped impact: if bitmaps are shared or aliased, a supply on one market corrupts the health check on another? Proof idea: assert that supplyCollateral on market A does not change collateralBitmap for market B.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62596a9d-dd39-4323-adb9-36af76acaaa8?mode=deep",
+    "timestamp": "2026-05-31 19:40:20.546796",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / authorized operator activates collateral with zero-returning oracle] Can an authorized operator activate a collateral index whose oracle returns 0, causing isHealthy to compute maxDebt contribution of 0 for that index (0 * 0 / ORACLE_PRICE_SCALE = 0), under preconditions: oracle[i].price() returns 0, operator activates index i; call sequence: supplyCollateral(market, i, amount, borrower) -> isHealthy(market, id, borrower); violating invariant: a zero-price oracle should not make a position appear healthier; causing scoped impact: the zero-price collateral contributes 0 to maxDebt, making the position appear less healthy than if the collateral were not activated — can this trigger a false liquidation? Proof idea: assert isHealthy returns false when all oracle prices are 0 and borrower has debt (per oracleZeroCausesIsHealthyReturnFalse spec).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4307be41-b2fd-4a6f-87e2-331b30be5d2c?mode=deep",
+    "timestamp": "2026-05-31 19:40:33.393980",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / bitmap countBits overflow in popcount algorithm] Can the countBits function (Hamming weight via SWAR algorithm) return an incorrect result for any uint128 input, under preconditions: any bitmap value; call sequence: UtilsLib.countBits(bitmap); violating invariant: countBits must return the exact number of set bits; causing scoped impact: if countBits returns a value > MAX_COLLATERALS_PER_BORROWER for a valid bitmap, the TooManyActivatedCollaterals check in supplyCollateral incorrectly blocks activation; if it returns < actual count, the cap is bypassed? Proof idea: differential fuzz test comparing countBits against a naive bit-counting loop for all uint128 values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c93eaeca-9efb-4332-a406-5d9ea8887f87?mode=deep",
+    "timestamp": "2026-05-31 19:40:46.698850",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / authorized operator activates collateral on behalf of borrower with existing debt, then immediately withdraws] Can an authorized operator call supplyCollateral(market, i, amount, borrower) then withdrawCollateral(market, i, amount, borrower, operator) in a single multicall, with the borrower having existing debt, under preconditions: borrower has debt, collateral[i] == 0 before multicall; call sequence: multicall([supplyCollateral(i, amount), withdrawCollateral(i, amount)]); violating invariant: the health check in withdrawCollateral must use the bitmap state after supply (bit i set, collateral[i] = amount); causing scoped impact: if the health check passes (borrower is healthy with the new collateral), the withdrawal succeeds and the operator extracts the collateral — is this the intended behavior? Proof idea: assert that the health check in withdrawCollateral correctly includes the just-supplied collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_14e99ef5-212a-4171-be71-116326a1f680?mode=deep",
+    "timestamp": "2026-05-31 19:40:59.903249",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / bitmap bit 127 (highest valid index)] Can an authorized operator activate collateral at index 127 (the maximum valid bitmap index), under preconditions: market has 128 collateral params (MAX_COLLATERALS), operator is authorized; call sequence: supplyCollateral(market, 127, amount, borrower); violating invariant: setBit(bitmap, 127) must set bit 127 of a uint128 — but uint128 has bits 0-127, so bit 127 is the MSB; causing scoped impact: if setBit(bitmap, 127) overflows (1 << 127 is the MSB of uint128), does the bitmap correctly represent this? Proof idea: assert setBit(0, 127) == (1 << 127) and msb(1 << 127) == 127.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e4cacd2-3f5b-47a4-a404-c376a188ca45?mode=deep",
+    "timestamp": "2026-05-31 19:41:14.198001",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / authorized operator activates collateral at index 128 (out of range)] Can an authorized operator call supplyCollateral(market, 128, amount, borrower), under preconditions: market has at most 128 collateral params (MAX_COLLATERALS = 128), so index 128 is out of bounds; call sequence: supplyCollateral(market, 128, amount, borrower); violating invariant: setBit(bitmap, 128) would shift by 128 bits on a uint128, which is undefined behavior in assembly; causing scoped impact: if setBit(bitmap, 128) does not revert and returns an unexpected value, the bitmap is corrupted? Proof idea: assert supplyCollateral reverts for collateralIndex >= market.collateralParams.length.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_153b3d85-6182-443c-bc1e-a4a02223d58a?mode=deep",
+    "timestamp": "2026-05-31 19:41:27.730559",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / authorized operator triggers bad debt realization that reduces debt to 0, leaving collateral with bits set] Can an authorized operator trigger a (0,0) liquidation that realizes all bad debt (debt -> 0), leaving collateral[i] > 0 with bit i still set, under preconditions: borrower has bad debt (all collateral value < debt), operator calls liquidate(market, anyIndex, 0, 0, borrower, false, ...); call sequence: liquidate(market, 0, 0, 0, borrower, false, receiver, address(0), ''); violating invariant: after debt == 0, isHealthy returns true (maxDebt >= 0 always); causing scoped impact: the borrower's collateral remains locked with bits set but debt is 0 — can the borrower withdraw all collateral? Proof idea: assert that after (0,0) liquidation with debt==0, withdrawCollateral succeeds for all active collateral indices.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_15b4516b-1884-4fef-830c-310a8319159c?mode=deep",
+    "timestamp": "2026-05-31 19:41:41.885702",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Collateral bitmap corruption causing health checks or liquidation loops to skip active collateral or include inactive collateral'] [Function: EcrecoverAuthorizer.setIsAuthorized / bitmap corruption via flashLoan callback activating collateral] Can a flashLoan callback (IFlashLoanCallback.onFlashLoan) call supplyCollateral(market, i, amount, borrower) on behalf of an authorized borrower, under preconditions: flashLoan callback is authorized by borrower via EcrecoverAuthorizer; call sequence: flashLoan(tokens, assets, authorizedCallback, data) -> onFlashLoan calls supplyCollateral(market, i, amount, borrower); violating invariant: supplyCollateral requires onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender]; causing scoped impact: if the flashLoan callback is authorized, it can activate collateral indices on behalf of the borrower, potentially poisoning the bitmap? Proof idea: assert that flashLoan callback can only call supplyCollateral if it is authorized by the borrower.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6434cf12-75a2-4dd3-b760-3541b566947d?mode=deep",
+    "timestamp": "2026-05-31 19:41:56.091994",
+    "report_generated": false
+  }
+]
