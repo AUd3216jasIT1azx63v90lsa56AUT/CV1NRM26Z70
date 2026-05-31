@@ -1,0 +1,20 @@
+[
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given a buy offer with maxAssets > 0 and a group where the maker uses a Merkle tree of offers (EcrecoverRatifier with proof), exploit the fact that consumed[maker][group] is shared across all offers in the Merkle tree that share the same group, to fill one leaf offer and exhaust the group budget, blocking all other leaf offers in the tree from being filled, violating the invariant that Merkle tree offers with shared groups must have coherent consumed accounting, causing scoped impact: filling one offer in a Merkle tree exhausts the group budget for all other offers in the tree? Proof idea: create Merkle tree with N offers sharing group G and maxUnits=M; fill one offer for M units; assert all other offers in tree are blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b4d1dc7-0636-4623-aef8-90e7540e9115?mode=deep",
+    "timestamp": "2026-05-31 22:15:30.996840",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given a buy offer with maxAssets > 0 and a group where the maker's offer has a callback that during onBuy calls setConsumed(group, consumed[maker][group], maker) (a no-op setConsumed that sets consumed to its current value), observe that this passes the AlreadyConsumed check (require(amount >= consumed[onBehalf][group])), and verify that this no-op setConsumed does not affect the consumed accounting, but then exploit the fact that the callback can call setConsumed with amount = consumed[maker][group] + delta to inflate consumed and block subsequent fills, violating the invariant that callbacks must not be able to manipulate consumed accounting, causing scoped impact: maker's callback can inflate consumed to block taker's subsequent fills in the same transaction? Proof idea: implement onBuy callback that calls setConsumed to inflate consumed; assert subsequent fills in same tx revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f1fb64d8-bc41-4d88-a615-4318724db577?mode=deep",
+    "timestamp": "2026-05-31 22:15:43.182219",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Incorrect consumed-offer accounting allowing offers to be overfilled, reused, undercharged, or griefed after partial fill'] [Function: take / consumed mapping] Can an unprivileged taker, given a buy offer with maxAssets > 0 and a group where the maker has set maxAssets to type(uint256).max (effectively uncapped), observe that consumed[maker][group] += buyerAssets can overflow uint256 if buyerAssets is large enough, causing consumed to wrap around to a small value and the check newConsumed <= type(uint256).max to always pass, violating the invariant that consumed must be monotonically non-decreasing, causing scoped impact: consumed overflow allows offer to be filled beyond the intended cap when maxAssets is near type(uint256).max? Proof idea: set maxAssets = type(uint256).max; fill with large units; assert consumed does not overflow; assert Solidity 0.8 checked arithmetic prevents overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ea4643bc-e951-4f17-989e-92d9286016a1?mode=deep",
+    "timestamp": "2026-05-31 22:15:55.644209",
+    "report_generated": false
+  }
+]
