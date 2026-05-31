@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged taker, under the precondition that ecrecover accepts both canonical and high-s malleable signatures for the same digest, submit a malleable (v, r, s') variant of a maker's root signature to isRatified, triggering take with the same offer and root but a different Signature struct, violating the invariant that each distinct signature byte-string authorizes at most one fill sequence, causing scoped impact: taker fills an offer the maker intended to cancel by submitting the non-canonical form after the canonical form was observed on-chain? Proof idea: fuzz (v, r, s) pairs where s > secp256k1_n/2 and assert ecrecover returns the same signer; confirm isRatified does not reject high-s signatures and assert no double-fill protection exists at the signature level.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2b659d44-5063-4b6e-b769-fda74499f0f2?mode=deep",
+    "timestamp": "2026-05-31 21:03:40.274830",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / HashLib.isLeaf] Can an unprivileged taker, given a Merkle tree of height >= 2 where the maker signed root R, craft a ratifierData with a proof path that reinterprets an internal node hash as a leaf hash (second-preimage via length-extension), bypassing HashLib.isLeaf's domain separation, violating the invariant that only hashes of valid Offer structs can appear as leaves, causing scoped impact: taker fills a fabricated offer not signed by the maker and receives loan assets without paying the correct countervalue? Proof idea: construct a 64-byte payload whose keccak256 equals a known internal node hash and submit it as a leaf; assert isLeaf returns true for an offer the maker never signed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aea6a137-8b7a-43e8-a7c2-c1ec2bcd10d2?mode=deep",
+    "timestamp": "2026-05-31 21:03:52.182609",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take] Can an unprivileged taker, given that the same Offer struct appears at two distinct leafIndex positions in the same Merkle tree (duplicate leaves), call take twice with leafIndex=0 and leafIndex=1 respectively, each time passing isRatified, violating the invariant that a single offer instance can be filled at most once per leaf, causing scoped impact: taker doubles the fill of a single offer, receiving twice the expected assets while the maker's consumed cap is hit only after both fills? Proof idea: build a tree with offer O at indices 0 and 1; call take twice with different leafIndex values; assert consumed[maker][group] equals 2*units and that the maker's position reflects double the intended exposure.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a07b94d8-b9c0-45c2-afe6-eaa789a80a37?mode=deep",
+    "timestamp": "2026-05-31 21:04:05.115259",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.isAuthorized] Can an unprivileged attacker, who obtains isAuthorized[maker][attacker]=true after a maker has already published a signed root, use their own private key to sign a new root containing a modified offer (different tick, higher maxUnits) and pass isRatified because the signer check allows any authorized address, violating the invariant that only the maker's own key or a pre-authorized signer at signing time can authorize offer terms, causing scoped impact: attacker creates a valid ratification for an offer the maker never intended, allowing a take at a price favorable to the taker? Proof idea: grant authorization post-signing; sign a new root with attacker key; call take; assert isRatified passes and the offer terms differ from the maker's original intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f6812cd-2ee4-4719-a604-1b048351a76c?mode=deep",
+    "timestamp": "2026-05-31 21:04:17.749468",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.cancelRoot / Midnight.isAuthorized] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true, call cancelRoot(maker, root) to grief the maker by canceling a live root containing profitable offers, violating the invariant that only the maker should control cancellation of their own offer roots, causing scoped impact: maker's valid offers are permanently invalidated without maker consent, freezing maker's ability to provide liquidity? Proof idea: authorize operator; operator calls cancelRoot; assert isRootCanceled[maker][root]=true and subsequent take reverts with RootCanceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6fe57dd0-5848-4928-98b1-9d48bb71785f?mode=deep",
+    "timestamp": "2026-05-31 21:04:30.707452",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (payer logic)] Can an unprivileged taker, under the precondition that offer.buy=true and offer.callback is set to a contract that returns CALLBACK_SUCCESS but transfers fewer assets than buyerAssets, exploit the fact that payer=offer.callback and the state (credit/debt) is updated before the safeTransferFrom call, violating the invariant that the buyer must pay exactly buyerAssets before credit is granted, causing scoped impact: buyer's credit increases without full payment if the callback's transferFrom is a no-op or partial? Proof idea: deploy a callback that approves only sellerAssets; call take; assert credit increased but only partial payment was made; confirm revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_720e3521-9c0e-4414-ba40-f0bebdc97fec?mode=deep",
+    "timestamp": "2026-05-31 21:04:45.115508",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer] Can an unprivileged taker, given that hashOffer does not commit to the taker address, submit a valid ratifierData (signed by the maker for taker A) and call take with taker=B (a different address), passing isRatified because the offer hash contains no taker binding, violating the invariant that a maker's signed offer should only be fillable by the intended counterparty, causing scoped impact: unauthorized taker fills the offer and receives assets the maker intended to give only to a specific counterparty? Proof idea: sign offer for taker A; call take with taker=B; assert isRatified passes and B receives assets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3d92fee6-9f6a-454a-92da-374ba1ba198d?mode=deep",
+    "timestamp": "2026-05-31 21:04:58.299597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (receiverIfTakerIsSeller)] Can an unprivileged taker, under the precondition that offer.buy=false (maker is seller), pass receiverIfTakerIsSeller=attacker_address to take(), causing sellerAssets to be sent to the attacker instead of the maker's intended receiver, violating the invariant that the maker controls where their sold assets are sent when offer.buy=false, causing scoped impact: maker's loan assets are redirected to an attacker-controlled address? Proof idea: set offer.buy=false; call take with receiverIfTakerIsSeller=attacker; assert sellerAssets are sent to attacker not offer.receiverIfMakerIsSeller.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5c8c8ce-8b02-43fa-84f8-b760b8a7285c?mode=deep",
+    "timestamp": "2026-05-31 21:05:12.338613",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (consumed tracking, maxAssets vs maxUnits)] Can an unprivileged taker, given an offer with maxAssets>0 and offer.buy=true, exploit the fact that consumed tracks buyerAssets (units*buyerPrice/WAD rounded down) rather than units, by choosing units values where rounding causes consumed to increment by less than the true economic value, violating the invariant that consumed[maker][group] accurately caps total buyer asset exposure, causing scoped impact: taker fills the offer for more total units than the maker intended by exploiting rounding in buyerAssets computation? Proof idea: fuzz units near WAD/buyerPrice boundaries; assert sum(buyerAssets per fill) < maxAssets while total units exceed the intended cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d7819a9f-f2e8-4780-9f8b-ebe11c309797?mode=deep",
+    "timestamp": "2026-05-31 21:05:27.054129",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (consumed tracking, maxAssets vs maxUnits)] Can an unprivileged taker, given an offer with maxUnits>0 and offer.buy=false (maker is seller), exploit the fact that consumed tracks units while the economic value transferred is sellerAssets=units*sellerPrice/WAD, by choosing a tick where sellerPrice is very high, violating the invariant that the maker's total asset outflow is bounded by maxUnits*price, causing scoped impact: maker pays out more assets than intended because maxUnits does not cap asset value when price is high? Proof idea: set maxUnits=N at a high tick; fill N units; assert sellerAssets >> N and maker's position reflects unexpected asset outflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9739a182-9034-4570-95c7-9b4a3271d74a?mode=deep",
+    "timestamp": "2026-05-31 21:05:41.170837",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee, buyerPrice/sellerPrice split)] Can an unprivileged taker, under the precondition that the settlement fee is set to its maximum (e.g., 50 bps for 360-day TTM) and offer.buy=true, exploit the fact that buyerPrice=offerPrice and sellerPrice=offerPrice-settlementFee, causing sellerAssets to be significantly less than buyerAssets, violating the invariant that the maker (buyer) pays exactly buyerAssets and the taker (seller) receives exactly sellerAssets, causing scoped impact: taker receives fewer assets than expected if they did not account for the settlement fee spread? Proof idea: set max settlement fee; call take; assert sellerAssets = units*(offerPrice-fee)/WAD and buyerAssets = units*offerPrice/WAD; confirm no bypass of fee deduction.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be02f4e9-81e5-489b-9eb3-8d45f27c7e15?mode=deep",
+    "timestamp": "2026-05-31 21:05:55.815627",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.buy=false, payer=msg.sender)] Can an unprivileged taker, under the precondition that offer.buy=false and takerCallback=address(0), exploit the fact that payer=msg.sender (not taker), allowing a different address to be the msg.sender than the taker, violating the invariant that the taker (buyer) must fund the purchase, causing scoped impact: a third party's funds are used to pay for the taker's credit increase without their explicit consent? Proof idea: authorize taker; call take as operator (msg.sender != taker) with takerCallback=0; assert safeTransferFrom pulls from msg.sender (operator) not taker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cfa6be0a-6ddc-4ad4-9455-d14a75204e6d?mode=deep",
+    "timestamp": "2026-05-31 21:06:11.939047",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (isAuthorized[offer.maker][offer.ratifier] check timing)] Can an unprivileged attacker, under the precondition that isAuthorized[maker][EcrecoverRatifier]=false at signing time but true at take time, submit a signature that was created by an address authorized only at take time, violating the invariant that ratifier authorization must exist at the time the offer is signed, causing scoped impact: offers are filled using authorization that the maker granted after the fact, potentially under duress or by mistake? Proof idea: sign root before granting authorization; grant authorization; call take; assert isRatified passes despite authorization not existing at signing time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_38cb4247-c008-49c3-b069-6361bce057d1?mode=deep",
+    "timestamp": "2026-05-31 21:06:29.020716",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (isAuthorized[offer.maker][offer.ratifier] revocation)] Can an unprivileged maker, under the precondition that isAuthorized[maker][EcrecoverRatifier] is revoked between two partial fills of the same offer, cause the second fill to revert with RatifierUnauthorized, violating the invariant that partial fills of a single offer should either all succeed or all fail atomically, causing scoped impact: taker's second fill is blocked after the first fill already changed the maker's position, leaving the market in an inconsistent state? Proof idea: partial fill; revoke authorization; attempt second fill; assert revert and check consumed state vs position state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a7228d1-d1b2-4e8b-8de4-73891d8fe3b6?mode=deep",
+    "timestamp": "2026-05-31 21:06:46.688320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / HashLib.offerTreeTypeHash (height=0, single-offer tree)] Can an unprivileged taker, given a single-offer tree (proof.length=0) where root=hashOffer(offer), submit ratifierData with proof=[] and leafIndex=0, causing isLeaf to check currentHash==root directly, violating the invariant that a zero-length proof should not be a valid Merkle proof path, causing scoped impact: any offer whose hash equals the root can be filled without a proper Merkle path, potentially allowing a taker to fill an offer the maker intended to be part of a larger tree? Proof idea: create single-offer tree; submit proof=[]; assert isRatified passes; confirm this is the only valid path for height-0 trees.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be6e0ee6-e709-45fd-b963-2ebfcd77c9bf?mode=deep",
+    "timestamp": "2026-05-31 21:07:05.014783",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / HashLib.isLeaf (leafIndex boundary)] Can an unprivileged taker, given a proof of length N, submit leafIndex=2^N-1 (all bits set), causing isLeaf to traverse the proof with all siblings on the left side, violating the invariant that the leaf index must correctly encode the path from root to leaf, causing scoped impact: taker proves membership of a leaf that is not in the tree by exploiting boundary conditions in the bit-shifting logic? Proof idea: fuzz leafIndex across [0, 2^N) for proof lengths 1-20; assert isLeaf returns true only for valid (root, leaf, index, proof) tuples.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf4a5c5d-cbcb-4e02-805f-d2abeb34b1bc?mode=deep",
+    "timestamp": "2026-05-31 21:07:23.669575",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (cross-chain replay, block.chainid vs INITIAL_CHAIN_ID)] Can an unprivileged taker, after a hard fork that changes block.chainid, replay a signature created on the original chain on the forked chain by exploiting the fact that EcrecoverRatifier uses block.chainid while Midnight uses INITIAL_CHAIN_ID for market IDs, violating the invariant that signatures should not be valid across chains, causing scoped impact: taker fills an offer on the forked chain using a signature the maker created for the original chain? Proof idea: simulate chainid change; recompute domain separator; assert old signature is invalid on new chain; confirm market IDs are identical across fork.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40bc90e8-6fa3-49c6-ab79-18bd062c4161?mode=deep",
+    "timestamp": "2026-05-31 21:07:44.839729",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.group shared across markets)] Can an unprivileged taker, given a maker who uses the same offer.group bytes32 value for offers in two different markets, fill offers in market A to exhaust consumed[maker][group], preventing the maker's offers in market B from being filled, violating the invariant that group-based consumption caps should only apply to offers the maker intended to share a budget, causing scoped impact: maker's liquidity in market B is frozen by a taker who fills market A offers? Proof idea: create two markets with same group; fill market A to maxUnits; attempt market B fill; assert ConsumedUnits revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_51cb5611-5f48-491e-a73a-e9f282f818c5?mode=deep",
+    "timestamp": "2026-05-31 21:08:05.249579",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.reduceOnly bypass)] Can an unprivileged taker, given an offer with reduceOnly=true and offer.buy=true, exploit the fact that the reduceOnly check only prevents buyerCreditIncrease (not debt reduction), by taking the offer when the maker has existing debt, causing the maker's debt to decrease without the maker paying assets, violating the invariant that reduceOnly offers should not allow the maker to receive economic benefit beyond reducing their own position, causing scoped impact: maker's debt is reduced by the taker's payment without the maker providing the correct countervalue? Proof idea: set maker debt > 0; create reduceOnly buy offer; call take; assert maker debt decreases and taker pays sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0f07ed2-2577-49ee-a0a4-30133e62946e?mode=deep",
+    "timestamp": "2026-05-31 21:08:25.843845",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (callback reentrancy, liquidation lock)] Can an unprivileged taker, under the precondition that the seller has a sell callback, use the onSell callback to reenter take() with a different offer for the same seller, exploiting the fact that the liquidation lock is set for the seller but not for the buyer, violating the invariant that partial state updates during callbacks cannot be reused, causing scoped impact: taker fills two offers in sequence within a single transaction, with the second fill observing the state after the first fill's position update but before the health check? Proof idea: deploy reentrant sell callback; call take; in onSell reenter take with second offer; assert health check applies to final state not intermediate state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_462733cf-5f44-40ae-a03f-d3fca3f6e6e9?mode=deep",
+    "timestamp": "2026-05-31 21:08:46.686507",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (buyerCallback as payer, no pre-approval)] Can an unprivileged maker, under the precondition that offer.buy=true and offer.callback is set, exploit the fact that the onBuy callback is called before safeTransferFrom(payer=callback), allowing the callback to observe the updated credit state and use it to source funds from Midnight itself (e.g., via flashLoan or withdraw), violating the invariant that the buyer must provide external funds equal to buyerAssets, causing scoped impact: maker receives credit without providing net new external assets by recycling protocol-held funds? Proof idea: deploy callback that calls flashLoan inside onBuy; assert net token balance of Midnight decreases by less than buyerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a95861b-d9ea-4fca-b67a-a902d474fb24?mode=deep",
+    "timestamp": "2026-05-31 21:09:08.948622",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (multicall, consumed state across calls)] Can an unprivileged taker, using multicall to batch two take() calls for the same offer in a single transaction, exploit the fact that consumed[maker][group] is updated atomically per call but the Merkle proof is re-verified each time, violating the invariant that the same offer cannot be filled beyond its cap within a single block, causing scoped impact: taker fills the offer twice in one transaction if the consumed check passes for both calls before either reverts? Proof idea: batch two take calls via multicall; assert consumed after both calls equals sum of both fills; confirm cap enforcement.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ab64ea7-7296-4f09-9a1a-d238db6070d0?mode=deep",
+    "timestamp": "2026-05-31 21:09:32.447752",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.expiry at maturity boundary)] Can an unprivileged taker, given an offer with offer.expiry=offer.market.maturity, call take at block.timestamp=maturity, passing both the expiry check (<=) and the CannotIncreaseDebtPostMaturity check (<=), violating the invariant that debt must not increase at or after maturity, causing scoped impact: taker increases seller's debt at exactly maturity by exploiting the inclusive boundary in both checks? Proof idea: set expiry=maturity; warp to maturity; call take with sellerDebtIncrease>0; assert CannotIncreaseDebtPostMaturity does not revert at timestamp==maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e13fc01a-1ede-4ea8-aff0-980c3ae7891d?mode=deep",
+    "timestamp": "2026-05-31 21:09:54.982440",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.start > offer.expiry)] Can an unprivileged maker, by signing an offer with offer.start > offer.expiry, create an offer that can never be filled (permanent DoS of the group's consumed slot), violating the invariant that consumed[maker][group] should only be incremented for fillable offers, causing scoped impact: maker's group budget is permanently locked at 0 consumed, preventing any future offers in that group from being filled? Proof idea: sign offer with start=T+100, expiry=T+50; attempt take at any timestamp; assert OfferNotStarted or OfferExpired always reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a074e7e-94ab-4c18-ad01-f7ee2c55b349?mode=deep",
+    "timestamp": "2026-05-31 21:10:20.151355",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Offer/take logic flaw allowing a taker or maker to receive assets without paying the correct countervalue'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (callbackData hashing)] Can an unprivileged taker, given that hashOffer hashes callbackData as keccak256(offer.callbackData), submit a take with a different callbackData value that has the same keccak256 hash (preimage resistance), violating the invariant that the maker's signed callbackData is exactly what the callback receives, causing scoped impact: callback receives unexpected data, potentially causing it to source funds from a different pool or execute unintended logic? Proof idea: find two callbackData values with same keccak256 (infeasible in practice); alternatively, test that callbackData is passed verbatim to onBuy/onSell and assert callback behavior matches signed intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_656e4238-4bfd-40a6-a0d9-848b04fd09f9?mode=deep",
+    "timestamp": "2026-05-31 21:10:45.346052",
+    "report_generated": false
+  }
+]
