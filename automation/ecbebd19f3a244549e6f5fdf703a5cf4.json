@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (mulDivUp overflow in fee computation)] Can an unprivileged taker, by supplying a units value near type(uint128).max and a price near 1e18, cause mulDivUp(units, price + fee, WAD) to overflow uint256 in the buyer asset computation, reverting the take and creating a DoS on large fills, or if unchecked, wrapping to a small value that allows the taker to receive assets for free? Proof idea: fuzz units in [type(uint128).max - 1000, type(uint128).max], price = tickToPrice(0) ~= 1e18, assert take either reverts with overflow or correctly caps assets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4a3490f9-dedd-40dc-adcd-67ab805d1cbd?mode=deep",
+    "timestamp": "2026-05-31 22:59:49.584333",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (offer.market.rcfThreshold field)] Can an unprivileged maker sign an offer with a market where rcfThreshold is set to a value that, combined with rounding in the RCF computation (repaidUnits <= (debtOf-maxDebt) / (1 - LIF*LLTV)), causes the RCF to be deactivated for positions that should be protected, allowing full liquidation of a position that should only be partially liquidated, and does the offer hash binding rcfThreshold prevent a taker from substituting a different rcfThreshold? Proof idea: sign offer with rcfThreshold=X, attempt take with market struct having rcfThreshold=Y, assert hashOffer produces different hash and take reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_29fc79bb-a78d-44a1-a19d-e97e19db8d9f?mode=deep",
+    "timestamp": "2026-05-31 23:00:01.786550",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with TTM between 0 and 1 day)] Can an unprivileged taker, under preconditions where TTM is between 0 and 86400 seconds (1 day), exploit the linear interpolation between settlementFeeCbp0 (0-day) and settlementFeeCbp1 (1-day) to find a TTM value where the interpolated fee rounds to a value lower than both breakpoints, creating a fee valley that allows cheaper trades than at either breakpoint? Proof idea: for TTM in [1, 86400], compute settlementFee(id, TTM), assert it is monotonically non-decreasing from cbp0 to cbp1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a4cd279-8036-459b-a4cd-33e6f6bce8e5?mode=deep",
+    "timestamp": "2026-05-31 23:00:15.099846",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.reduceOnly with fee rounding)] Can an unprivileged taker, given a reduceOnly=true sell offer (maker is a lender reducing credit), exploit the fee rounding in the take to cause the maker's credit to decrease by more than the units filled (because the settlement fee is deducted from the maker's credit in addition to the units), violating the invariant that reduceOnly offers cannot increase the maker's debt? Proof idea: take a reduceOnly sell offer, assert maker.credit decreases by exactly units and maker.debt does not increase, regardless of fee rounding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_646073e8-72e9-42c9-845e-1f6ae10f31bc?mode=deep",
+    "timestamp": "2026-05-31 23:00:28.073900",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (offer.callbackData field)] Can an unprivileged taker, given an offer where offer.callbackData is non-empty and keccak256(offer.callbackData) is included in the offer hash, construct a different callbackData with the same keccak256 hash (preimage resistance assumption), or exploit the fact that the callback is executed with the original callbackData but the fee computation uses the offer's tick/maxAssets, to cause the callback to transfer a different amount than the fee computation expects, creating an accounting discrepancy? Proof idea: sign offer with callbackData=X, attempt take with callbackData=Y where keccak256(Y)!=keccak256(X), assert take reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4095b7a0-1ba3-4d75-a604-593ac7470540?mode=deep",
+    "timestamp": "2026-05-31 23:00:41.510512",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (maxLif computation rounding)] Can an unprivileged liquidator, under preconditions where maxLif = mulDivDown(WAD, WAD, WAD - mulDivDown(cursor, WAD - lltv, WAD)) rounds down, exploit the rounding to liquidate a position at a LIF slightly below maxLif, receiving less collateral than expected, or conversely, does the rounding allow a position to be liquidated at a LIF above maxLif, seizing more collateral than the maker's signed offer intended? Proof idea: for each (lltv, cursor) pair in the allowed set, compute maxLif and assert mulDivDown(WAD, WAD, WAD - mulDivDown(cursor, WAD-lltv, WAD)) <= true_maxLif.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_040ebfbd-4dd8-4bdc-b811-b1333caa99d9?mode=deep",
+    "timestamp": "2026-05-31 23:00:55.651018",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee constant above 360 days)] Can an unprivileged taker, by taking an offer at TTM = 361 days (just above the 360-day cap), pay the same settlement fee as at TTM = 360 days, while the maker signed the offer expecting a higher fee for longer TTM (since the fee is capped), and does this create a systematic incentive for takers to fill long-dated offers immediately after market creation to minimize fee payments? Proof idea: assert settlementFee(id, 361 days) == settlementFee(id, 360 days) and settlementFee(id, 365 days) == settlementFee(id, 360 days).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28201abe-f34d-465b-b3bf-20bf4560c8c6?mode=deep",
+    "timestamp": "2026-05-31 23:01:10.631080",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (offer.market.collateralParams lltv/maxLif)] Can an unprivileged taker, given an offer signed for a market with collateralParams[i].lltv = LLTV_8 (1e18, no overcollateralization), exploit the fact that maxLif = mulDivDown(WAD, WAD, WAD - mulDivDown(cursor, 0, WAD)) = WAD (LIF=1, no incentive), causing liquidations to always realize bad debt, and does the offer hash binding lltv prevent a taker from substituting a different lltv to change the liquidation math? Proof idea: sign offer with lltv=LLTV_8, attempt take with lltv=LLTV_7, assert hashOffer differs and take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b572c47c-fd0a-4d27-b986-15d8c596f153?mode=deep",
+    "timestamp": "2026-05-31 23:01:26.599015",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee breakpoint at exactly 1 day)] Can an unprivileged taker, by submitting a take at TTM = 86400 seconds exactly (1 day breakpoint), cause the settlement fee to use settlementFeeCbp1 directly without interpolation, and if settlementFeeCbp1 < settlementFeeCbp0 (which is allowed since each breakpoint is independently settable), pay a lower fee at 1 day than at 0 days, creating a fee inversion that incentivizes waiting until exactly 1 day before maturity to trade? Proof idea: set cbp0=14, cbp1=10, assert settlementFee(id, 86400) == 10 * CBP and settlementFee(id, 86399) is between 10*CBP and 14*CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_05fb5629-8c6c-43bd-8811-9ae887cd7fdd?mode=deep",
+    "timestamp": "2026-05-31 23:01:41.446551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (UtilsLib.mulDivDown without overflow check)] Can an unprivileged taker, by supplying units and price values such that units * price overflows uint256 in mulDivDown(units, price, WAD) (since mulDivDown uses unchecked multiplication x*y), cause the asset computation to wrap to a small value, allowing the taker to receive a large number of units for a tiny asset payment, violating the solvency invariant? Proof idea: fuzz units near type(uint256).max / price for each tick price, assert units * tickToPrice(tick) does not overflow uint256 given the uint128 cap on units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9b7d63da-c333-4ff1-8760-4289f8e74603?mode=deep",
+    "timestamp": "2026-05-31 23:01:55.856986",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with loan token decimals != 18)] Can an unprivileged taker, under preconditions where the loan token has 6 decimals (e.g., USDC), exploit the fact that the settlement fee is computed in WAD (1e18) but the actual asset transfer is in 6-decimal units, causing the fee to round to 0 for small trades (because fee * assets / WAD < 1 in 6-decimal units), allowing zero-fee trades and systematic fee leakage? Proof idea: create market with 6-decimal loan token, take offer with assets=1e6 (1 USDC), assert claimableSettlementFee increases by at least 1 wei.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1592e547-7e58-4488-94de-f1e53f67713a?mode=deep",
+    "timestamp": "2026-05-31 23:02:11.579256",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (offer.market.enterGate / liquidatorGate fields)] Can an unprivileged taker, given an offer signed for a market with enterGate=address(0) (unrestricted), exploit the fact that the offer hash binds the gate address, and if the market creator later deploys a gate at a different address and creates a new market with the same parameters but a different gate, the original offer cannot be replayed in the gated market, confirming gate binding, or identify a scenario where the gate address in the offer hash does not match the market's actual gate? Proof idea: sign offer with enterGate=address(0), create market with enterGate=gateContract, attempt take, assert hashOffer differs and take reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f351e1ca-722e-4468-be2c-3eec64be28b8?mode=deep",
+    "timestamp": "2026-05-31 23:02:26.627173",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (post-maturity LIF ramp linear interpolation)] Can an unprivileged liquidator, under preconditions where block.timestamp is between maturity and maturity + TIME_TO_MAX_LIF (15 minutes), exploit the linear interpolation of LIF from 1 to maxLif to find a timestamp where the interpolated LIF rounds down, causing the liquidator to receive less collateral than expected, or rounds up, causing the borrower to lose more collateral than the protocol intends? Proof idea: for timestamp in [maturity, maturity + 900], compute interpolated LIF, assert it is monotone and bounded by [WAD, maxLif].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f01cac3f-8fe3-49ea-8cc7-5d0c016925b8?mode=deep",
+    "timestamp": "2026-05-31 23:02:41.337266",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with TTM between breakpoints, non-integer cbp interpolation)] Can an unprivileged taker, by taking offers at TTM values where the linear interpolation between two cbp breakpoints produces a non-integer cbp value that is truncated, systematically pay a lower fee than the protocol intends, and does the truncation always favor the taker (lower fee) or the protocol (higher fee)? Proof idea: for all TTM values between each pair of adjacent breakpoints, compute floor((cbpHigh - cbpLow) * (TTM - TTMLow) / (TTMHigh - TTMLow)) + cbpLow and assert it equals the on-chain settlementFee(id, TTM) / CBP.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a66e1bad-4060-4451-bc69-a36144ee0084?mode=deep",
+    "timestamp": "2026-05-31 23:02:56.013489",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.start field and fee at take time)] Can an unprivileged taker, given an offer with offer.start set to a future timestamp, wait until block.timestamp == offer.start to take the offer, where the TTM at that moment is market.maturity - offer.start, and if the maker signed the offer expecting a specific fee at a specific TTM, exploit the fact that the fee is computed at take time (not signing time), allowing the taker to choose the optimal TTM (and thus fee) by timing the take? Proof idea: sign offer with start=T, take at T (TTM=maturity-T), assert fee = settlementFee(id, maturity-T) and not the fee at signing time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_44fc6978-e59a-46ea-b0f2-d2d44477daa2?mode=deep",
+    "timestamp": "2026-05-31 23:03:09.687787",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (UtilsLib.mulDivUp in buyer asset computation)] Can an unprivileged taker, under preconditions where buyerAssets = mulDivUp(units, buyerPrice, WAD) and buyerPrice = tickToPrice(tick) + settlementFee, exploit the round-up in mulDivUp to cause the buyer to pay 1 wei more than the exact value, and does this 1-wei excess go to the protocol as fee or to the maker as extra assets, and can it be extracted by a maker who fills their own offer? Proof idea: for units=1 and various ticks, assert mulDivUp(1, tickToPrice(tick) + settlementFee(id, TTM), WAD) is either 0 or 1, and trace where the 1-wei excess is accounted.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f838022c-835c-4f93-9c1c-f83117204e22?mode=deep",
+    "timestamp": "2026-05-31 23:03:24.357495",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (OFFER_TYPEHASH constant)] Can an unprivileged attacker, by constructing a crafted Offer struct where one field (e.g., offer.tick as uint256) has a value that, when ABI-encoded, produces the same bytes as a different field combination (type confusion in abi.encode), cause HashLib.hashOffer to produce the same hash for two semantically different offers, allowing a signed offer for one set of terms to be replayed as a different offer? Proof idea: verify that abi.encode(OFFER_TYPEHASH, hashMarket(offer.market), offer.buy, ...) is collision-resistant for all valid Offer field combinations by checking that each field has a unique type and position.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f359bff-be3c-4b6e-aa44-f423b3b99f2e?mode=deep",
+    "timestamp": "2026-05-31 23:03:39.618623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with very large TTM near MaturityTooFar limit)] Can an unprivileged taker, under preconditions where the market maturity is set to the maximum allowed (block.timestamp + 100 years = ~3.15e9 seconds), take an offer where TTM > 360 days and the fee is capped at settlementFeeCbp6, and does the fee cap create a systematic incentive for makers to sign offers for very long-dated markets where the fee is the same as for 360-day markets, reducing the protocol's fee revenue? Proof idea: create market with maturity = block.timestamp + 100 years, take offer immediately, assert settlementFee(id, 100 years) == settlementFee(id, 360 days).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fdceb610-6b18-4490-b0f0-fa4d7a13d0f4?mode=deep",
+    "timestamp": "2026-05-31 23:03:55.104129",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (continuous fee MAX_CONTINUOUS_FEE = 0.01e18 / 365 days)] Can an unprivileged taker, under preconditions where the continuous fee is set to MAX_CONTINUOUS_FEE and a lender has held credit for 365 days, exploit the rounding in pendingFee = mulDivDown(credit * continuousFee * elapsed, 1, WAD) to cause the total pendingFee to be less than 1% of credit, violating the invariant that the continuous fee cap is 1% annualized? Proof idea: set continuousFee=MAX_CONTINUOUS_FEE, hold credit=1e18 for 365 days, assert pendingFee >= 0.01e18 * credit / WAD - 1 (rounding tolerance).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4332099d-af9f-4a27-b6fb-effcabb4644f?mode=deep",
+    "timestamp": "2026-05-31 23:04:10.810937",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / HashLib.hashOffer (offer.market.collateralParams array ordering)] Can an unprivileged taker, given an offer signed for a market with collateralParams sorted in ascending address order, attempt to fill the offer with a market struct where collateralParams are in a different order (same params, different order), causing hashMarket to produce a different collateralParamsHash (since it hashes the array in order), and thus a different offer hash, confirming that collateral ordering is bound in the signature? Proof idea: sign offer with collateralParams=[A, B], attempt take with collateralParams=[B, A], assert hashOffer differs and take reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d853e652-baa9-4021-9854-c42328468f9b?mode=deep",
+    "timestamp": "2026-05-31 23:04:27.837795",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with cbp stored as uint16, precision loss)] Can an unprivileged fee setter, by setting a settlement fee that is a valid multiple of CBP but whose cbp value exceeds uint16 max (65535), cause setMarketSettlementFee to silently truncate the value when storing as uint16, resulting in a lower-than-intended fee that creates systematic fee leakage? Proof idea: attempt to set settlementFee to 65536 * CBP, assert the transaction reverts or the stored cbp value is 65536, and verify that 65536 * CBP > MAX_SETTLEMENT_FEE_360_DAYS so this is unreachable in practice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23f8f578-1e4c-4418-b5f2-ef430c984b8a?mode=deep",
+    "timestamp": "2026-05-31 23:04:43.459252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (TickLib.wExp unchecked arithmetic)] Can an unprivileged taker, by selecting a tick value near MAX_TICK=5820 where wExp(LN_ONE_PLUS_DELTA * (MAX_TICK/2 - tick)) involves a large negative exponent, cause the unchecked division 1e36 / wExp(-x) in the negative branch of wExp to produce 0 (if wExp(-x) > 1e36), resulting in tickToPrice returning 0 and allowing the taker to receive assets for free? Proof idea: for tick in [MAX_TICK-10, MAX_TICK], compute tickToPrice(tick) and assert it is strictly greater than 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_97b43208-3e5c-4400-9494-5d6dee1a0f6a?mode=deep",
+    "timestamp": "2026-05-31 23:05:00.103176",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with TTM exactly at each breakpoint)] Can an unprivileged taker, by taking offers at TTM values exactly equal to each of the seven breakpoints (0, 86400, 604800, 2592000, 7776000, 15552000, 31104000 seconds), confirm that the settlement fee equals the stored cbp value exactly (no interpolation), and identify any off-by-one in the boundary condition (< vs <=) that causes the fee to use the wrong breakpoint? Proof idea: for each breakpoint B, assert settlementFee(id, B) == cbp[i] * CBP and settlementFee(id, B-1) uses interpolation between cbp[i-1] and cbp[i].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b0fdb15-5be0-4254-922e-a68c37c7a338?mode=deep",
+    "timestamp": "2026-05-31 23:05:18.006317",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (offer.maxUnits vs offer.maxAssets mutual exclusion)] Can an unprivileged taker, given an offer where both maxUnits and maxAssets are nonzero (which should revert with MultipleNonZero), exploit a path where the offer hash is valid but the take reverts, causing the maker's signature to be permanently unusable for that offer, effectively freezing the maker's offer capacity? Proof idea: sign offer with maxUnits=X and maxAssets=Y (both nonzero), attempt take, assert it reverts with MultipleNonZero, and verify the offer cannot be filled even with corrected ratifierData.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d0540773-1e91-435b-9995-7765766971f0?mode=deep",
+    "timestamp": "2026-05-31 23:05:34.404922",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: EcrecoverRatifier.isRatified / Midnight.take (settlement fee with multi-collateral market and oracle price rounding)] Can an unprivileged taker, under preconditions where a multi-collateral market has collaterals with different oracle price scales (ORACLE_PRICE_SCALE = 1e36), exploit the rounding in maxDebt = sum(collateral_i * oraclePrice_i * lltv_i / ORACLE_PRICE_SCALE / WAD) to cause a position that is exactly at the health boundary to be classified as healthy or unhealthy depending on rounding direction, and does the offer hash binding collateralParams prevent a taker from substituting different oracle addresses? Proof idea: sign offer with oracle=O1, attempt take with oracle=O2, assert hashOffer differs and take reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_677c76a7-7d4b-4b1f-bdb8-2f10bcc1b032?mode=deep",
+    "timestamp": "2026-05-31 23:05:49.153290",
+    "report_generated": false
+  }
+]
