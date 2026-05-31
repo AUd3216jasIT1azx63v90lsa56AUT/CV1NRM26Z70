@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / setIsAuthorized] Can an unprivileged buyer-callback contract, under preconditions where the callback is called with buyer as the position owner (Midnight.sol:449), trigger the sequence take() -> onBuy() -> setIsAuthorized(authorized=attacker, onBehalf=buyer) if the callback contract is already authorized for buyer, to grant the attacker full authorization over the buyer's position during the take callback, violating the invariant that authorization grants must be intentional and not exploitable via callback confusion, causing scoped impact: attacker gains permanent control over buyer's Midnight position? Proof idea: unit test asserting that a callback contract cannot escalate its own authorization to a third party during onBuy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_636dbb7f-1058-40fa-a27f-a7e54128addf?mode=deep",
+    "timestamp": "2026-05-31 20:20:53.002223",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / EventsLib.Take / payer = buyerCallback] Can an unprivileged taker, under preconditions where payer is resolved as buyerCallback (Midnight.sol:422) and safeTransferFrom pulls from payer after onBuy (Midnight.sol:455), trigger the sequence take() -> onBuy() -> [callback does not transfer tokens] -> safeTransferFrom(loanToken, callback, midnight, buyerAssets-sellerAssets) to cause the take to revert after state has been partially updated, violating the invariant that state updates must be atomic with token transfers, causing scoped impact: consumed[maker][group] is incremented and positions are updated but the take reverts, leaving the offer partially consumed without asset settlement? Proof idea: unit test asserting that a revert in safeTransferFrom rolls back all state changes including consumed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d6eb3550-eb0d-4d54-9d5f-6266dd567db7?mode=deep",
+    "timestamp": "2026-05-31 20:21:04.903493",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate / EventsLib.Liquidate / callback ordering] Can an unprivileged liquidator, under preconditions where EventsLib.Liquidate is emitted with badDebt, latestLossFactor, and latestContinuousFeeCredit (Midnight.sol:681-694) before onLiquidate fires, trigger the sequence liquidate() -> [event emitted with stale continuousFeeCredit] -> onLiquidate() -> claimContinuousFee(amount=latestContinuousFeeCredit) to claim the full continuousFeeCredit that was reported in the event but may have been further modified by the callback, violating the invariant that claimable fee must match actual continuousFeeCredit storage, causing scoped impact: fee overclaim or underclaim due to event-reported vs. storage-actual value divergence? Proof idea: differential test comparing EventsLib.Liquidate.latestContinuousFeeCredit vs. marketState[id].continuousFeeCredit after callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7e5c497-64a0-4d23-bcaa-c49ee6b3e4e3?mode=deep",
+    "timestamp": "2026-05-31 20:21:17.226650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / supplyCollateral + withdrawCollateral] Can an unprivileged seller-callback contract, under preconditions where the seller's health check runs after onSell returns (Midnight.sol:476), trigger the sequence take(sell offer) -> onSell() -> supplyCollateral(highValueCollateral) -> [health check passes] -> withdrawCollateral(highValueCollateral) in a subsequent transaction to use flash-collateral to pass the health check, violating the invariant that collateral must be genuinely locked to back debt, causing scoped impact: seller borrows loan tokens backed only by transiently-supplied collateral that is immediately withdrawn? Proof idea: unit test asserting withdrawCollateral after take reverts with UnhealthyBorrower when collateral was supplied only during the callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d3360852-8092-4c4b-afbf-508ab51eef6d?mode=deep",
+    "timestamp": "2026-05-31 20:21:29.868237",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / _updatePosition / onBuy callback / lossFactor] Can an unprivileged buyer-callback contract, under preconditions where _updatePosition(buyer) is called inside take (Midnight.sol:379) before onBuy fires, and lossFactor is updated by a concurrent liquidation during onBuy, trigger the sequence take() -> _updatePosition(buyer, lossFactor=L1) -> onBuy() -> liquidate(bad debt, lossFactor=L2) -> [take continues with stale L1] to leave the buyer's lastLossFactor set to L1 while the market's lossFactor is L2, violating the invariant that lastLossFactor must equal marketState.lossFactor after _updatePosition, causing scoped impact: buyer's credit is not slashed for the bad debt realized during the callback? Proof idea: stateful fuzz asserting position[id][buyer].lastLossFactor == marketState[id].lossFactor after take completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_30228e46-3b84-41c1-b74c-1ac846b994de?mode=deep",
+    "timestamp": "2026-05-31 20:21:42.927832",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / flashLoan] Can an unprivileged buyer-callback contract, under preconditions where the protocol's token balance is partially committed to the take's safeTransferFrom (Midnight.sol:455-456), trigger the sequence take() -> onBuy() -> flashLoan(tokens=[loanToken], assets=[midnight.balance]) to drain the protocol's entire loan token balance during the callback, violating the invariant that flash loan repayment must restore the full balance, causing scoped impact: if the flash loan callback fails to repay, the take's subsequent safeTransferFrom to receiver fails, leaving the protocol insolvent? Proof idea: invariant test asserting IERC20(loanToken).balanceOf(midnight) is conserved across any flashLoan called during onBuy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dbfa98e9-c098-49d9-a7ed-5b271e754878?mode=deep",
+    "timestamp": "2026-05-31 20:21:56.132181",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / setConsumed on taker's own group] Can an unprivileged taker, under preconditions where the taker is also a maker with offers in a shared group, trigger the sequence take(sell offer as taker) -> onSell() -> setConsumed(group=takerMakerGroup, amount=type(uint256).max) to cancel all of the taker's own maker offers during the sell callback, violating the invariant that offer cancellation must not be usable to manipulate the current take's accounting, causing scoped impact: taker uses the callback to cancel their own resting offers to prevent being taken against while their debt is being increased? Proof idea: unit test asserting setConsumed during onSell does not affect the current take's consumed accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2aa55b4b-b16b-49a5-9152-bb1a066c1c82?mode=deep",
+    "timestamp": "2026-05-31 20:22:09.287609",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / touchMarket] Can an unprivileged buyer-callback contract, under preconditions where touchMarket is called at the start of take (Midnight.sol:347), trigger the sequence take(market M) -> onBuy() -> touchMarket(market M') where M' shares the same loanToken but different collateral to create a new market during the callback, violating the invariant that market creation during a callback must not affect the current take's market state, causing scoped impact: defaultSettlementFeeCbp or defaultContinuousFee changes applied to M' during callback affect subsequent takes in M if markets share state? Proof idea: unit test asserting marketState[id] for market M is unchanged after touchMarket(M') is called during onBuy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ceeba6e8-f623-4192-bbe8-4149b236e7de?mode=deep",
+    "timestamp": "2026-05-31 20:22:23.925364",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / liquidate with postMaturityMode=false] Can an unprivileged seller-callback contract, under preconditions where the seller's liquidation lock is set (Midnight.sol:444) but only for the specific (id, seller) pair, trigger the sequence take(sell offer, market=M1) -> onSell() -> liquidate(market=M2, borrower=seller) to liquidate the seller's position in a different market during the callback, violating the invariant that the liquidation lock must protect the seller across all markets during a take callback, causing scoped impact: seller's collateral in market M2 is seized while their debt in M1 is being increased, leaving M1 position undercollateralized? Proof idea: two-market unit test asserting liquidationLocked(id2, seller) is true during onSell of market id1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bf8de1fe-54ab-45c0-8223-cba96155b13f?mode=deep",
+    "timestamp": "2026-05-31 20:22:37.887901",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / EventsLib.Take / buyerPendingFeeIncrease accounting] Can an unprivileged buyer-callback contract, under preconditions where buyerPendingFeeIncrease is computed using continuousFee * timeToMaturity (Midnight.sol:386) before onBuy fires, trigger the sequence take() -> onBuy() -> setMarketContinuousFee(id, newFee) if the callback holds feeSetter role, to change the continuousFee after the pendingFee was already computed and applied, violating the invariant that pendingFee must reflect the fee rate at credit creation time, causing scoped impact: buyer's pendingFee is set using the old rate but future accrual uses the new rate, creating a fee accounting mismatch? Proof idea: unit test asserting pendingFee after take matches continuousFee * timeToMaturity * creditIncrease / WAD regardless of fee changes during callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5bbd321-29c2-4c20-b2a9-dcb1db03f313?mode=deep",
+    "timestamp": "2026-05-31 20:22:52.514317",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / withdraw (onBehalf=maker)] Can an unprivileged buyer-callback contract that is authorized for the maker, under preconditions where the maker is the buyer (offer.buy=true) and has existing credit, trigger the sequence take(buy offer) -> onBuy() -> withdraw(onBehalf=maker, units=maker.credit) to drain the maker's credit during the callback before the take's safeTransferFrom pulls the settlement fee, violating the invariant that the maker's credit must remain intact until the take is fully settled, causing scoped impact: maker's credit is withdrawn while the take's fee transfer is still pending? Proof idea: unit test asserting withdraw during onBuy for the maker does not allow credit to go negative.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fae02b59-ad70-4c4a-b5c6-a6bd8c2a6bf4?mode=deep",
+    "timestamp": "2026-05-31 20:23:05.895235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: liquidate / onLiquidate callback / repay] Can an unprivileged liquidator-callback contract, under preconditions where _position.debt is reduced by repaidUnits before onLiquidate fires (Midnight.sol:676), trigger the sequence liquidate(repaidUnits=X) -> onLiquidate() -> repay(units=Y, onBehalf=borrower) to further reduce the borrower's debt during the callback, violating the invariant that the total debt reduction must not exceed the original debt, causing scoped impact: borrower's debt underflows or is reduced below zero, corrupting position accounting? Proof idea: fuzz repaidUnits + Y > originalDebt and assert position[id][borrower].debt never underflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9fef5e27-0844-4890-a2be-9e5e6c6fec0e?mode=deep",
+    "timestamp": "2026-05-31 20:23:19.437557",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / take (different offer, same maker)] Can an unprivileged seller-callback contract, under preconditions where the maker's consumed[maker][group] is already incremented for the first take, trigger the sequence take(offer A, maker=M) -> onSell() -> take(offer B, maker=M, same group) to fill two offers from the same maker in the same group within one callback, violating the invariant that the OCO group budget must be enforced atomically, causing scoped impact: maker M's total exposure across both offers exceeds maxAssets or maxUnits? Proof idea: stateful fuzz asserting consumed[M][group] <= offer.maxAssets after any sequence of takes within a callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e6019cb3-9d13-4dbd-9a45-6ae560fcd17c?mode=deep",
+    "timestamp": "2026-05-31 20:23:33.352196",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / withdrawCollateral (onBehalf=seller)] Can an unprivileged buyer-callback contract that is authorized for the seller, under preconditions where the seller's liquidation lock is set (Midnight.sol:444) preventing liquidation but not collateral withdrawal, trigger the sequence take(buy offer) -> onBuy() -> withdrawCollateral(onBehalf=seller) to remove the seller's collateral during the callback, violating the invariant that the seller's collateral must remain intact during the take callback to ensure the health check at Midnight.sol:476 is meaningful, causing scoped impact: seller's collateral is withdrawn during onBuy, making the seller unhealthy when the health check runs after onSell? Proof idea: unit test asserting withdrawCollateral during onBuy for the seller reverts with UnhealthyBorrower or the health check catches the state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af41064d-9af9-4977-8bb4-248b4ac8b61e?mode=deep",
+    "timestamp": "2026-05-31 20:23:47.845500",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / multicall] Can an unprivileged seller-callback contract, under preconditions where multicall uses delegatecall preserving msg.sender (Midnight.sol:213), trigger the sequence take(sell offer) -> onSell() -> multicall([repay(debt), withdrawCollateral(all)]) to atomically repay debt and withdraw all collateral during the callback before the health check, violating the invariant that the health check at Midnight.sol:476 must see the seller's true post-take state, causing scoped impact: seller extracts all collateral while their debt from the take is simultaneously repaid using borrowed funds, creating a zero-cost borrow? Proof idea: unit test asserting multicall during onSell cannot produce a state where seller has zero debt and zero collateral after having increased debt in the take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eddb10e9-c6e8-4029-900c-71500c21b06f?mode=deep",
+    "timestamp": "2026-05-31 20:24:02.027447",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / take (reduceOnly offer)] Can an unprivileged buyer-callback contract, under preconditions where a reduceOnly offer requires buyerCreditIncrease == 0 (Midnight.sol:393), trigger the sequence take(buy offer) -> onBuy() -> take(reduceOnly buy offer) to fill a reduceOnly offer during the callback when the buyer's credit was just increased by the outer take, violating the invariant that reduceOnly offers must not be filled when credit increases, causing scoped impact: reduceOnly constraint is bypassed because the credit increase from the outer take is not visible to the inner take's reduceOnly check? Proof idea: unit test asserting MakerCreditOrDebtIncreased reverts for a reduceOnly offer filled during onBuy when buyer credit was increased by the outer take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c0a7519-9006-4750-8120-736cada9465a?mode=deep",
+    "timestamp": "2026-05-31 20:24:15.677349",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / liquidate (postMaturityMode=true, same borrower=seller)] Can an unprivileged seller-callback contract, under preconditions where the liquidation lock is set for (id, seller) (Midnight.sol:444) and postMaturityMode liquidation requires block.timestamp > market.maturity, trigger the sequence take(sell offer, post-maturity) -> onSell() -> liquidate(borrower=seller, postMaturityMode=true) to attempt post-maturity liquidation of the seller during the callback, violating the invariant that liquidationLocked(id, seller) must prevent all liquidation modes during the callback, causing scoped impact: if the lock check at Midnight.sol:620-624 is bypassed for postMaturityMode, the seller is liquidated while their debt is being increased? Proof idea: unit test asserting liquidate reverts with NotLiquidatable when liquidationLocked(id, seller) is true regardless of postMaturityMode.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5dd57bde-be34-47b0-875a-05b8733875e3?mode=deep",
+    "timestamp": "2026-05-31 20:24:30.608640",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / repay (onBehalf=seller)] Can an unprivileged buyer-callback contract that is authorized for the seller, under preconditions where the seller's debt was increased by the take (Midnight.sol:414) before onBuy fires, trigger the sequence take(buy offer) -> onBuy() -> repay(onBehalf=seller, units=sellerDebtIncrease) to repay the seller's new debt during the buyer callback, violating the invariant that the seller's health check at Midnight.sol:476 must reflect the debt created by the take, causing scoped impact: seller's debt is repaid during onBuy making the health check trivially pass, while the repay's safeTransferFrom pulls tokens from the callback contract that were funded by the take's buyerAssets? Proof idea: unit test asserting that repaying seller debt during onBuy does not allow the seller to avoid the health check obligation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_217f35b3-2ea1-406a-8901-41e664c7aa24?mode=deep",
+    "timestamp": "2026-05-31 20:24:46.561130",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / flashLoan + repay] Can an unprivileged seller-callback contract, under preconditions where the seller received sellerAssets via safeTransferFrom before onSell fires (Midnight.sol:456), trigger the sequence take(sell offer) -> onSell() -> flashLoan(loanToken, amount) -> onFlashLoan() -> repay(seller debt) -> [flash loan repaid from sellerAssets] to use the received sellerAssets to repay the seller's debt within the callback, violating the invariant that the health check must see the seller's true debt obligation, causing scoped impact: seller borrows loan tokens and immediately repays using the same tokens received from the sale, creating a circular zero-cost borrow? Proof idea: unit test asserting that using sellerAssets to repay debt during onSell does not allow the seller to pass the health check with zero net collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a2a5b0f-44fb-4037-a778-fcdd7cc64420?mode=deep",
+    "timestamp": "2026-05-31 20:25:02.360343",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / take (same offer, different units)] Can an unprivileged buyer-callback contract, under preconditions where consumed[maker][group] is incremented by the first take's units (Midnight.sol:371), trigger the sequence take(offer, units=U1) -> onBuy() -> take(same offer, units=U2) to fill the same offer twice within one callback, violating the invariant that the offer's maxUnits or maxAssets cap must be enforced across all fills, causing scoped impact: offer is overfilled beyond maxUnits or maxAssets by the sum U1+U2? Proof idea: fuzz U1+U2 > offer.maxUnits and assert ConsumedUnits reverts on the second take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70e27eae-0cde-49ca-a88a-fc1b407f5ff6?mode=deep",
+    "timestamp": "2026-05-31 20:25:19.863161",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / take (buy offer, seller becomes buyer)] Can an unprivileged seller-callback contract, under preconditions where the seller's debt was increased by the first take, trigger the sequence take(sell offer, seller=A) -> onSell() -> take(buy offer, taker=A) to have the seller immediately buy units in the same market during the callback, violating the invariant that buying units reduces debt before increasing credit (Midnight.sol:382), causing scoped impact: if the seller's debt is reduced to zero by the inner buy take, the outer take's health check at Midnight.sol:476 passes trivially, allowing the seller to extract loan tokens without net collateral? Proof idea: unit test asserting that a buy take during onSell that zeros the seller's debt still results in the outer health check seeing the correct net debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_afa76e6d-93ca-4e1d-b163-11973025fec6?mode=deep",
+    "timestamp": "2026-05-31 20:25:37.007255",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / liquidate (borrower=buyer, different collateral index)] Can an unprivileged buyer-callback contract, under preconditions where the buyer has existing debt in the market and the liquidation lock only covers the seller (Midnight.sol:444), trigger the sequence take(buy offer, buyer=B) -> onBuy() -> liquidate(borrower=B, collateralIndex=X) to liquidate the buyer's pre-existing debt during the callback, violating the invariant that the buyer's position must remain intact during the take callback, causing scoped impact: buyer's collateral is seized and bad debt is realized during onBuy, corrupting the buyer's credit increase accounting from the take? Proof idea: unit test asserting liquidate(borrower=buyer) during onBuy does not corrupt the buyer's credit or debt state from the outer take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2444375e-c132-445f-b658-8c12c3bdc943?mode=deep",
+    "timestamp": "2026-05-31 20:25:54.926662",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / setIsAuthorized (onBehalf=seller)] Can an unprivileged seller-callback contract that is already authorized for the seller, under preconditions where the callback is called with seller's context, trigger the sequence take(sell offer) -> onSell() -> setIsAuthorized(authorized=attacker, onBehalf=seller, newIsAuthorized=true) to grant the attacker authorization over the seller's position during the callback, violating the invariant that authorization grants must be intentional and not exploitable via callback confusion, causing scoped impact: attacker gains permanent control over the seller's Midnight position including ability to withdraw collateral and repay debt? Proof idea: unit test asserting that a callback contract cannot grant third-party authorization on behalf of the seller during onSell.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_811bb92d-7ad2-4129-b34d-676e86a3d1d5?mode=deep",
+    "timestamp": "2026-05-31 20:26:14.452284",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onBuy callback / take (sell offer, taker=buyer, maker=third party)] Can an unprivileged buyer-callback contract, under preconditions where the buyer's credit was just increased by the outer take, trigger the sequence take(buy offer) -> onBuy() -> take(sell offer, taker=buyer) to immediately sell the newly-received credit units during the callback, violating the invariant that credit units must be withdrawable only after the take is fully settled, causing scoped impact: buyer receives loan tokens from the inner sell take before the outer buy take's safeTransferFrom pulls the buyer's payment, creating a net-zero-cost credit extraction? Proof idea: invariant test asserting IERC20(loanToken).balanceOf(midnight) >= sum(withdrawable) after any sequence of takes within callbacks.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7feb38d0-46c8-433c-9df7-cdff39eefb52?mode=deep",
+    "timestamp": "2026-05-31 20:26:32.541981",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take / onSell callback / updatePosition (seller)] Can an unprivileged seller-callback contract, under preconditions where _updatePosition(seller) was called inside take (Midnight.sol:380) before onSell fires, trigger the sequence take(sell offer) -> onSell() -> updatePosition(market, seller) to call _updatePosition again for the seller during the callback, violating the invariant that _updatePosition must be idempotent within the same block, causing scoped impact: seller's lastAccrual is updated to block.timestamp during the callback, preventing correct fee accrual for the seller's credit decrease in the outer take? Proof idea: unit test asserting seller's pendingFee and credit are identical whether or not updatePosition is called during onSell.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_444a59af-68b5-47ad-8397-14893269b1a2?mode=deep",
+    "timestamp": "2026-05-31 20:26:51.224149",
+    "report_generated": false
+  }
+]
