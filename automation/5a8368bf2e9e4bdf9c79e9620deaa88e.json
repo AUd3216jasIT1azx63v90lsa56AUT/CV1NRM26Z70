@@ -1,0 +1,122 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall / Midnight.flashLoan / unbounded tokens] Can an unprivileged user, under the precondition that flashLoan() has no bound on tokens.length and multicall() has no bound on calls.length, call multicall([flashLoan(tokens_N, assets_N, callback, '')] * M) causing M*2*N token transfer calls, violating the invariant that multicall does not compound flashLoan's unbounded loop, causing scoped impact: block-level DoS by composing multicall and flashLoan with large token arrays? Proof idea: fuzz M and N, call multicall of flashLoan calls, assert gas grows as M*N and find the OOG threshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fa58e5cc-8b63-423b-81bb-0faf2d4ad093?mode=deep",
+    "timestamp": "2026-05-31 20:43:39.268854",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: HashLib.hashMarket / market.collateralParams memory allocation] Can an unprivileged taker, under the precondition that the Offer struct is passed in memory to take() and isRatified(), observe that hashMarket allocates a new bytes32[] array of length market.collateralParams.length before looping, causing memory expansion cost proportional to collateral count in addition to the loop iterations, violating the invariant that memory allocation in ratifier validation is bounded, causing scoped impact: compounded gas griefing from both memory allocation and loop execution in hashMarket for 128-collateral markets? Proof idea: profile memory usage in hashMarket for 1 vs 128 collaterals, assert memory expansion cost is non-trivial.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd426237-09e0-46d9-9c0a-d3fccb878e61?mode=deep",
+    "timestamp": "2026-05-31 20:43:51.145163",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.take / SetterRatifier.isRatified / repeated fills] Can an unprivileged taker, under the precondition that an offer with maxUnits = type(uint256).max is ratified via SetterRatifier with proof.length=P, call take() N times on the same offer each time paying P keccak256 iterations in isLeaf, violating the invariant that repeated fills of the same offer do not repeatedly pay unbounded ratifier validation costs, causing scoped impact: gas griefing of legitimate makers whose offers are repeatedly taken with large proof arrays? Proof idea: ratify a root with proof.length=P, call take() N times on the same offer, assert total gas = N * (P * keccak256_cost + hashMarket_cost).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bbc44296-92bf-4220-be31-e14382532eaf?mode=deep",
+    "timestamp": "2026-05-31 20:44:03.523822",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.liquidate / post-maturity / 16-collateral bitmap + touchMarket] Can an unprivileged liquidator, under the precondition that a 128-collateral market has passed maturity and a borrower has 16 activated collaterals, call liquidate() in post-maturity mode causing touchMarket (128 iterations) + bitmap while-loop (16 oracle calls) + LIF ramp computation to all execute, violating the invariant that post-maturity liquidation gas cost is bounded and predictable, causing scoped impact: gas griefing of post-maturity liquidations making them economically unviable in 128-collateral markets with 16-collateral borrowers? Proof idea: warp past maturity, call liquidate() with postMaturityMode=true on a 16-collateral borrower in a 128-collateral market, measure gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4c346459-0bb9-49c7-8ae0-da9d02007dbe?mode=deep",
+    "timestamp": "2026-05-31 20:44:16.575605",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: SetterRatifier.setIsRootRatified / Midnight.isAuthorized] Can an unprivileged attacker who is authorized by a maker, under the precondition that isAuthorized[maker][attacker] == true, call setIsRootRatified(maker, root_i, true) for N distinct roots in a loop (or via multicall), causing N SSTORE operations to isRootRatified[maker][root_i], violating the invariant that authorization delegation does not enable storage-write griefing against the maker's account, causing scoped impact: storage bloat and gas griefing of the maker's future interactions via authorized-operator abuse? Proof idea: authorize attacker, call setIsRootRatified N times with distinct roots, measure gas and assert N SSTOREs are performed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c64e4dda-b66e-4c87-8479-2e791b00274d?mode=deep",
+    "timestamp": "2026-05-31 20:44:29.491281",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall / Midnight.supplyCollateral / touchMarket compound] Can an unprivileged borrower, under the precondition that a 128-collateral market exists and multicall() is unbounded, call multicall([supplyCollateral(market_128, i, 1, borrower) for i in range(16)]) causing 16 touchMarket calls each with 128 collateral validation iterations (2048 total iterations), violating the invariant that activating 16 collaterals costs O(16) not O(16*128), causing scoped impact: gas griefing of multi-collateral position setup in 128-collateral markets? Proof idea: call multicall of 16 supplyCollateral calls on a 128-collateral market, measure gas vs 16 calls on a 1-collateral market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_503898fe-e92f-4c09-9092-c9d3807a1223?mode=deep",
+    "timestamp": "2026-05-31 20:44:43.192096",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: HashLib.isLeaf / proof with valid root but wrong offer hash] Can an unprivileged taker, under the precondition that a root is ratified for offer A, construct a proof array of length N that hashes to the ratified root starting from a different leaf hash (offer B's hash), causing isLeaf to execute N iterations before returning false and triggering InvalidProof, violating the invariant that proof verification failure is cheap, causing scoped impact: gas griefing via deliberately invalid but maximally long proofs that consume N keccak256 gas before reverting? Proof idea: construct proof.length=N that does not match the offer hash, call take() with SetterRatifier, assert it reverts with InvalidProof after consuming N*keccak256 gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ed9e722-fc9c-46df-9cc4-445dca2de77a?mode=deep",
+    "timestamp": "2026-05-31 20:44:56.691687",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.take / touchMarket / IdLib.storeInCode market creation] Can an unprivileged market creator, under the precondition that touchMarket() stores the full market struct (including 128 CollateralParams) via IdLib.storeInCode using CREATE2, observe that market creation with 128 collaterals causes a large code deployment proportional to collateral count, violating the invariant that market creation gas cost is bounded by a small constant, causing scoped impact: gas griefing of market creation by maximizing collateral count to 128? Proof idea: call touchMarket() with 1 vs 128 collaterals, measure gas difference and assert it scales with collateral count.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_870d0e63-e0be-4081-ab16-5c0f29a0a4ad?mode=deep",
+    "timestamp": "2026-05-31 20:45:10.016356",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.isHealthy / take / seller with 16 collaterals + SetterRatifier proof] Can an unprivileged taker, under the precondition that the seller has 16 activated collaterals and the offer uses SetterRatifier with proof.length=P, observe that take() calls isRatified (P isLeaf iterations) then isHealthy (16 oracle calls) sequentially, and fuzz P from 0 to 1000 and collateral count from 1 to 16, violating the invariant that take() gas cost has a known upper bound, causing scoped impact: combined gas griefing making take() revert OOG for legitimate takers when P and collateral count are both maximized? Proof idea: invariant fuzz test over (P, collateral_count) pairs, assert take() never reverts OOG for P <= 20 and collateral_count <= 16.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a3def662-6886-49ff-b3a7-30f0676f44af?mode=deep",
+    "timestamp": "2026-05-31 20:45:23.162867",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall / Midnight.withdraw / touchMarket compound] Can an unprivileged lender, under the precondition that a 128-collateral market exists and multicall() is unbounded, call multicall([withdraw(market_128, 1, lender, lender)] * N) causing N touchMarket calls each with 128 collateral validation iterations, violating the invariant that batch withdrawal gas cost is O(N) not O(N*128), causing scoped impact: gas griefing of batch lender withdrawals in 128-collateral markets? Proof idea: fuzz N from 1 to 100, call multicall of withdraw on 128-collateral market, assert gas scales as N*128 vs N*1 for 1-collateral market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_588a75d0-b5fe-43cd-8674-acc3cc7b673e?mode=deep",
+    "timestamp": "2026-05-31 20:45:36.287837",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: SetterRatifier.isRatified / proof.length = 0 trivial pass] Can an unprivileged taker, under the precondition that a root is ratified equal to hashOffer(offer) (single-leaf tree), pass proof = new bytes32[](0) and leafIndex = 0 to isLeaf, causing isLeaf to return true with zero loop iterations (currentHash == root trivially), violating the invariant that a zero-length proof only validates a single-offer tree and cannot be replayed against a different root, causing scoped impact: confirm that zero-length proof is correctly bounded and does not enable cross-root replay? Proof idea: ratify root = hashOffer(offer), call isRatified with proof.length=0 and leafIndex=0, assert it succeeds; then ratify a different root and assert it fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ef80434c-95f0-4c60-960e-239d079c4390?mode=deep",
+    "timestamp": "2026-05-31 20:45:49.366354",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.liquidate / multicall / bad debt realization loop] Can an unprivileged liquidator, under the precondition that N borrowers each have bad debt and 16 activated collaterals, call multicall([liquidate(borrower_i, 0, 0, 0, borrower_i, false, address(0), address(0), '')] * N) to realize bad debt for all N borrowers, causing N*(16 oracle calls + lossFactor update) in a single transaction, violating the invariant that bad debt realization gas cost is bounded per transaction, causing scoped impact: gas griefing of batch bad-debt realization via multicall? Proof idea: set up N borrowers with bad debt and 16 collaterals each, call multicall of zero-seize liquidations, assert gas grows as N*16.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f83f3a85-d68f-46ad-a508-5807982f482c?mode=deep",
+    "timestamp": "2026-05-31 20:46:03.219307",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: HashLib.hashOffer / Offer.market.collateralParams memory copy] Can an unprivileged taker, under the precondition that the Offer struct is passed as memory to take() and isRatified(), observe that the full market.collateralParams array (up to 128 CollateralParams structs, each 4 fields) is copied into memory for every take() call, causing memory allocation of 128 * 4 * 32 = 16384 bytes per call, violating the invariant that per-call memory cost is bounded by a small constant, causing scoped impact: gas griefing via memory expansion cost in 128-collateral market take() calls? Proof idea: measure memory usage in take() for 1 vs 128 collaterals, assert memory expansion cost is significant and scales with collateral count.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b8c90021-6ecc-43d6-93d9-f205b98b67b7?mode=deep",
+    "timestamp": "2026-05-31 20:46:16.085141",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall / Midnight.take / SetterRatifier / 128-collateral + proof compound] Can an unprivileged taker, under the precondition that a 128-collateral market exists with a SetterRatifier root ratified and multicall() is unbounded, call multicall([take(offer_128col_proof_P)] * N) causing N*(128 hashMarket + P isLeaf + 16 isHealthy oracle) iterations, violating the invariant that a single transaction cannot force O(N * (collateral_count + proof_length + health_collaterals)) computation, causing scoped impact: block-level DoS by composing all three loop sources in a single multicall? Proof idea: find minimum N*(128+P+16) product exceeding 30M gas, construct the multicall, assert OOG revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_81532f57-c048-4fdc-b70e-9e3c68736295?mode=deep",
+    "timestamp": "2026-05-31 20:46:29.967916",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: SetterRatifier.isRatified / proof.length near uint256 max] Can an unprivileged taker, under the precondition that abi.decode(ratifierData, (bytes32, uint256, bytes32[])) will revert if the encoded proof array length exceeds available calldata, attempt to pass ratifierData encoding proof.length = type(uint256).max to isRatified(), and determine whether the revert occurs at abi.decode (before the loop) or causes memory allocation OOG, violating the invariant that malformed ratifierData always reverts cheaply before any loop execution, causing scoped impact: confirm whether oversized proof arrays are rejected at decode time or cause expensive OOG? Proof idea: encode ratifierData with proof.length = 2^32, call take() with SetterRatifier, assert revert occurs at abi.decode with minimal gas consumption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_28eb2b56-47b7-4edd-b342-d8f82db415f4?mode=deep",
+    "timestamp": "2026-05-31 20:46:42.958883",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.take / SetterRatifier.isRatified / offer.market passed in memory] Can an unprivileged taker, under the precondition that take() accepts Offer memory offer and the offer's market.collateralParams is a caller-supplied array, pass an offer with market.collateralParams.length = 128 that does NOT match any existing market (causing touchMarket to create a new market), observe that both touchMarket (128-iteration validation loop + CREATE2 deployment) and isRatified (128-iteration hashMarket) execute, violating the invariant that market creation and ratifier validation costs are paid separately, causing scoped impact: compounded gas cost for first-touch 128-collateral market take() with SetterRatifier? Proof idea: call take() on a non-existent 128-collateral market with SetterRatifier, measure gas for combined touchMarket creation + isRatified hashing.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a61f2da6-282f-464d-b91b-c8913616a909?mode=deep",
+    "timestamp": "2026-05-31 20:46:56.527586",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.multicall / Midnight.setIsAuthorized / SetterRatifier.setIsRootRatified] Can an unprivileged attacker, under the precondition that multicall() is unbounded and setIsAuthorized + setIsRootRatified each perform SSTORE operations, call multicall([setIsAuthorized(attacker, true, attacker), setIsRootRatified(attacker, root_i, true)] * N) causing 2N SSTORE operations in a single transaction, violating the invariant that multicall does not enable cheap bulk storage writes beyond what individual calls allow, causing scoped impact: gas griefing via storage write amplification through multicall? Proof idea: fuzz N from 1 to 1000, call multicall of alternating setIsAuthorized and setIsRootRatified, assert gas scales as 2N*SSTORE_cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7bf95e66-f4b2-4ad9-b16f-59d05b638e4c?mode=deep",
+    "timestamp": "2026-05-31 20:47:10.929706",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.liquidate / isHealthy / touchMarket / SetterRatifier compound via multicall] Can an unprivileged actor, under the precondition that a 128-collateral market exists with SetterRatifier, a borrower has 16 activated collaterals, and multicall() is unbounded, call multicall([take(offer_128col_proof_P), liquidate(borrower_16col)]) in a single transaction causing (128 hashMarket + P isLeaf + 16 isHealthy) from take() plus (128 touchMarket + 16 bitmap oracle) from liquidate(), violating the invariant that composing take() and liquidate() in multicall does not multiply loop costs, causing scoped impact: compounded gas griefing from all loop sources in a two-call multicall? Proof idea: construct the two-call multicall, measure total gas, assert it equals sum of individual call gas costs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0b2635a-b325-4cd2-9717-8a54e2ff4548?mode=deep",
+    "timestamp": "2026-05-31 20:47:23.884205",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: SetterRatifier.isRatified / proof depth vs offerTreeTypeHash cap asymmetry] Can an unprivileged taker, under the precondition that SetterRatifier.isRatified calls HashLib.isLeaf with an attacker-supplied proof but never calls offerTreeTypeHash (which would enforce the height <= 20 cap via TreeTooHigh revert), pass proof.length = 100 to SetterRatifier while the same proof would cause EcrecoverRatifier to revert with TreeTooHigh, violating the invariant that all ratifier implementations enforce equivalent proof depth bounds, causing scoped impact: SetterRatifier is strictly weaker than EcrecoverRatifier in bounding proof verification cost, enabling gas griefing attacks that are impossible against EcrecoverRatifier? Proof idea: differential test: call both ratifiers with proof.length = 21..100, assert EcrecoverRatifier always reverts with TreeTooHigh while SetterRatifier succeeds, quantify gas difference.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7bd4851-97d5-4213-a385-76fa541aa276?mode=deep",
+    "timestamp": "2026-05-31 20:47:38.128257",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: Midnight.take / touchMarket / isRatified / isHealthy sequential loops] Can an unprivileged taker, under the precondition that a 128-collateral market exists, the seller has 16 activated collaterals, and the offer uses SetterRatifier with proof.length=P, perform a stateful fuzz test over (collateral_count in [1..128], activated_collaterals in [1..16], proof_length in [0..1000]) and assert that for all valid parameter combinations take() does not revert OOG within a 30M gas block limit, violating the invariant that take() is always executable within block gas limits for protocol-valid inputs, causing scoped impact: identification of parameter combinations where legitimate take() calls become impossible due to gas exhaustion? Proof idea: Foundry stateful fuzz over the three parameters, assert gasleft() > 0 after take() for all valid inputs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62e3165f-deb6-4c5d-80b7-28674c11aa3f?mode=deep",
+    "timestamp": "2026-05-31 20:47:51.836281",
+    "report_generated": false
+  }
+]
