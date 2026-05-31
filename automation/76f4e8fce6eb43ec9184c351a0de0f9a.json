@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take / flashLoan] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true, use flashLoan() to borrow loan tokens, then execute take() against the maker's buy offer (maker-as-buyer) as the seller, receiving sellerAssets, then repay the flash loan, violating the invariant that flash loan callbacks must not be used to source funds for takes that create incorrect credit/debt netting, causing scoped impact: the taker-as-seller increases their debt without supplying collateral, using flash loan proceeds to cover the take's asset transfer? Proof idea: flashLoan→take(sell)→repay sequence, assert taker's collateral health after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_10a3d173-28b1-4f32-92bf-46350e41aa32?mode=deep",
+    "timestamp": "2026-05-31 18:33:23.662308",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.group=G with consumed[maker][G] already at maxUnits-1, execute take() with units=2, causing newConsumed=maxUnits+1 which exceeds maxUnits, violating the invariant that consumed[maker][group] must never exceed maxUnits, causing scoped impact: the ConsumedUnits check reverts, but if the check is off-by-one (newConsumed <= maxUnits vs newConsumed < maxUnits), the offer can be overfilled by 1 unit? Proof idea: fuzz consumed[maker][G]=maxUnits-1, take with units=2, assert ConsumedUnits reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_762dc40a-60ba-4a39-8f60-792a5d687677?mode=deep",
+    "timestamp": "2026-05-31 18:33:35.565995",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a buy offer (maker-as-buyer), execute take() where the taker is the seller and the seller's health check fails (SellerIsLiquidatable), but the operator uses the liquidation lock (liquidationLocked=true for the seller) to bypass the health check, violating the invariant that the health check must apply to the seller after every take, causing scoped impact: the seller's position becomes unhealthy after the take without triggering SellerIsLiquidatable? Proof idea: set liquidationLocked=true for seller, execute take, assert seller is unhealthy after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86d6e649-b7eb-4b01-9043-b115d1be6678?mode=deep",
+    "timestamp": "2026-05-31 18:33:48.226879",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take / _updatePosition] Can an unprivileged taker, under the precondition that the buyer has position.credit=0 and position.debt=D and units=D-1 (less than debt), execute take() via a SetterRatifier-ratified buy offer, causing _updatePosition to be skipped for the buyer (hasCredit=false and units < debt), then buyerPos.debt decreases by D-1, violating the invariant that _updatePosition must be called before any position modification to apply accumulated loss factor and fee accrual, causing scoped impact: buyer's debt is reduced without updating lastLossFactor, creating a stale position state that affects future credit calculations? Proof idea: fuzz units=debt-1, assert buyer's lastLossFactor is updated after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5e9cea19-5d53-4e57-9b92-75ae4f14f349?mode=deep",
+    "timestamp": "2026-05-31 18:34:00.751053",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with offers for multiple markets, execute take() in market A and market B in the same multicall, violating the invariant that position updates in one market must not affect the health check in another market, causing scoped impact: the maker's position in market A is updated (credit reduced, debt increased) and the health check in market B uses stale collateral values, enabling the maker to be undercollateralized in market A while appearing healthy in market B? Proof idea: multicall([take(marketA), take(marketB)]), assert health in both markets after.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3847671c-7451-4197-8532-70ecd774df45?mode=deep",
+    "timestamp": "2026-05-31 18:34:13.903101",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.maxAssets>0 (asset-capped offer), execute take() with units such that buyerAssets (computed via mulDivDown) rounds down to exactly maxAssets, then execute another take with units=1, causing newConsumed=maxAssets+mulDivDown(1, buyerPrice, WAD) which may be 0 (if buyerPrice < WAD), violating the invariant that asset-capped offers must not be overfilled due to rounding in mulDivDown, causing scoped impact: the offer is filled beyond maxAssets due to rounding, creating excess credit for the buyer? Proof idea: fuzz units near maxAssets/buyerPrice boundary, assert consumed[maker][group] <= maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75f74f28-1246-4ace-bea6-ec7255f819b6?mode=deep",
+    "timestamp": "2026-05-31 18:34:27.911991",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take / sellerCallback] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has a seller callback (offer.callback != address(0) for a sell offer), execute take() where the seller callback reenters setIsRootRatified to de-ratify the root, violating the invariant that root ratification state must not change during an active take, causing scoped impact: the root is de-ratified during the take callback, but the take has already passed the isRatified check, leaving the position in an inconsistent state where the ratification was revoked mid-execution? Proof idea: implement seller callback that calls setIsRootRatified(maker, root, false), assert take completes and position state is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_86577211-322a-46e4-80fe-a25368448718?mode=deep",
+    "timestamp": "2026-05-31 18:34:41.147720",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: take / buyerCreditIncrease netting] Can an unprivileged taker, under the precondition that the buyer (maker) has position.debt=D and position.credit=0, execute take() via a SetterRatifier-ratified buy offer with units=D+1, causing _updatePosition to be called (units > buyerPos.debt), then buyerCreditIncrease=1 and buyerPos.debt goes to 0 and buyerPos.credit becomes 1, violating the invariant that the transition from pure-debt to pure-credit must be atomic and not leave intermediate states exploitable by callbacks, causing scoped impact: the buyer callback observes the position with debt=0 and credit=0 (before credit is added), enabling incorrect netting in a reentrant take? Proof idea: implement buyer callback that reads position state, assert credit and debt are consistent during callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_66d78a59-6146-4af6-8f1a-b1aa6b2b9450?mode=deep",
+    "timestamp": "2026-05-31 18:34:55.686209",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer for a market with enterGate, execute take() where sellerDebtIncrease>0 but the enterGate.canIncreaseDebt check is bypassed because the operator calls take() on behalf of the taker (not the maker), violating the invariant that the enter gate must check the seller's debt increase regardless of who calls take(), causing scoped impact: the maker's debt increases in a gated market without the gate's approval? Proof idea: create gated market, operator ratifies root, taker calls take(), assert SellerGatedFromIncreasingDebt reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b2a493fa-7f35-4bad-a004-0dfea4fe23b4?mode=deep",
+    "timestamp": "2026-05-31 18:35:11.806387",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.tick not aligned to the market's tickSpacing, supply a valid Merkle proof for the offer and call take(), violating the invariant that offers must only be placed at ticks that are multiples of the market's tickSpacing, causing scoped impact: the TickNotAccessible check in take() reverts, but if tickSpacing was reduced after the root was ratified, previously invalid ticks become valid, enabling takes at ticks the maker did not intend? Proof idea: ratify root with offer.tick=T, reduce tickSpacing so T becomes valid, assert take() succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_31793234-6dcc-4439-8f78-9eb12e0b867d?mode=deep",
+    "timestamp": "2026-05-31 18:35:26.278104",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer, execute take() where the taker is the operator itself (not the maker), violating the invariant that the taker must not be the maker (SelfTake), causing scoped impact: the operator can act as both the ratifier (via setIsRootRatified) and the taker, creating a self-dealing scenario where the operator profits from the maker's position? Proof idea: operator calls setIsRootRatified then take() with taker=operator, assert SelfTake reverts only if operator==maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_06a0f411-dead-4877-8adb-95bdeeb0e61e?mode=deep",
+    "timestamp": "2026-05-31 18:35:40.101212",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take / _updatePosition] Can an unprivileged taker, under the precondition that the seller has position.credit=C (small) and position.debt=0 and the market's continuousFee has accrued since lastAccrual, execute take() via a SetterRatifier-ratified sell offer with units=C, causing _updatePosition to be called (hasCredit=true), then postSlashCredit=C' (after fee accrual) and sellerCreditDecrease=min(C, C')=C', then sellerDebtIncrease=C-C'>0, violating the invariant that a seller with only credit and no debt must not end up with debt after a take that was intended to fully reduce credit, causing scoped impact: the seller ends up with unexpected debt due to continuous fee accrual reducing credit before netting? Proof idea: fuzz continuousFee accrual, assert seller's debt after take equals max(0, units - postSlashCredit).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0b3e03d5-1fb4-408f-a20d-dbdef1464ce2?mode=deep",
+    "timestamp": "2026-05-31 18:35:54.870789",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a buy offer (maker-as-buyer) for a market with enterGate, execute take() where buyerCreditIncrease>0 but the enterGate.canIncreaseCredit check is bypassed because the operator calls take() on behalf of the taker (seller), violating the invariant that the enter gate must check the buyer's credit increase regardless of who calls take(), causing scoped impact: the maker's credit increases in a gated market without the gate's approval? Proof idea: create gated market, operator ratifies root, taker calls take(), assert BuyerGatedFromIncreasingCredit reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e0a059e0-0157-4bc2-9daa-5d4cfb9bdab2?mode=deep",
+    "timestamp": "2026-05-31 18:36:10.018761",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.maxUnits=0 and offer.maxAssets=0 (both zero), execute take() with any units amount, causing newConsumed to exceed both maxUnits=0 and maxAssets=0, violating the invariant that an offer with both maxUnits=0 and maxAssets=0 must not be fillable (or must be treated as unlimited), causing scoped impact: the ConsumedUnits/ConsumedAssets check behavior for zero-cap offers is undefined, enabling unlimited fills that create unbounded credit/debt? Proof idea: fuzz offer with maxUnits=0 and maxAssets=0, assert take() behavior is well-defined.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_01075ddd-de31-4756-a95d-9d67a30ba45e?mode=deep",
+    "timestamp": "2026-05-31 18:36:23.948729",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take / repay callback] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has debt in a market, ratify a root containing a buy offer (maker-as-buyer) to reduce debt via netting, then execute take() where the buyer callback calls repay() on behalf of the maker to repay additional debt, violating the invariant that the buyer callback must not modify the maker's debt position during the take, causing scoped impact: the maker's debt is reduced both by take netting and by the repay callback, creating a double-reduction that desynchronizes debt accounting? Proof idea: buyer callback calls repay(), assert total debt reduction equals assets transferred.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_779f5d4d-487d-472f-a6d4-2ac0e9c61932?mode=deep",
+    "timestamp": "2026-05-31 18:36:38.484605",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.buy=false (sell offer) and the seller has position.credit=0 and position.debt=0 (empty position), execute take() with units>0, causing sellerCreditDecrease=0 and sellerDebtIncrease=units, violating the invariant that a seller with no collateral must not be able to increase debt (SellerIsLiquidatable check should catch this), causing scoped impact: the seller's debt increases without any collateral, and the health check at the end of take() reverts with SellerIsLiquidatable, but the position state has already been partially updated? Proof idea: seller with no collateral, take sell offer, assert SellerIsLiquidatable reverts and position state is unchanged.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fe197ec7-eac1-4d6e-b705-dd4c3665bb8b?mode=deep",
+    "timestamp": "2026-05-31 18:36:52.428366",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer for a market at maturity-1, execute take() at exactly block.timestamp=maturity (boundary), causing the CannotIncreaseDebtPostMaturity check to use block.timestamp <= offer.market.maturity (which is true at maturity), allowing debt increase at exactly maturity, violating the invariant that debt must not increase at or after maturity, causing scoped impact: the maker's debt increases at exactly maturity, creating an incompatible position state that cannot be repaid post-maturity? Proof idea: warp to maturity, take sell offer, assert CannotIncreaseDebtPostMaturity behavior at boundary.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f6ebc855-0a2a-43df-a7f5-0046b4d58c72?mode=deep",
+    "timestamp": "2026-05-31 18:37:07.833941",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take / _updatePosition] Can an unprivileged taker, under the precondition that the buyer has position.credit=0 and position.debt=D and units=D (exactly equal to debt), execute take() via a SetterRatifier-ratified buy offer, causing _updatePosition to be skipped (hasCredit=false and units <= buyerPos.debt is false only if units > debt, but units=debt so units <= debt is true), then buyerCreditIncrease=zeroFloorSub(D, D)=0 and buyerPos.debt decreases by D to 0, violating the invariant that _updatePosition must be called when debt goes to 0 to update lastLossFactor and lastAccrual, causing scoped impact: buyer's position is cleared (debt=0) with stale lastLossFactor, creating an incompatible baseline for future credit accrual? Proof idea: fuzz units=debt exactly, assert lastLossFactor and lastAccrual are updated when debt goes to 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7a4b8150-0990-4cb1-9b47-455803e00143?mode=deep",
+    "timestamp": "2026-05-31 18:37:22.639184",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer, execute take() where the taker callback (takerCallback) reenters setIsRootRatified to ratify a new root containing a different sell offer, then execute another take() in the same callback, violating the invariant that root ratification must not be modifiable during an active take callback, causing scoped impact: the reentrant take uses a newly ratified root to execute a second sell offer against the maker, doubling the maker's debt increase in a single transaction? Proof idea: taker callback calls setIsRootRatified then take(), assert maker's debt after both takes equals expected value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f46c5f1-9778-493b-a9b0-ad55daa8af48?mode=deep",
+    "timestamp": "2026-05-31 18:37:36.936026",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the Merkle tree contains an offer with offer.callbackData containing malicious ABI-encoded data, execute take() where the maker callback decodes callbackData and calls setIsRootRatified or setIsAuthorized on behalf of the maker, violating the invariant that maker callbacks must not modify authorization or ratification state during a take, causing scoped impact: the maker callback grants additional authorizations or ratifies new roots, enabling further unauthorized takes that create incorrect credit/debt netting? Proof idea: craft callbackData that triggers setIsAuthorized in callback, assert authorization state after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1798b094-95a5-496b-bbe0-12922588a212?mode=deep",
+    "timestamp": "2026-05-31 18:37:51.497731",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer for a market with LLTV=1e18 (LLTV=1), execute take() where sellerDebtIncrease>0 and the seller has no collateral, violating the invariant that LLTV=1 markets have no overcollateralization requirement and unhealthy positions always realize bad debt, causing scoped impact: the seller's debt increases without collateral in an LLTV=1 market, and the SellerIsLiquidatable check passes (since maxDebt=0 >= debt=0 before the take, but after the take debt>0 and maxDebt=0), enabling immediate liquidation of the seller? Proof idea: LLTV=1 market, seller with no collateral, take sell offer, assert SellerIsLiquidatable reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f67dbac3-06f2-440c-8f5a-5111f6cbbffb?mode=deep",
+    "timestamp": "2026-05-31 18:38:06.576298",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take / _updatePosition] Can an unprivileged taker, under the precondition that the seller has position.credit=C and position.debt=0 and a bad debt event has occurred (lossFactor increased) since the seller's lastLossFactor, execute take() via a SetterRatifier-ratified sell offer with units=C, causing _updatePosition to be called (hasCredit=true), then postSlashCredit=C' < C (due to slashing), then sellerCreditDecrease=min(C, C')=C' and sellerDebtIncrease=C-C'>0, violating the invariant that a seller who intended to fully reduce credit (units=C) must not end up with debt due to slashing applied during _updatePosition, causing scoped impact: the seller ends up with unexpected debt because slashing reduced their credit below the intended take amount? Proof idea: fuzz lossFactor increase, assert seller's debt after take equals max(0, units - postSlashCredit).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7d137308-6d4d-4db8-8c06-ac718832a950?mode=deep",
+    "timestamp": "2026-05-31 18:38:22.127324",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a buy offer (maker-as-buyer) for a market where the buyer's debt is exactly equal to units, execute take() causing _updatePosition to be skipped for the buyer (hasCredit=false and units <= debt), then buyerPos.debt decreases by units to 0 and buyerCreditIncrease=0, violating the invariant that when debt goes to 0 via netting, the position must be fully updated to reflect the clean state, causing scoped impact: buyer's position has debt=0 and credit=0 with stale lastLossFactor and lastAccrual, creating an incompatible baseline for future interactions? Proof idea: invariant test: after any take that reduces debt to 0, assert lastLossFactor == marketState.lossFactor.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9589e82b-d12a-4409-a6a1-60dd6b0b15d5?mode=deep",
+    "timestamp": "2026-05-31 18:38:38.106211",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: isRatified / take] Can an unprivileged taker, under the precondition that isRootRatified[maker][root]=true and the offer has offer.buy=true (buy offer) and the buyer (maker) has position.credit=0 and position.debt=0 (empty position), execute take() with units>0, causing buyerCreditIncrease=units and buyerPos.credit increases from 0 to units, violating the invariant that _updatePosition must be called before credit is added to ensure lastLossFactor and lastAccrual are initialized, causing scoped impact: the buyer's credit is added with stale lastLossFactor=0 (initial value), and if lossFactor>0, the buyer's credit will be incorrectly slashed at the next _updatePosition call? Proof idea: fuzz lossFactor>0, take buy offer for empty position, assert lastLossFactor is updated before credit is added.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7833595-795c-483d-b069-248d93cb9ed2?mode=deep",
+    "timestamp": "2026-05-31 18:38:54.075211",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: setIsRootRatified / take / liquidate] Can an unprivileged authorized operator, under the precondition that isAuthorized[maker][operator]=true and maker has a ratified root with a sell offer, execute take() to increase the maker's debt, then immediately call liquidate() on the maker (if the maker is now unhealthy), violating the invariant that a position must not become liquidatable immediately after a take due to the SetterRatifier enabling unexpected debt increases, causing scoped impact: the operator can force the maker into an unhealthy position via a ratified sell offer and then liquidate them in the same transaction? Proof idea: multicall([take(sell), liquidate(maker)]), assert maker is unhealthy after take and liquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f9b0376-8299-4dc8-982f-e200a0b297f0?mode=deep",
+    "timestamp": "2026-05-31 18:39:10.645387",
+    "report_generated": false
+  }
+]
