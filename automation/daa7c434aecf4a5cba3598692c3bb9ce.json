@@ -1,0 +1,68 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (seller health check)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for a sell offer and the seller (taker) has insufficient collateral attempt to fill the sell offer, expecting take() to revert with SellerIsLiquidatable after the health check at the end of take(), and confirm that the health check is not bypassable by ratifier approval, violating the invariant that every borrow/take must create correct debt and collateral obligation, causing scoped impact: bad debt creation via undercollateralized borrow? Proof idea: unit test where taker has no collateral, fills sell offer and asserts SellerIsLiquidatable revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec30c177-0d4f-4721-afec-c9091d5b21b9?mode=deep",
+    "timestamp": "2026-05-31 17:54:12.014777",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (liquidation lock)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for a sell offer and the seller is currently being liquidated (liquidationLocked==true) attempt to fill the sell offer as taker, expecting the health check at the end of take() to be skipped due to liquidationLocked, and confirm that the liquidation lock does not allow bypassing the health check for new debt creation, violating the invariant that every borrow/take must create correct debt and collateral obligation, causing scoped impact: unauthorized debt creation during liquidation? Proof idea: set liquidationLocked for seller, fill sell offer and assert health invariant holds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_199aeb83-b43b-4862-93f8-312b32e4e618?mode=deep",
+    "timestamp": "2026-05-31 17:54:24.142624",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (TakerUnauthorized)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for offers attempt to submit a take() where msg.sender != taker and isAuthorized[taker][msg.sender]==false, expecting take() to revert with TakerUnauthorized before isRatified is called, and confirm that taker authorization is not bypassable by ratifier approval, violating the invariant that gates and authorizations must not be bypassable, causing scoped impact: unauthorized take on behalf of another user? Proof idea: unit test calling take() with mismatched msg.sender and taker and asserting TakerUnauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5bf24f9d-0c94-4aa3-b950-1aab3b8619ff?mode=deep",
+    "timestamp": "2026-05-31 17:54:36.485014",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (RatifierUnauthorized)] Can an unprivileged ATTACKER under the precondition that a maker has NOT authorized the SetterRatifier (isAuthorized[maker][setterRatifier]==false) attempt to submit a take() with offer.ratifier=setterRatifier, expecting take() to revert with RatifierUnauthorized before isRatified is called, and confirm that ratifier authorization cannot be bypassed, violating the invariant that gates and ratifiers must not be bypassable, causing scoped impact: unauthorized offer fill using unauthorized ratifier? Proof idea: unit test calling take() without maker authorizing ratifier and asserting RatifierUnauthorized revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_164148a2-9ad1-4ebb-b687-89cf02154446?mode=deep",
+    "timestamp": "2026-05-31 17:54:49.156654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + HashLib.isLeaf (proof ordering)] Can an unprivileged ATTACKER under the precondition that a valid proof exists for offer O at leafIndex I in a tree attempt to submit the same proof with leafIndex I XOR 1 (flipping the lowest bit), causing the left/right ordering of the first sibling to be reversed and producing a different computed root that does not match the ratified root, and confirm that leafIndex manipulation cannot produce a valid alternative proof, violating the invariant that each offer occupies exactly one position in the tree, causing scoped impact: unauthorized offer fill via proof ordering manipulation? Proof idea: fuzz leafIndex by flipping individual bits and assert isLeaf returns false for all mutations.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68920bd8-e363-4056-a496-4271ed245703?mode=deep",
+    "timestamp": "2026-05-31 17:55:02.412451",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (ERC20 fee-on-transfer)] Can an unprivileged ATTACKER under the precondition that the market's loanToken charges a fee on transfer and a maker has ratified a root for buy offers attempt to fill a buy offer, causing the actual tokens received by Midnight to be less than buyerAssets due to the transfer fee, violating the invariant that ERC20 transfer deltas must match accounting deltas, causing scoped impact: protocol insolvency where withdrawable exceeds actual token balance? Proof idea: deploy fee-on-transfer token, fill buy offer and assert Midnight's token balance equals expected withdrawable amount.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4becfcd4-99d6-4984-b2ae-7dba94264429?mode=deep",
+    "timestamp": "2026-05-31 17:55:15.494736",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.setIsRootRatified + Midnight.multicall (authorization chain)] Can an unprivileged ATTACKER under the precondition that maker has authorized a router contract (isAuthorized[maker][router]==true) and the router contract uses Midnight.multicall to batch operations atomically use the router to call [setIsAuthorized(attacker, true, maker), setIsRootRatified(maker, root, true)] in sequence, where the first call grants attacker operator rights and the second ratifies a root, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized root ratification via authorization chain through router? Proof idea: PoC where router multicall grants attacker auth and ratifies root in one tx and asserts attacker can fill offers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56904683-add6-4141-bda3-2461596618b3?mode=deep",
+    "timestamp": "2026-05-31 17:55:28.279295",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (no-op take)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for a fully-consumed offer (consumed==max) and the Midnight comment states 'Midnight can call the callback of offers through a no-op take, even if those offers have consumed==max' submit a take() with units=0 to trigger the maker callback without consuming any capacity, and use that callback to call setIsRootRatified or setIsAuthorized to escalate privileges, violating the invariant that no-op takes must not enable unauthorized state changes, causing scoped impact: unauthorized privilege escalation via no-op take callback? Proof idea: submit take() with units=0 on exhausted offer and assert callback cannot modify authorization or ratification state.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39e95750-9a9a-463e-ad44-f659e9bf2ef6?mode=deep",
+    "timestamp": "2026-05-31 17:55:42.260797",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (collateral bitmap)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for sell offers and a borrower (taker) has activated 16 collaterals (MAX_COLLATERALS_PER_BORROWER) attempt to fill a sell offer that would add a 17th collateral activation, expecting supplyCollateral to revert with TooManyActivatedCollaterals, and confirm that collateral limits are not bypassable by ratifier approval, violating the invariant that collateral bitmap/list state must match actual deposited collateral, causing scoped impact: accounting corruption via collateral bitmap overflow? Proof idea: activate 16 collaterals, attempt to supply 17th and assert TooManyActivatedCollaterals revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a4a6349-fa6c-4529-9819-00054f1af49b?mode=deep",
+    "timestamp": "2026-05-31 17:55:55.365342",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (settlement fee manipulation)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for offers at a specific tick and the settlement fee is changed between root ratification and take() execution cause the effective buyer/seller prices to differ from what the maker intended when constructing the Merkle tree, violating the invariant that ratifier approval must bind correct maker intent including price terms, causing scoped impact: unauthorized price deviation where maker receives less than intended? Proof idea: ratify root, change settlement fee, fill offer and assert sellerAssets differs from maker's expected value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aac55e02-3d45-4e99-b4bd-bd4acc8f1cdf?mode=deep",
+    "timestamp": "2026-05-31 17:56:09.635343",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: SetterRatifier.isRatified + Midnight.take (continuous fee crystallization)] Can an unprivileged ATTACKER under the precondition that a maker has ratified a root for buy offers and the market's continuousFee is changed between root ratification and take() execution cause the pendingFee accrued on the buyer's new credit to differ from what the maker intended, violating the invariant that ratifier approval must bind correct maker intent including fee terms, causing scoped impact: unauthorized fee burden where buyer accumulates higher pendingFee than expected? Proof idea: ratify root, change continuousFee, fill buy offer and assert buyerPendingFeeIncrease differs from expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_52f632a6-b7cd-421a-ab0d-8025ea76954a?mode=deep",
+    "timestamp": "2026-05-31 17:56:25.516700",
+    "report_generated": false
+  }
+]
