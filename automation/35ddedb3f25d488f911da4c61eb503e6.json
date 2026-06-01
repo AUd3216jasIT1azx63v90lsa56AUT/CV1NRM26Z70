@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/periphery/interfaces/IPermit2.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: liquidate / isHealthy / IOracle.price / cross-module: take then liquidate] Can an unprivileged taker, taking a sell offer that increases the seller's debt to exactly maxDebt (at the health threshold), observe that isHealthy() at line 476 returns true (maxDebt >= debt), but a subsequent liquidate() call in the same block (different transaction) uses the same oracle price and computes originalDebt > maxDebt as false (since debt == maxDebt), so liquidate() reverts with NotLiquidatable(), confirming the position is correctly not liquidatable, but if the oracle price drops by 1 wei between transactions, the position becomes liquidatable, violating the invariant that a position at exactly the threshold must not be immediately liquidatable due to oracle price drift, causing scoped impact: valid borrower at threshold becomes liquidatable? Proof idea: differential test: take to threshold, then liquidate in same block vs next block with oracle price - 1.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74b9c25e-7c80-4738-9c1e-13138ac772ec?mode=deep",
-    "timestamp": "2026-05-31 18:10:48.802771",
-    "report_generated": false
-  }
-]
