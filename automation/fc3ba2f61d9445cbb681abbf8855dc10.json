@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: isRatified / take] Can an unprivileged attacker supply a sell offer where the seller callback (onSell) calls flashLoan() with a callback that cancels the maker's root and then immediately takes a sibling offer from the same root before the cancellation is visible to the outer take's health check, exploiting the ordering of flashLoan's token transfer (before callback) and repayment (after callback) to create a window where the root is canceled but the sibling take has already passed isRatified()? Proof idea: onSell -> flashLoan(callback=cancelAndTake) -> onFlashLoan cancels root then takes sibling; assert sibling take either succeeds (root not yet canceled at isRatified call) or fails (root already canceled); document the exact ordering.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d93d7e64-9264-492b-ac31-574de5231109?mode=deep",
-    "timestamp": "2026-05-31 23:43:12.889829",
-    "report_generated": false
-  }
-]
