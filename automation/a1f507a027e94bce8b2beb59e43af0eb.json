@@ -178,5 +178,65 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f0d85881-e1ee-4143-95c3-34e56ec08cd1?mode=deep",
     "timestamp": "2026-06-01 01:20:09.806099",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a whitelist for fee-free transfers under the precondition that Midnight is not on the whitelist, trigger take() so that all transfers to/from Midnight incur fees, while transfers between whitelisted addresses do not, causing systematic underfunding of the protocol, violating the invariant that token transfer amounts match accounting amounts, causing scoped impact: protocol insolvency? Proof idea: deploy whitelist-fee token with Midnight not whitelisted, execute take(), assert balance shortfall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_10fdd965-c10b-4da0-aadf-893729d8a326?mode=deep",
+    "timestamp": "2026-06-01 01:20:38.427961",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that modifies the token's own state (e.g., auto-compounds interest) under the precondition that the hook fires during safeTransferFrom in take(), trigger take() so that the hook changes the token's total supply or individual balances, causing Midnight's balance to change unexpectedly during the take() execution, violating the invariant that Midnight's balance only changes by the expected transfer amounts, causing scoped impact: accounting desync? Proof idea: deploy auto-compound token, execute take(), assert balance change equals expected transfer amounts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71fc479e-ee00-4daa-91dc-d8e3794879c8?mode=deep",
+    "timestamp": "2026-06-01 01:20:50.650442",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls balanceOf on Midnight and uses it to determine the fee (e.g., fee = 0 if Midnight balance > threshold) under the precondition that Midnight's balance is near the threshold, trigger take() so that the fee changes based on Midnight's current balance, causing the fee to be different from what was expected at the start of take(), violating the invariant that accounting is deterministic given inputs, causing scoped impact: unpredictable accounting desync? Proof idea: deploy balance-sensitive-fee token, execute take() near threshold, assert fee matches expectation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_82aa8688-fe09-480d-8313-b06bc495a3a1?mode=deep",
+    "timestamp": "2026-06-01 01:21:04.023859",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls flashLoan() on Midnight under the precondition that the hook fires during safeTransferFrom in take(), trigger take() so that the hook initiates a flash loan that temporarily drains Midnight's balance, causing subsequent safeTransfer calls in take() to fail due to insufficient balance, violating the invariant that take() is atomic and cannot be interrupted by external balance changes, causing scoped impact: DoS of take() or partial state corruption? Proof idea: implement transfer hook that calls flashLoan(), execute take(), assert atomicity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32aa8cd6-03a9-4406-8b88-8721792b602c?mode=deep",
+    "timestamp": "2026-06-01 01:21:16.779749",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls multicall() on Midnight under the precondition that the hook fires during safeTransferFrom in take(), trigger take() so that the hook executes a multicall that modifies position state (e.g., repay, withdraw, supplyCollateral) while take() is mid-execution, violating the invariant that take() state updates are atomic and not interleaved with other state-modifying calls, causing scoped impact: accounting corruption through multicall reentrancy? Proof idea: implement transfer hook that calls multicall([repay, withdraw]), execute take(), assert no state corruption.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_792d0e3d-4886-445b-bb93-e55149cba23f?mode=deep",
+    "timestamp": "2026-06-01 01:21:31.814871",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls setIsAuthorized() on Midnight under the precondition that the hook fires during safeTransferFrom in take(), trigger take() so that the hook grants authorization to an attacker address during the take() execution, allowing the attacker to immediately call withdraw() or withdrawCollateral() on behalf of the buyer/seller before take() completes, violating the invariant that authorization changes do not affect ongoing transactions, causing scoped impact: unauthorized fund withdrawal? Proof idea: implement transfer hook that calls setIsAuthorized(attacker, true, victim), execute take(), assert attacker cannot exploit mid-take authorization.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5c139769-e6e2-4e4f-a188-b5d51048e33b?mode=deep",
+    "timestamp": "2026-06-01 01:21:46.131099",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls liquidate() on Midnight under the precondition that the seller's liquidation lock is set during take() callbacks but the hook fires during safeTransferFrom (after callbacks), trigger take() so that the hook calls liquidate() on the seller after the liquidation lock is released (after !wasLocked check) but before take() returns, violating the invariant that the seller cannot be liquidated during take() execution, causing scoped impact: unauthorized liquidation of seller during take()? Proof idea: implement transfer hook that calls liquidate(seller), execute take(), assert liquidation lock prevents this.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_48fa15e3-8dab-45f6-8a7d-9e023ec3526c?mode=deep",
+    "timestamp": "2026-06-01 01:22:00.068682",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls setConsumed() on Midnight under the precondition that the hook fires during safeTransferFrom in take() after consumed has been incremented, trigger take() so that the hook resets consumed[maker][group] to 0, allowing the same offer to be filled again in a subsequent take(), violating the invariant that consumed only increases and offers cannot be replayed, causing scoped impact: offer replay and overfill? Proof idea: implement transfer hook that calls setConsumed(group, 0, maker), execute take() twice, assert consumed is not reset.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f355d99-b750-45ac-8100-2efd5d92b6e5?mode=deep",
+    "timestamp": "2026-06-01 01:22:15.921320",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls updatePosition() on Midnight under the precondition that the hook fires during safeTransferFrom in take() after position state has been updated but before take() returns, trigger take() so that the hook calls updatePosition() which applies loss factor and continuous fee accrual to the buyer/seller position that was just modified, causing double-application of loss factor or fee accrual, violating the invariant that updatePosition() is idempotent within a single block, causing scoped impact: incorrect credit/fee accounting? Proof idea: implement transfer hook that calls updatePosition(buyer), execute take(), assert credit not double-slashed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f56d0f00-8db4-4e21-b3b3-9bd7fa473c30?mode=deep",
+    "timestamp": "2026-06-01 01:22:31.871703",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IERC20.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: SafeTransferLib.safeTransferFrom / take] Can an unprivileged taker use a token that has a transfer hook that calls claimContinuousFee() on Midnight under the precondition that the hook fires during safeTransferFrom in take() and continuousFeeCredit has just been updated, trigger take() so that the hook claims the continuous fee, reducing marketState.withdrawable and totalUnits, causing the subsequent health check (isHealthy) to use stale totalUnits, violating the invariant that health checks use consistent state, causing scoped impact: incorrect health assessment leading to unauthorized liquidation or missed liquidation? Proof idea: implement transfer hook that calls claimContinuousFee(), execute take(), assert health check consistency.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cefa07d1-0f0c-44e4-9fbd-6182a0db8702?mode=deep",
+    "timestamp": "2026-06-01 01:22:46.539057",
+    "report_generated": false
   }
 ]
