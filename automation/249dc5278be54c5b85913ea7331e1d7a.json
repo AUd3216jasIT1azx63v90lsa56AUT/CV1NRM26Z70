@@ -1,0 +1,110 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.ratifier=EcrecoverRatifier, call take() with a modified offer O' where offer.ratifier=SetterRatifier but the same Merkle proof, under the precondition that hashOffer includes offer.ratifier, by calling take() with O' and original ratifierData, violating the invariant that the maker commits to a specific ratifier, causing scoped impact: attacker routes the offer through a different ratifier that may have weaker validation, enabling unauthorized credit/debt creation? Proof idea: assert hashOffer(O) != hashOffer(O') when O.ratifier != O'.ratifier.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dcb5eec7-1242-4b78-8830-026fa2f36f12?mode=deep",
+    "timestamp": "2026-06-01 00:01:38.304515",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.rcfThreshold=T1, call take() with a modified offer O' where offer.market.rcfThreshold=0 (RCF always deactivated) but the same Merkle proof, under the precondition that hashMarket includes rcfThreshold, by calling take() with O' and original ratifierData, violating the invariant that the maker's RCF threshold is committed to by the signature, causing scoped impact: attacker deactivates the RCF, enabling full liquidation of positions the maker intended to protect with partial liquidation? Proof idea: assert hashMarket(M1) != hashMarket(M2) when M1.rcfThreshold != M2.rcfThreshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cee49f50-8eb0-470e-b65a-07f54a7cbcc2?mode=deep",
+    "timestamp": "2026-06-01 00:01:50.477814",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.liquidatorGate=G1, call take() with a modified offer O' where offer.market.liquidatorGate=address(0) but the same Merkle proof, under the precondition that hashMarket includes liquidatorGate, by calling take() with O' and original ratifierData, violating the invariant that the maker's liquidator gate is committed to by the signature, causing scoped impact: attacker removes the liquidator gate, enabling unauthorized liquidations that seize collateral from the maker's borrowers? Proof idea: assert hashMarket(M1) != hashMarket(M2) when M1.liquidatorGate != M2.liquidatorGate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b8b41752-458f-45dc-945b-1f077f086b4e?mode=deep",
+    "timestamp": "2026-06-01 00:02:02.963844",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.collateralParams[i].lltv=L1, call take() with a modified offer O' where offer.market.collateralParams[i].lltv=L2 (higher LLTV) but the same Merkle proof, under the precondition that hashCollateralParams includes lltv, by calling take() with O' and original ratifierData, violating the invariant that the maker's LLTV commitment is enforced by the ratifier, causing scoped impact: attacker increases LLTV, enabling undercollateralized borrowing beyond the maker's risk tolerance? Proof idea: assert hashCollateralParams(C1) != hashCollateralParams(C2) when C1.lltv != C2.lltv.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c786c65c-239f-4fa8-858d-344916e94827?mode=deep",
+    "timestamp": "2026-06-01 00:02:15.918555",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.collateralParams[i].oracle=O1, call take() with a modified offer O' where offer.market.collateralParams[i].oracle=maliciousOracle but the same Merkle proof, under the precondition that hashCollateralParams includes oracle, by calling take() with O' and original ratifierData, violating the invariant that the maker's oracle commitment is enforced by the ratifier, causing scoped impact: attacker substitutes a manipulated oracle, enabling undercollateralized borrowing and bad debt creation? Proof idea: assert hashCollateralParams(C1) != hashCollateralParams(C2) when C1.oracle != C2.oracle.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ad32bf86-6fb9-438d-999e-6b9b02eecf57?mode=deep",
+    "timestamp": "2026-06-01 00:02:28.950852",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.collateralParams[i].maxLif=L1, call take() with a modified offer O' where offer.market.collateralParams[i].maxLif=L2 (lower maxLif) but the same Merkle proof, under the precondition that hashCollateralParams includes maxLif, by calling take() with O' and original ratifierData, violating the invariant that the maker's LIF commitment is enforced by the ratifier, causing scoped impact: attacker reduces the liquidation incentive, making liquidations unprofitable and leaving bad debt unrealized? Proof idea: assert hashCollateralParams(C1) != hashCollateralParams(C2) when C1.maxLif != C2.maxLif.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_928ebbf4-8c92-4993-9500-bee4a969185d?mode=deep",
+    "timestamp": "2026-06-01 00:02:41.695748",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.maxAssets=A1, call take() with a modified offer O' where offer.maxAssets=0 and offer.maxUnits=U1 (switching cap type) but the same Merkle proof, under the precondition that hashOffer includes both maxAssets and maxUnits, by calling take() with O' and original ratifierData, violating the invariant that the maker's cap type (assets vs units) is committed to by the signature, causing scoped impact: attacker switches the cap type to bypass the maker's intended volume limit, enabling overfill and incorrect accounting? Proof idea: assert hashOffer(O) != hashOffer(O') when O.maxAssets != O'.maxAssets or O.maxUnits != O'.maxUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3c992211-4adf-4641-8ff7-427dc247a3fd?mode=deep",
+    "timestamp": "2026-06-01 00:02:54.673972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.start=S1 (future timestamp), call take() with a modified offer O' where offer.start=0 but the same Merkle proof, under the precondition that hashOffer includes offer.start, by calling take() with O' and original ratifierData, violating the invariant that the maker's start time is committed to by the signature, causing scoped impact: attacker enables the offer before the maker intended it to be active, creating premature credit/debt? Proof idea: assert hashOffer(O) != hashOffer(O') when O.start != O'.start.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9a151556-84ed-4727-b8eb-f9eeec37efef?mode=deep",
+    "timestamp": "2026-06-01 00:03:08.305059",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.loanToken=T1, call take() with a modified offer O' where offer.market.loanToken=T2 (different token) but the same Merkle proof, under the precondition that hashMarket includes loanToken, by calling take() with O' and original ratifierData, violating the invariant that the maker's loan token is committed to by the signature, causing scoped impact: attacker substitutes a different (potentially worthless) loan token, causing the maker to receive incorrect assets and corrupting credit accounting? Proof idea: assert hashMarket(M1) != hashMarket(M2) when M1.loanToken != M2.loanToken.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fe1918cd-45b0-4856-8e04-c8ad4d01aca6?mode=deep",
+    "timestamp": "2026-06-01 00:03:21.486249",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O signed by authorized signer S (not the maker), call take() after the maker has revoked S's authorization (isAuthorized[maker][S] = false) but before the root is canceled, under the precondition that isRootCanceled[maker][root] == false, by calling take() with the original ratifierData, violating the invariant that authorization revocation must immediately invalidate all signed offers, causing scoped impact: attacker executes a trade the maker intended to block by revoking the signer, creating unauthorized credit/debt? Proof idea: unit test revoke-then-take sequence; assert isRatified reverts with Unauthorized() after signer authorization is revoked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1db57f61-257d-4db0-84ad-293ee7f8bbdb?mode=deep",
+    "timestamp": "2026-06-01 00:03:34.015689",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O signed by the maker themselves (signer == offer.maker), call take() after the maker has been compromised and their key used to sign a root cancellation, under the precondition that the maker cannot cancel the root (key compromised), by calling take() with the original ratifierData before the root is canceled, violating the invariant that makers must be able to cancel their offers, causing scoped impact: attacker (with compromised maker key) executes unauthorized trades creating incorrect credit/debt before the maker can respond? Proof idea: model the time window between key compromise and root cancellation; assert cancelRoot is the only revocation mechanism.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53c0c18b-8652-4eef-88a5-98295e79b552?mode=deep",
+    "timestamp": "2026-06-01 00:03:47.624941",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O in a market with maturity M, call take() at block.timestamp == M (maturity boundary) where the domain separator uses block.chainid (live) but the market ID uses INITIAL_CHAIN_ID, under the precondition that block.chainid == INITIAL_CHAIN_ID (no fork), by calling take() at exactly the maturity timestamp, violating the invariant that maturity boundary behavior is consistent between ratifier and core accounting, causing scoped impact: attacker exploits timestamp equality to ratify an offer at maturity while the core contract's CannotIncreaseDebtPostMaturity check uses block.timestamp <= market.maturity, creating a debt increase at the exact maturity boundary? Proof idea: unit test take() at block.timestamp == market.maturity; assert sellerDebtIncrease == 0 is enforced.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cdbcd5ba-2329-4de2-9011-e8100ab19b3f?mode=deep",
+    "timestamp": "2026-06-01 00:04:00.450126",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, after a hard fork changes block.chainid from C1 to C2, use a signature created on C1 (with domainSeparator using C1) on C2 (where domainSeparator uses C2), under the precondition that the market was created on C1 (using INITIAL_CHAIN_ID=C1) and still exists on C2, by calling take() on C2 with the C1 signature, violating the invariant that signatures must not be replayable across chains, causing scoped impact: attacker replays C1 offers on C2, creating unauthorized credit/debt in markets that exist on both chains? Proof idea: simulate chain fork by changing block.chainid; assert isRatified rejects C1 signatures on C2 due to domain separator mismatch.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43661ae0-0541-4819-8f86-f88946fe346b?mode=deep",
+    "timestamp": "2026-06-01 00:04:13.112336",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O where the signer is an authorized delegate S (not the maker), call take() in a multicall that first calls setIsAuthorized(S, false) on behalf of the maker (if the taker is also an authorized operator of the maker), then calls take() with the original ratifierData, under the precondition that the taker is authorized by the maker, by calling multicall([setIsAuthorized(S, false), take(offer, ratifierData, ...)]), violating the invariant that authorization revocation must prevent subsequent ratification in the same transaction, causing scoped impact: attacker revokes signer authorization then immediately uses the old signature in the same tx, testing if the revocation is checked at ratification time? Proof idea: unit test multicall revoke-then-take; assert take() reverts with Unauthorized() after setIsAuthorized(S, false).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4aed08ed-17b1-4fe0-bfeb-fa8090b45db5?mode=deep",
+    "timestamp": "2026-06-01 00:04:25.813812",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.cancelRoot / Midnight.setIsAuthorized] Can an unprivileged attacker, who is an authorized operator of the maker, call cancelRoot(maker, root) to cancel the maker's active root, then call setIsAuthorized(attacker, false) on behalf of the maker to remove their own authorization (preventing the maker from re-authorizing them), under the precondition that the attacker is the only authorized operator, by calling multicall([cancelRoot(maker, root), setIsAuthorized(attacker, false)]), violating the invariant that makers must retain control over their offer trees, causing scoped impact: attacker permanently freezes all of the maker's offers, preventing credit/debt position establishment? Proof idea: unit test this multicall sequence; assert maker's offers are permanently blocked.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78b55691-491f-4fd9-9cff-ea6cd87c9530?mode=deep",
+    "timestamp": "2026-06-01 00:04:38.725900",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for a Merkle tree containing N offers, use the same (sig, root) with different (leafIndex, proof) pairs to ratify multiple different offers from the same tree, under the precondition that each offer has a different group or the same group with sufficient remaining capacity, by calling take() N times with different (leafIndex, proof) pairs, violating the invariant that a single signature should not enable unlimited offer execution, causing scoped impact: attacker exhausts the maker's capital by filling all N offers in the tree simultaneously, creating N times the intended credit/debt? Proof idea: construct a tree with N offers; assert each offer can be independently ratified and filled up to its individual maxUnits cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1fb33bbd-9113-448f-b3ca-a06d71f7c0a3?mode=deep",
+    "timestamp": "2026-06-01 00:04:51.983670",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O with offer.market.collateralParams[i].token=C1, call take() with a modified offer O' where offer.market.collateralParams[i].token=C2 (different collateral token) but the same Merkle proof, under the precondition that hashCollateralParams includes token, by calling take() with O' and original ratifierData, violating the invariant that the maker's collateral token list is committed to by the signature, causing scoped impact: attacker substitutes a worthless collateral token, enabling undercollateralized borrowing and bad debt? Proof idea: assert hashCollateralParams(C1) != hashCollateralParams(C2) when C1.token != C2.token.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6ef3b2a5-b469-4046-825b-4f6930651526?mode=deep",
+    "timestamp": "2026-06-01 00:05:05.724398",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: EcrecoverRatifier.isRatified] Can an unprivileged taker, given a valid signature for offer O, call take() with the same ratifierData in two concurrent transactions (front-running/sandwich), under the precondition that consumed[maker][group] has not yet reached maxUnits, by submitting two take() calls in the same block with the same ratifierData, violating the invariant that the consumed counter must prevent double-fills within the same block, causing scoped impact: attacker double-fills the offer in the same block before the consumed counter is updated, creating double the intended credit/debt? Proof idea: simulate two take() calls in the same block; assert the second call reverts with ConsumedUnits() if the first fill exhausts the cap.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e66d112a-f323-4101-a4f7-19b3a07f0a50?mode=deep",
+    "timestamp": "2026-06-01 00:05:19.126252",
+    "report_generated": false
+  }
+]
