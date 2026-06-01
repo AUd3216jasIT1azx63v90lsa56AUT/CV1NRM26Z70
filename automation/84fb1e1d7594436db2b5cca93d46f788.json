@@ -52,5 +52,59 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ced5599c-82ac-46c6-8e4b-368e2c51962b?mode=deep",
     "timestamp": "2026-06-01 00:05:29.942544",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (fee-on-transfer loanToken, multicall repay+take)] Can an unprivileged borrower under the precondition that market.loanToken is fee-on-transfer call multicall([repay_call, take_call]) so that repay() increases withdrawable by full units (but Midnight receives units*(1-fee)), then take() as buyer increases credit and pulls buyerAssets (but Midnight receives buyerAssets*(1-fee)), causing cumulative balance shortfall across both operations, violating the invariant that Midnight's token balance >= totalUnits + claimableSettlementFee, causing scoped impact: insolvency amplified by multicall combining repay and take with fee-on-transfer token? Proof idea: fuzz fee rate, assert balance invariant after multicall.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a1181d3-6500-449f-a254-6ad434c4e5ac?mode=deep",
+    "timestamp": "2026-06-01 00:10:16.139206",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (callback revert in onSell after sellerAssets transferred)] Can an unprivileged maker under the precondition that offer.buy=false and offer.callback is a contract that reverts in onSell after the seller has already received sellerAssets (safeTransferFrom to receiver at line 456), trigger take() so that the transfer to receiver has executed, then ISellCallback(sellerCallback).onSell reverts, causing take() to revert and roll back all Midnight state, but the ERC20 transfer to receiver is also rolled back (since it's in the same transaction), violating the invariant that token transfers are atomic with state changes, causing scoped impact: no fund loss but confirming atomicity guarantee holds even with reverting sellerCallback? Proof idea: deploy reverting sellerCallback, assert receiver balance unchanged after revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_67d0ba49-99cf-40ff-a588-5b09c808da94?mode=deep",
+    "timestamp": "2026-06-01 00:10:28.264971",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (loanToken with rebasing, credit inflation)] Can an unprivileged lender under the precondition that market.loanToken is a rebasing token (balance increases for all holders), trigger take() as buyer so that buyerCreditIncrease = units - buyerPos.debt is computed based on nominal units, then the loanToken rebases up, increasing Midnight's balance without updating any position's credit, violating the invariant that sum of all credits + claimableSettlementFee + continuousFeeCredit == Midnight's token balance, causing scoped impact: accounting corruption where Midnight holds more tokens than recorded, potentially allowing feeClaimer to claim excess? Proof idea: deploy rebasing loanToken, take as buyer, rebase up, assert Midnight balance > totalUnits + claimableSettlementFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_38ae3b96-1d47-48d4-832c-34bd6ce8eb7c?mode=deep",
+    "timestamp": "2026-06-01 00:10:41.209492",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (loanToken with rebasing down, insolvency)] Can an unprivileged attacker under the precondition that market.loanToken is a rebasing token that can rebase down (balance decreases for all holders), trigger a rebase down after lenders have accumulated credit, so that Midnight's token balance decreases below totalUnits, violating the invariant that Midnight's token balance >= totalUnits, causing scoped impact: insolvency where lenders cannot withdraw their full credit? Proof idea: deploy rebasing-down loanToken, accumulate lender credit, rebase down, assert Midnight balance < totalUnits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5586fd35-70ed-4e93-9ea5-a9d2f934cdd3?mode=deep",
+    "timestamp": "2026-06-01 00:10:53.620526",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (callback revert in onBuy, payer confusion)] Can an unprivileged taker under the precondition that offer.buy=true and buyerCallback != address(0), trigger take() so that payer = buyerCallback (line 422), and if buyerCallback.onBuy reverts, the safeTransferFrom(loanToken, buyerCallback, address(this), ...) is never reached, but if buyerCallback.onBuy succeeds and then safeTransferFrom reverts (insufficient balance in buyerCallback), take() reverts, violating the invariant that the payer (buyerCallback) is responsible for funding the take, causing scoped impact: fund freeze where take() always reverts if buyerCallback has insufficient balance despite returning CALLBACK_SUCCESS? Proof idea: deploy buyerCallback returning CALLBACK_SUCCESS with 0 token balance, assert take() reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1fd1274f-92e2-408f-8b9c-0b4bb3d2544c?mode=deep",
+    "timestamp": "2026-06-01 00:11:06.484305",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (fee-on-transfer loanToken, post-maturity settlement)] Can an unprivileged lender under the precondition that market.loanToken is fee-on-transfer and the market has passed maturity, call withdraw() to redeem credit so that position.credit -= units and withdrawable -= units succeed, but safeTransfer(loanToken, receiver, units) delivers only units*(1-fee) to receiver, violating the invariant that a lender can redeem exactly their credit at maturity, causing scoped impact: fund freeze where lenders lose a percentage of their credit to transfer fees on withdrawal? Proof idea: deploy fee-on-transfer loanToken, reach maturity, withdraw, assert receiver balance < units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0c795dd1-dc21-4a83-93f1-cc444cc2b15b?mode=deep",
+    "timestamp": "2026-06-01 00:11:19.747747",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (callback revert in onBuy, group consumed desync)] Can an unprivileged taker under the precondition that offer.maxAssets > 0 and buyerCallback reverts, trigger take() so that consumed[maker][group] += buyerAssets is applied (line 368), then buyerCallback.onBuy reverts, causing take() to revert and roll back consumed[maker][group] to its previous value, violating the invariant that consumed[maker][group] is monotonically non-decreasing, causing scoped impact: offer replay where consumed counter is reset by a reverting callback, allowing the offer to be filled beyond maxAssets? Proof idea: deploy reverting buyerCallback, call take() N times, assert consumed[maker][group] never exceeds maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_db2ac341-50f5-4562-893d-949e8a58e696?mode=deep",
+    "timestamp": "2026-06-01 00:11:34.207678",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (loanToken with transfer that calls back into ratifier)] Can an unprivileged attacker under the precondition that market.loanToken has a transfer hook that calls EcrecoverRatifier.cancelRoot(maker, root) during safeTransferFrom, trigger take() so that after isRatified succeeds (root not canceled), the transfer hook cancels the root, then the subsequent safeTransferFrom (for sellerAssets) also fires the hook, but the root is already canceled, violating the invariant that a root that was valid at the start of take() remains valid throughout, causing scoped impact: offer replay prevention bypass where root is canceled mid-take? Proof idea: deploy ERC20 with transfer hook calling cancelRoot, assert root is canceled after take() but take() still succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cca77c5-b09d-474d-8900-933542513927?mode=deep",
+    "timestamp": "2026-06-01 00:11:48.567750",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: hashOffer / take (fee-on-transfer loanToken, loss factor accounting)] Can an unprivileged liquidator under the precondition that market.loanToken is fee-on-transfer and multiple bad debt liquidations have occurred (lossFactor > 0), trigger take() as buyer so that _updatePosition slashes buyer's credit based on lossFactor, then buyerCreditIncrease is computed on the slashed credit, and safeTransferFrom pulls buyerAssets from payer but Midnight receives less due to fee, violating the invariant that totalUnits accurately reflects the sum of all lender credits after slashing, causing scoped impact: accounting corruption where totalUnits diverges from actual lender credits due to combined fee-on-transfer and loss factor effects? Proof idea: fuzz lossFactor and fee rate, assert totalUnits == sum of all position credits.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b8e596e9-5f64-4f03-99bd-0cadbe6f6032?mode=deep",
+    "timestamp": "2026-06-01 00:12:01.530184",
+    "report_generated": false
   }
 ]
