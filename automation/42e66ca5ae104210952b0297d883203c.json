@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/interfaces/IGate.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: IEnterGate / take / continuousFeeCredit / claimContinuousFee / withdrawable underflow] Can an unprivileged fee claimer exploit the claimContinuousFee function which decrements withdrawable by the claimed amount, combined with the fact that continuousFeeCredit can accumulate to a value larger than withdrawable (since continuousFeeCredit is credited from pendingFee which was set at take time based on future TTM), to claim more than the available withdrawable balance, causing withdrawable to underflow and revert, violating the invariant that claimContinuousFee must always succeed for valid claim amounts, causing scoped impact: fund freeze where fee claimer cannot claim accrued fees? Proof idea: invariant test asserting continuousFeeCredit <= withdrawable at all times.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3879b62f-60b5-4f76-b710-1e2774cb8b71?mode=deep",
-    "timestamp": "2026-05-31 20:43:11.225394",
-    "report_generated": false
-  }
-]
