@@ -148,5 +148,155 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_543e954b-7f54-485f-90f5-d16936f37f90?mode=deep",
     "timestamp": "2026-06-01 01:00:49.912395",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimContinuousFee / EventsLib.ClaimContinuousFee] Can an unprivileged attacker cause claimContinuousFee to revert with an arithmetic underflow on marketState[id].continuousFeeCredit by front-running the feeClaimer's claim with a bad-debt liquidation that reduces continuousFeeCredit via the formula continuousFeeCredit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - oldLossFactor), under preconditions where the feeClaimer is about to claim the full continuousFeeCredit and a bad-debt event reduces it below the claim amount, violating the invariant that the feeClaimer must be able to claim all accrued fees, causing scoped impact: DoS against claimContinuousFee via bad-debt front-running? Proof idea: fuzz bad-debt amount and claim amount and assert underflow when claim > post-slash continuousFeeCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0072acf8-7d6a-4377-8470-b1056019aca5?mode=deep",
+    "timestamp": "2026-06-01 01:01:57.476982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimContinuousFee / EventsLib.ClaimContinuousFee] Can an unprivileged attacker cause claimContinuousFee to revert with an arithmetic underflow on marketState[id].withdrawable by front-running the feeClaimer's claim with a withdraw that drains withdrawable below the claim amount, under preconditions where withdrawable equals continuousFeeCredit and a lender withdraws first, violating the invariant that the feeClaimer must be able to claim all accrued continuous fees, causing scoped impact: DoS against claimContinuousFee via withdrawable race condition? Proof idea: set up withdrawable == continuousFeeCredit, have lender withdraw all, then assert claimContinuousFee reverts on underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d000411a-93db-4baa-81c6-fcb876f53c4b?mode=deep",
+    "timestamp": "2026-06-01 01:02:09.389597",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimContinuousFee / EventsLib.ClaimContinuousFee] Can an unprivileged attacker cause claimContinuousFee to revert with an arithmetic underflow on marketState[id].totalUnits by front-running the feeClaimer's claim with a withdraw that reduces totalUnits below the claim amount, under preconditions where totalUnits == continuousFeeCredit and a lender withdraws all credit, violating the invariant that the feeClaimer must be able to claim all accrued continuous fees, causing scoped impact: DoS against claimContinuousFee via totalUnits race condition? Proof idea: set totalUnits == continuousFeeCredit, have lender withdraw all, then assert claimContinuousFee reverts on underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc7c669f-a54e-4762-b6d7-c08b5f70e6a7?mode=deep",
+    "timestamp": "2026-06-01 01:02:21.914169",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimSettlementFee / EventsLib.ClaimSettlementFee] Can an unprivileged attacker cause claimSettlementFee to revert with an arithmetic underflow on claimableSettlementFee[token] by front-running the feeClaimer's claim with another claim (if feeClaimer is a contract that can be called twice in the same block) or by exploiting a race between two fee claim transactions, under preconditions where claimableSettlementFee[token] is exactly the claim amount and a concurrent claim drains it first, violating the invariant that the feeClaimer must be able to claim all accrued settlement fees, causing scoped impact: DoS against claimSettlementFee via race condition? Proof idea: simulate two concurrent claimSettlementFee calls for the same amount and assert the second reverts on underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87b3ecab-f73e-4556-aba3-c7a6074f654b?mode=deep",
+    "timestamp": "2026-06-01 01:02:35.197556",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by deploying a market with an enterGate whose canIncreaseDebt() reverts (rather than returning false), under preconditions where the attacker is the market creator and sets enterGate to a contract that reverts on canIncreaseDebt(), violating the invariant that a valid sell-side take must be executable, causing scoped impact: permanent DoS against all debt-increasing takes in the targeted market? Proof idea: deploy a gate that reverts on canIncreaseDebt(), create a market with it, and assert take reverts when sellerDebtIncrease > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_df26f50b-6bf4-405e-ac6f-978b0c613ab2?mode=deep",
+    "timestamp": "2026-06-01 01:02:48.657832",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the _updatePosition call inside take when marketState[id].lossFactor == type(uint128).max, making updatePositionView return postSlashCredit == 0 and causing a division-by-zero or underflow in the pendingFee computation (postSlashPendingFee = credit > 0 ? pendingFee - pendingFee.mulDivUp(credit - postSlashCredit, credit) : 0), under preconditions where the market has been fully slashed and a lender with credit > 0 is involved in a take, violating the invariant that take must not revert due to accounting edge cases after full loss, causing scoped impact: DoS against all takes in a fully-slashed market? Proof idea: drive lossFactor to type(uint128).max, then attempt a take involving a lender with credit > 0 and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6baf6811-6a9b-4645-ad44-c2821cf9042f?mode=deep",
+    "timestamp": "2026-06-01 01:03:02.846135",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by crafting an offer where buyerAssets - sellerAssets (the settlement fee portion) causes SafeTransferLib.safeTransferFrom to fail because the payer has insufficient allowance or balance, under preconditions where the payer is the buyerCallback contract and the attacker controls it, violating the invariant that a valid take must complete the token transfer, causing scoped impact: DoS against take for any offer where the payer is an underfunded callback? Proof idea: deploy a callback that approves exactly sellerAssets but not buyerAssets, and assert take reverts on the settlement fee transfer.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5df58974-d3bb-4ddc-b167-e1ad7377f765?mode=deep",
+    "timestamp": "2026-06-01 01:03:16.766859",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged attacker cause liquidate to revert with NotBorrower() by front-running a liquidator's call with a repay that reduces position[id][borrower].debt to exactly 0, under preconditions where the borrower's debt is small and the attacker repays the exact remaining amount, violating the invariant that an unhealthy position must remain liquidatable until fully repaid, causing scoped impact: DoS against liquidation for any borrower with small remaining debt? Proof idea: fuzz borrower debt in [1, 100] and attacker repay amount and assert NotBorrower() after full repay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1186c240-f259-4ff4-a7cd-a56f93a53dfd?mode=deep",
+    "timestamp": "2026-06-01 01:03:32.313689",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the multicall function to atomically (1) take an offer partially, (2) call setConsumed(group, type(uint256).max, maker) via an authorized operator, and (3) attempt the victim's take in the same transaction, under preconditions where the attacker is authorized for the maker and uses multicall to atomically exhaust the group, violating the invariant that a valid offer must remain fillable until its cap is reached, causing scoped impact: atomic DoS against all offers in a group via authorized setConsumed? Proof idea: authorize attacker for maker, use multicall to setConsumed(group, type(uint256).max, maker) and assert subsequent take reverts with ConsumedUnits().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f54c54d-a2ef-4bfc-9963-d35aef5cbf90?mode=deep",
+    "timestamp": "2026-06-01 01:03:47.919917",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: withdraw / EventsLib.Withdraw] Can an unprivileged attacker cause withdraw to revert by triggering a bad-debt realization that reduces a lender's credit to 0 via _updatePosition inside withdraw, making the subsequent credit subtraction (_position.credit -= units) underflow, under preconditions where the lender's credit after slashing is less than the units they are trying to withdraw, violating the invariant that a lender must be able to withdraw their actual post-slash credit, causing scoped impact: DoS against withdraw for any lender after a bad-debt event reduces their credit below their requested withdrawal? Proof idea: fuzz lossFactor and lender credit and assert underflow when post-slash credit < units.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5824565a-099a-4ff9-944c-89961bdc111d?mode=deep",
+    "timestamp": "2026-06-01 01:04:03.328679",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by deploying a market with a ratifier that is authorized for the maker but whose isRatified() function reverts under specific conditions (e.g., when called with certain ratifierData), under preconditions where the attacker controls the ratifier contract and can make it revert for specific takers, violating the invariant that a valid offer with a valid ratifier must be fillable, causing scoped impact: targeted DoS against specific takers via a malicious ratifier? Proof idea: deploy a ratifier that reverts for specific msg.sender values, authorize it for the maker, and assert take reverts with RatifierFail() for targeted takers.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2dbdbf9c-eba8-48cf-b5e8-44e8555a93cc?mode=deep",
+    "timestamp": "2026-06-01 01:04:20.502533",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimContinuousFee / EventsLib.ClaimContinuousFee] Can an unprivileged attacker cause claimContinuousFee to revert by deploying a market where the loanToken's transfer() function reverts or returns false, under preconditions where the attacker creates a market with a token that has a conditional transfer failure (e.g., a blocklist), violating the invariant that the feeClaimer must be able to claim all accrued fees, causing scoped impact: permanent DoS against claimContinuousFee for any market with a blocklisted or broken loan token? Proof idea: deploy a token that reverts on transfer to the receiver, and assert claimContinuousFee reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e4692ea-33fd-4a44-896f-88bb85fd0951?mode=deep",
+    "timestamp": "2026-06-01 01:04:35.501867",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged attacker cause liquidate to revert by deploying a market where the collateral token's transfer() function reverts or returns false for the receiver, under preconditions where the attacker creates a market with a collateral token that has a conditional transfer failure, violating the invariant that a valid liquidation must complete the collateral transfer, causing scoped impact: permanent DoS against liquidation for any market with a broken collateral token? Proof idea: deploy a collateral token that reverts on transfer to the liquidator's receiver, and assert liquidate reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc1a99e5-e41a-4c1d-89ce-30e195ca4b92?mode=deep",
+    "timestamp": "2026-06-01 01:04:49.972740",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the _updatePosition call for the buyer when hasCredit(id, buyer) is true, making the updatePositionView computation overflow due to a mulDivDown on (type(uint128).max - marketState[id].lossFactor) / (type(uint128).max - _lastLossFactor) when _lastLossFactor > marketState[id].lossFactor (which should not happen but could due to a race), under preconditions where the buyer's lastLossFactor is stale and the market's lossFactor has been updated, violating the invariant that _updatePosition must not revert for any valid state, causing scoped impact: DoS against take for any buyer with stale lastLossFactor after a lossFactor update? Proof idea: fuzz lastLossFactor and current lossFactor and assert division-by-zero or underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f28d5a9-1988-4d83-bd2a-a8cc36574145?mode=deep",
+    "timestamp": "2026-06-01 01:05:05.695551",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: repay / EventsLib.Repay] Can an unprivileged attacker cause repay to revert by deploying a market where the loanToken's transferFrom() function reverts or returns false for the payer, under preconditions where the attacker creates a market with a token that has a conditional transferFrom failure (e.g., insufficient allowance or blocklist), violating the invariant that a borrower must be able to repay their debt, causing scoped impact: permanent DoS against repay for any market with a broken or blocklisted loan token? Proof idea: deploy a token that reverts on transferFrom from the payer, and assert repay reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a58f2c4f-be2f-4181-bace-f5b8184443ed?mode=deep",
+    "timestamp": "2026-06-01 01:05:21.083891",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged attacker cause liquidate to revert with an arithmetic underflow on position[id][borrower].debt when badDebt > _position.debt due to a rounding error in the badDebt computation, under preconditions where the collateral oracle returns a price that makes mulDivUp(collateral, price, ORACLE_PRICE_SCALE).mulDivUp(WAD, maxLif) exceed the actual debt, violating the invariant that badDebt must never exceed the borrower's actual debt, causing scoped impact: DoS against liquidation for specific price/collateral/debt combinations? Proof idea: fuzz collateral, price, maxLif, and debt values and assert badDebt > debt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_71c11482-f2d7-4b85-8e29-071eba190f1a?mode=deep",
+    "timestamp": "2026-06-01 01:05:37.375021",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the settlement fee computation in settlementFee() when timeToMaturity is exactly at a breakpoint boundary (e.g., timeToMaturity == 1 days, 7 days, 30 days, 90 days, 180 days, 360 days), making buyerPrice - sellerPrice produce a settlement fee that causes buyerAssets < sellerAssets (underflow in claimableSettlementFee[token] += buyerAssets - sellerAssets), under preconditions where the settlement fee is zero and the rounding of buyerAssets and sellerAssets produces buyerAssets < sellerAssets, violating the invariant that the settlement fee must always be non-negative, causing scoped impact: DoS against take at specific TTM breakpoints? Proof idea: fuzz tick, units, and timeToMaturity at breakpoints and assert buyerAssets >= sellerAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_59fc7291-4787-48f2-bacd-cfd86d650fd9?mode=deep",
+    "timestamp": "2026-06-01 01:05:53.554189",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by crafting a buy offer where buyerPrice > WAD (i.e., tick == 0 giving price near 1e18 and settlementFee > 0 making buyerPrice = sellerPrice + settlementFee > WAD), making units.mulDivDown(buyerPrice, WAD) overflow uint256, under preconditions where the settlement fee is nonzero and the offer tick is 0, violating the invariant that take must not revert for any valid offer parameters, causing scoped impact: DoS against take for offers at tick 0 with nonzero settlement fee? Proof idea: set tick=0, set nonzero settlement fee, fuzz units near type(uint256).max / buyerPrice and assert overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb8abdd3-cb3f-400d-aa7d-e4515117013e?mode=deep",
+    "timestamp": "2026-06-01 01:06:09.246387",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged attacker cause liquidate to revert by supplying a collateral with a zero-price oracle for the liquidated collateral (liquidatedCollatPrice == 0), making the seizedAssets computation (repaidUnits.mulDivDown(lif, WAD).mulDivDown(ORACLE_PRICE_SCALE, liquidatedCollatPrice)) revert with division by zero, under preconditions where the attacker creates a market with a collateral oracle that returns 0, violating the invariant that liquidation must be executable for any valid market, causing scoped impact: permanent DoS against liquidation for any market with a zero-price collateral oracle? Proof idea: deploy an oracle that returns 0, create a market with it, make a position unhealthy, and assert liquidate reverts on division by zero.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0a70e489-1ee7-4a0b-a913-fad29d55bbbd?mode=deep",
+    "timestamp": "2026-06-01 01:06:24.711548",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the multicall function to atomically (1) supply collateral for the seller, (2) take an offer that increases the seller's debt, and (3) withdraw the collateral in the same multicall, making the seller unhealthy at the isHealthy check at the end of take, under preconditions where the seller's collateral is exactly at the health threshold, violating the invariant that a take must not leave the seller in an unhealthy state, causing scoped impact: DoS against take via multicall-based collateral withdrawal during take? Proof idea: use multicall to combine take and withdrawCollateral and assert SellerIsLiquidatable().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7def3051-a5f7-4c79-87a7-c43883a3ca62?mode=deep",
+    "timestamp": "2026-06-01 01:06:40.973692",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: claimContinuousFee / EventsLib.ClaimContinuousFee] Can an unprivileged attacker cause claimContinuousFee to permanently revert by driving continuousFeeCredit to 0 via repeated bad-debt liquidations that each apply the formula continuousFeeCredit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - oldLossFactor), under preconditions where the attacker creates multiple undercollateralized positions and liquidates them sequentially, violating the invariant that accrued continuous fees must be claimable, causing scoped impact: permanent DoS against claimContinuousFee via bad-debt-driven continuousFeeCredit destruction? Proof idea: stateful fuzz test iterating bad-debt liquidations and asserting continuousFeeCredit approaches 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70e63df8-d686-4d73-9fdb-1917debccc57?mode=deep",
+    "timestamp": "2026-06-01 01:06:57.518815",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: withdraw / EventsLib.Withdraw] Can an unprivileged attacker cause withdraw to revert by exploiting the touchMarket call inside withdraw to create the market for the first time (if not yet created), making the market creation path execute and potentially revert due to invalid market parameters passed by the attacker, under preconditions where the attacker crafts a Market struct with invalid parameters (e.g., unsorted collaterals) and calls withdraw with it, violating the invariant that withdraw must not revert for valid market parameters, causing scoped impact: DoS against withdraw for any user who passes a Market struct that triggers market creation with invalid parameters? Proof idea: call withdraw with a Market struct with unsorted collaterals and assert CollateralParamsNotSorted().",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e38fa2bb-8e22-4878-aa22-909557d1ca48?mode=deep",
+    "timestamp": "2026-06-01 01:07:14.345457",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the fact that the liquidation lock (tExchange) uses transient storage that persists across calls within the same transaction, allowing a nested take (via callback reentrancy) to set wasLocked=true for the outer take's seller, preventing the outer take from unlocking the seller at line 475 and leaving the seller permanently locked for the duration of the transaction, under preconditions where the attacker's callback reenters take with the same seller, violating the invariant that the liquidation lock must be correctly managed across nested calls, causing scoped impact: DoS against liquidation for the seller for the duration of the transaction? Proof idea: implement a callback that reenters take with the same seller and assert liquidationLocked(id, seller) remains true after the outer take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_33f4d77a-900b-463f-9f59-d408749c2f49?mode=deep",
+    "timestamp": "2026-06-01 01:07:31.530460",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: liquidate / EventsLib.Liquidate] Can an unprivileged attacker cause liquidate to revert by crafting a market where the collateral oracle returns a price so large that maxDebt computation (collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(lltv, WAD)) overflows uint256, under preconditions where the attacker creates a market with a collateral oracle that returns a price near type(uint256).max / collateral, violating the invariant that liquidation must not revert for any valid oracle price, causing scoped impact: DoS against liquidation for any market with an extreme oracle price? Proof idea: deploy an oracle returning type(uint256).max, create a market with it, and assert liquidate reverts on overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6c47e9ba-7369-4731-a942-1454e723e1a5?mode=deep",
+    "timestamp": "2026-06-01 01:07:50.566512",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/EventsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: take / EventsLib.Take] Can an unprivileged attacker cause take to revert by exploiting the sellerPendingFeeDecrease computation (sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit)) when sellerPos.credit is 1 and sellerPos.pendingFee is near type(uint128).max, making mulDivUp overflow, under preconditions where the seller has a near-zero credit with a large pendingFee after bad debt, violating the invariant that take must not revert for any valid seller position state, causing scoped impact: DoS against take for any seller with extreme pendingFee/credit ratio? Proof idea: fuzz sellerPos.credit in [1, 10] and sellerPos.pendingFee near type(uint128).max and assert mulDivUp overflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_41b27e1f-c380-4e4e-a1ca-fdf31ee47f85?mode=deep",
+    "timestamp": "2026-06-01 01:08:08.367296",
+    "report_generated": false
   }
 ]
