@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Non-standard ERC20 behavior, fee-on-transfer behavior, callback revert behavior, or false-return handling that breaks accounting or freezes funds'] [Function: EcrecoverRatifier.isRatified (view reentrancy via isAuthorized)] Can an attacker exploit the isAuthorized call within isRatified to observe stale authorization state under preconditions where the maker's authorization is changed within the same block as a take, triggering the call sequence setIsAuthorized(ratifier, false, maker) -> take(offer, ...) -> isRatified(offer, ratifierData) -> IMidnight(MIDNIGHT).isAuthorized(offer.maker, _signer) returns false -> Unauthorized() revert, violating the invariant that authorization state at take time must be respected, causing scoped impact: a maker can front-run a take by revoking ratifier authorization, causing the taker's transaction to revert and wasting gas? Proof idea: in a single block, revoke ratifier authorization then attempt take, assert Unauthorized revert; verify no state changes persist.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68c35e39-a6ba-4810-bd49-5922e1cd1b67?mode=deep",
-    "timestamp": "2026-05-31 19:58:19.472978",
-    "report_generated": false
-  }
-]

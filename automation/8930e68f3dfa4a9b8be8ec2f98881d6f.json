@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/libraries/SafeTransferLib.sol -> Scope: Medium Fee mis-accounting where settlement fee or continuous fee is overclaimed, underclaimed, unclaimable, or charged to the wrong side'] [Function: claimContinuousFee] Can an unprivileged feeClaimer under the precondition that continuousFeeCredit > 0 but withdrawable == 0 (all assets are borrowed, none repaid) trigger claimContinuousFee(market, amount, receiver) where _marketState.withdrawable -= amount underflows and reverts, violating the invariant that accrued continuous fees must always be claimable regardless of market utilization, causing scoped impact: continuous fee permanently unclaimable when market is fully utilized? Proof idea: create fully utilized market (all credit borrowed, no repayments), accrue continuousFeeCredit via updatePosition, call claimContinuousFee, assert revert.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5601ddc4-bf41-40ea-803b-9217d167ecb5?mode=deep",
-    "timestamp": "2026-05-31 22:57:40.091457",
-    "report_generated": false
-  }
-]
