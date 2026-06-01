@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'File Name: src/libraries/SafeTransferLib.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: liquidate / multicall / SafeTransferLib.safeTransfer ordering] Can an unprivileged liquidator, under the precondition that the liquidator uses multicall to batch a liquidate call followed by a withdraw call in the same transaction, trigger a state where the liquidate call updates _marketState.withdrawable and _position.debt, then the withdraw call in the same multicall reads the updated withdrawable and transfers loan tokens, causing the loan token balance to decrease before SafeTransferLib.safeTransferFrom(loanToken, payer, address(this), repaidUnits) in the liquidate call is executed, violating the invariant that multicall must not bypass per-action invariants, causing scoped impact: multicall ordering allows withdrawal of loan tokens before the liquidator's repayment is received, creating a temporary insolvency window? Proof idea: construct multicall with liquidate then withdraw, assert that the loan token balance is consistent at each step.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c2f368a3-f5e7-40b2-b6bc-11c66a9ab995?mode=deep",
-    "timestamp": "2026-05-31 18:32:57.585548",
-    "report_generated": false
-  }
-]
