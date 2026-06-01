@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: touchMarket] Can an unprivileged market creator under the precondition that MAX_COLLATERALS=128 is the only enforced bound call touchMarket with a Market struct containing exactly 128 CollateralParams, permanently encoding a 128-entry collateralParams array into every subsequent take/repay/withdraw/supplyCollateral/withdrawCollateral/liquidate calldata payload, violating the invariant that protocol interactions must remain economically viable for honest users, causing scoped impact: low-cost DoS where the attacker creates a market with 128 collaterals making every future interaction with that market prohibitively expensive in calldata gas? Proof idea: fuzz collateralParams.length in [1, 128] and measure gas cost of take/repay/withdraw on the resulting market; assert gas cost grows linearly with collateralParams.length and crosses block gas limit at some threshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b5f2c3c7-bd3a-423c-954b-3363db95cd7a?mode=deep",
+    "timestamp": "2026-06-01 00:06:30.133890",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isHealthy / UtilsLib.msb / UtilsLib.clearBit] Can an unprivileged borrower under the precondition that MAX_COLLATERALS_PER_BORROWER=16 and supplyCollateral does not call any oracle call supplyCollateral 16 times across 16 distinct collateral indices to activate all 16 bitmap slots, forcing every subsequent isHealthy call (triggered by take for the seller and withdrawCollateral) to execute a while(_collateralBitmap != 0) loop with 16 external IOracle.price() calls, violating the invariant that healthy accounts must not become unliquidatable due to gas exhaustion, causing scoped impact: gas griefing where the borrower's position becomes too expensive to health-check within a single transaction? Proof idea: deploy 16 mock oracles each consuming near-maximum gas; supply collateral to all 16 indices; call isHealthy and assert it reverts with out-of-gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_be974784-3998-413f-8279-43ccaf041314?mode=deep",
+    "timestamp": "2026-06-01 00:06:42.611530",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / UtilsLib.msb / UtilsLib.clearBit] Can an unprivileged borrower under the precondition that a borrower has activated MAX_COLLATERALS_PER_BORROWER=16 collaterals and the position is unhealthy call supplyCollateral to activate 16 collateral slots then let the position become unhealthy, forcing any liquidator's call to liquidate to execute the while(_collateralBitmap != 0) loop 16 times with 16 IOracle.price() external calls before reaching the liquidation logic, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: liquidation failure via gas griefing where the liquidation transaction runs out of gas? Proof idea: fuzz number of activated collaterals in [1,16] with gas-heavy mock oracles; assert liquidate reverts with out-of-gas when all 16 slots are active.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_867fe563-6954-46d3-835e-4c88c9a80adb?mode=deep",
+    "timestamp": "2026-06-01 00:06:55.110475",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall] Can an unprivileged user under the precondition that multicall has no length bound on the calls[] array call multicall with an arbitrarily large calls[] array where each element encodes a call to an expensive function such as take or liquidate, violating the invariant that multicall must not break invariants that hold for single calls and must not enable low-cost DoS, causing scoped impact: low-cost DoS where an attacker submits a multicall that consumes the entire block gas limit, blocking other transactions in the same block? Proof idea: fuzz calls.length in [1, 10000] with each call encoding a no-op touchMarket; measure gas consumption and assert it grows linearly without bound.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_faa8aa70-1c03-4f67-a25c-6da38bd8cea5?mode=deep",
+    "timestamp": "2026-06-01 00:07:08.020887",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: flashLoan] Can an unprivileged user under the precondition that flashLoan has no length bound on the tokens[] and assets[] arrays call flashLoan with tokens.length set to a very large value, forcing two unbounded for-loops (one for outbound transfers, one for inbound repayments) each iterating tokens.length times, violating the invariant that protocol interactions must not enable low-cost DoS, causing scoped impact: gas griefing where the flashLoan transaction exhausts the block gas limit? Proof idea: fuzz tokens.length in [1, 10000] with a mock callback; assert gas cost grows linearly and crosses block gas limit at some threshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4acb78cd-cc1b-4e0b-9d47-ec7780dcd622?mode=deep",
+    "timestamp": "2026-06-01 00:07:22.762395",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: touchMarket / for-loop over collateralParams] Can an unprivileged market creator under the precondition that the for-loop in touchMarket iterates market.collateralParams.length times (up to 128) call touchMarket with 128 collateral params where each CollateralParams struct is 128 bytes, causing the ABI-decoding of the Market memory struct to allocate and zero-initialize 128 * 128 = 16,384 bytes of memory on every subsequent call to any function accepting Market memory market, violating the invariant that protocol interactions must remain economically viable, causing scoped impact: permanent gas griefing for all future users of that market? Proof idea: create a market with 128 collaterals; measure memory expansion gas cost in take/repay/withdraw; assert cost is significantly higher than a 1-collateral market.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fbabc561-08ac-4868-a7fe-b1a8edcee1fa?mode=deep",
+    "timestamp": "2026-06-01 00:07:36.797302",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isHealthy / take (SellerIsLiquidatable check)] Can an unprivileged seller under the precondition that the seller has 16 activated collaterals and take calls isHealthy(offer.market, id, seller) at line 476 after every take call take an offer as seller with 16 activated collateral slots, forcing the post-take health check to execute 16 IOracle.price() calls in the while(_collateralBitmap != 0) loop, violating the invariant that every borrow/take must create correct debt and collateral obligation without reverting due to gas, causing scoped impact: gas griefing where legitimate take transactions revert out-of-gas due to the seller's collateral configuration? Proof idea: deploy 16 gas-heavy mock oracles; activate all 16 collateral slots for the seller; call take and assert it reverts with out-of-gas.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d50b44ca-e302-404d-972a-a24c19d2ab23?mode=deep",
+    "timestamp": "2026-06-01 00:07:51.649071",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: supplyCollateral / UtilsLib.countBits] Can an unprivileged borrower under the precondition that countBits(newCollateralBitmap) is called on every supplyCollateral that activates a new collateral slot call supplyCollateral repeatedly to activate collateral slots up to MAX_COLLATERALS_PER_BORROWER=16, then attempt to supply a 17th collateral to a new index, and verify that countBits correctly rejects it with TooManyActivatedCollaterals, violating the invariant that collateral bitmap/list state must match actual deposited collateral, causing scoped impact: accounting corruption if countBits returns an incorrect popcount for a bitmap with all 16 bits set? Proof idea: fuzz all 128-bit bitmaps with exactly 16 bits set; assert countBits always returns exactly 16; differential-test against a reference popcount implementation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3a3db077-7a82-4e1d-ae05-c5ca9dc3dbb3?mode=deep",
+    "timestamp": "2026-06-01 00:08:06.485513",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / UtilsLib.msb] Can an unprivileged borrower under the precondition that msb(bitmap) uses the clz opcode and assumes bitmap is not zero call supplyCollateral to activate exactly one collateral at index 0 (bitmap = 0x1), then become unhealthy, and verify that the liquidate loop correctly identifies index 0 via msb(0x1) = 0 and clears the bit, violating the invariant that multi-collateral valuation must not skip or double count collateral, causing scoped impact: accounting corruption if msb returns an incorrect index for low-order bits? Proof idea: unit-test msb for all single-bit bitmaps from bit 0 to bit 127; assert msb(1 << i) == i for all i in [0, 127].",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_02c81dc0-33dd-431f-b977-faeee412e610?mode=deep",
+    "timestamp": "2026-06-01 00:08:19.655163",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / take] Can an unprivileged taker under the precondition that multicall uses delegatecall and has no reentrancy guard compose a multicall with N take calls each targeting a different offer in the same market, forcing N sequential executions of take each calling touchMarket, updatePosition, isHealthy, and oracle lookups, violating the invariant that multicall must not break per-action invariants, causing scoped impact: gas griefing where a single multicall transaction with many takes exhausts the block gas limit and prevents other users from transacting? Proof idea: fuzz N in [1, 100] takes in a single multicall; measure total gas; assert gas grows linearly with N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79d28779-7068-45a3-81ed-d1cc8c8d0b5f?mode=deep",
+    "timestamp": "2026-06-01 00:08:33.681889",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral] Can an unprivileged caller under the precondition that the takes[] and collateralWithdrawals[] arrays in MidnightBundles have no length bounds call buyWithUnitsTargetAndWithdrawCollateral with a very large takes[] array where each take fails (caught by try/catch), forcing the loop to iterate takes.length times calling ConsumableUnitsLib.consumableUnits and IMidnight.toId on each iteration, violating the invariant that protocol interactions must not enable low-cost DoS, causing scoped impact: gas griefing where the bundler transaction exhausts the block gas limit? Proof idea: fuzz takes.length in [1, 10000] with all takes designed to revert; assert gas cost grows linearly and crosses block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4fb00a8d-2af1-40a7-8b26-051c56d5b303?mode=deep",
+    "timestamp": "2026-06-01 00:08:48.991154",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / while(_collateralBitmap != 0) / UtilsLib.clearBit] Can an unprivileged borrower under the precondition that the borrower has activated 16 collaterals and the liquidate loop calls clearBit(i) on each iteration verify that the loop terminates in exactly 16 iterations and that _collateralBitmap reaches zero, violating the invariant that multi-collateral valuation must not skip or double count collateral, causing scoped impact: accounting corruption if clearBit fails to clear the correct bit causing an infinite loop or incorrect maxDebt computation? Proof idea: fuzz all combinations of up to 16 set bits in a 128-bit bitmap; assert the while loop in liquidate terminates in exactly countBits(bitmap) iterations and that maxDebt equals the sum over all activated collaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f2eaf23e-c26a-4e85-ae42-923789be40bf?mode=deep",
+    "timestamp": "2026-06-01 00:09:02.615402",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: touchMarket / for-loop] Can an unprivileged market creator under the precondition that the for-loop in touchMarket validates collateralParams[i].token > previousCollateralToken call touchMarket with 128 collateral params where each token address is just above the previous one (e.g., address(1) through address(128)), causing the loop to execute 128 iterations of address comparison, LLTV validation, and maxLif validation, violating the invariant that market creation must not be a gas griefing vector for subsequent users, causing scoped impact: permanent gas griefing since the 128-entry collateralParams array is encoded into the market's CREATE2 bytecode and must be passed in calldata on every future interaction? Proof idea: create a market with 128 collaterals; measure gas for touchMarket creation vs. subsequent take calls; assert calldata cost alone exceeds a meaningful threshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d45ba3b1-4684-47cd-abb5-fca63d1c3697?mode=deep",
+    "timestamp": "2026-06-01 00:09:16.598200",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isHealthy / withdrawCollateral] Can an unprivileged borrower under the precondition that withdrawCollateral calls isHealthy which loops over the collateralBitmap call withdrawCollateral for a borrower with 16 activated collaterals and non-zero debt, forcing isHealthy to execute 16 IOracle.price() calls, violating the invariant that valid withdrawals must not be blocked by gas exhaustion, causing scoped impact: fund freeze where a borrower with 16 activated collaterals cannot withdraw any collateral because the health check always runs out of gas? Proof idea: activate 16 collaterals with gas-heavy oracles; attempt withdrawCollateral with a small amount; assert it reverts out-of-gas even when the position would remain healthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_30b8dcfe-404b-4991-8069-5551107ab6ee?mode=deep",
+    "timestamp": "2026-06-01 00:09:31.777774",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / repay] Can an unprivileged user under the precondition that multicall has no length bound compose a multicall with many repay calls each for 1 unit of debt on behalf of different borrowers, forcing N sequential repay executions each calling touchMarket and updating marketState.withdrawable, violating the invariant that multicall must not break per-action invariants, causing scoped impact: gas griefing where a single multicall with many repay calls exhausts the block gas limit? Proof idea: fuzz N in [1, 1000] repay calls in a single multicall; measure total gas; assert gas grows linearly with N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4baabde6-36db-45f4-9906-a36970b30898?mode=deep",
+    "timestamp": "2026-06-01 00:09:47.707892",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: UtilsLib.msb / liquidate loop] Can an unprivileged borrower under the precondition that msb uses the clz opcode (Osaka) which may not be available on all EVM forks call supplyCollateral to activate collateral at index 127 (the highest bit), then become unhealthy, and verify that msb(1 << 127) correctly returns 127 and the liquidate loop processes the correct collateral, violating the invariant that multi-collateral valuation must not skip or double count collateral, causing scoped impact: accounting corruption if msb returns an incorrect value for high-order bits? Proof idea: unit-test msb for bitmap = (1 << 127); assert msb returns 127; also test all 128 single-bit values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0f0c1978-5080-4808-bada-9c30d9ae88fb?mode=deep",
+    "timestamp": "2026-06-01 00:10:01.543060",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: MidnightBundles.repayAndWithdrawCollateral / collateralWithdrawals loop] Can an unprivileged caller under the precondition that the collateralWithdrawals[] array in repayAndWithdrawCollateral has no length bound call repayAndWithdrawCollateral with a very large collateralWithdrawals[] array, forcing the loop to call withdrawCollateral (which calls isHealthy with up to 16 oracle calls) on each iteration, violating the invariant that protocol interactions must not enable low-cost DoS, causing scoped impact: gas griefing where the bundler transaction exhausts the block gas limit? Proof idea: fuzz collateralWithdrawals.length in [1, 1000] with gas-heavy oracles; assert gas cost grows super-linearly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4e5ccf1-11b4-4bec-b8c0-eeecd699f2c5?mode=deep",
+    "timestamp": "2026-06-01 00:10:15.486392",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: liquidate / badDebt computation / while loop] Can an unprivileged liquidator under the precondition that a borrower has 16 activated collaterals and the liquidate loop computes both maxDebt and badDebt in the same while(_collateralBitmap != 0) loop call liquidate on a borrower with 16 activated collaterals where each collateral has a different oracle price, and verify that badDebt is computed correctly as originalDebt minus the sum of collateral values divided by maxLif, violating the invariant that bad debt must reduce lender credit exactly once and proportionally, causing scoped impact: accounting corruption if the loop's badDebt accumulation using zeroFloorSub produces incorrect results due to ordering of collateral processing? Proof idea: fuzz 16 collateral amounts and oracle prices; assert badDebt computed by the loop equals the expected value computed off-chain.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a8c90100-4a83-4039-82a0-0f8c37ac26d2?mode=deep",
+    "timestamp": "2026-06-01 00:10:30.374938",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / supplyCollateral / countBits] Can an unprivileged borrower under the precondition that multicall uses delegatecall and countBits is called on each supplyCollateral that activates a new slot compose a multicall with 16 supplyCollateral calls each activating a new collateral index, then a 17th supplyCollateral call, and verify that the 17th call reverts with TooManyActivatedCollaterals, violating the invariant that collateral bitmap/list state must match actual deposited collateral, causing scoped impact: accounting corruption if countBits returns an incorrect value allowing more than 16 activated collaterals? Proof idea: multicall 17 supplyCollateral calls; assert the 17th reverts; assert collateralBitmap has exactly 16 bits set after the first 16.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb294301-14dd-492a-a461-1e54c796597b?mode=deep",
+    "timestamp": "2026-06-01 00:10:44.251283",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: isHealthy / take / seller health check] Can an unprivileged taker under the precondition that the seller has 16 activated collaterals and take calls isHealthy at line 476 after the sell callback call take against a sell offer where the seller has 16 activated collaterals, forcing the post-take isHealthy check to execute 16 IOracle.price() calls, and verify that if any oracle call reverts the entire take reverts, violating the invariant that every borrow/take must create correct debt and collateral obligation, causing scoped impact: fund freeze where a seller with 16 activated collaterals (one of which has a reverting oracle) cannot have their offers taken? Proof idea: activate 16 collaterals for the seller with one oracle set to revert; call take; assert it reverts; then deactivate the reverting collateral and assert take succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f080b259-3145-4578-8b89-a06ac0c35057?mode=deep",
+    "timestamp": "2026-06-01 00:10:57.454297",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: UtilsLib.clearBit / isHealthy loop termination] Can an unprivileged borrower under the precondition that clearBit(bitmap, i) clears bit i and the isHealthy loop uses _collateralBitmap = _collateralBitmap.clearBit(i) to advance verify that the loop terminates correctly when the bitmap has bits set at non-contiguous indices (e.g., bits 0, 63, 127), violating the invariant that multi-collateral valuation must not skip or double count collateral, causing scoped impact: accounting corruption if clearBit fails to clear the correct bit for high-index collaterals causing the loop to process the same collateral twice? Proof idea: fuzz bitmaps with bits set at indices 0, 63, 127; assert isHealthy processes each collateral exactly once and the loop terminates.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_62f79722-e59f-4e75-a3e5-72089c5cb0fb?mode=deep",
+    "timestamp": "2026-06-01 00:11:11.141070",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: touchMarket / for-loop / IdLib.storeInCode] Can an unprivileged market creator under the precondition that touchMarket calls IdLib.storeInCode(market, INITIAL_CHAIN_ID) which stores the full Market struct (including all 128 CollateralParams) as CREATE2 bytecode call touchMarket with 128 collateral params, causing IdLib.storeInCode to deploy a contract whose bytecode encodes 128 CollateralParams, and verify that toMarket(id) correctly decodes all 128 entries, violating the invariant that market config is immutable after creation, causing scoped impact: gas griefing since every toMarket call must decode 128 CollateralParams from bytecode? Proof idea: create a market with 128 collaterals; call toMarket(id); assert all 128 CollateralParams are correctly decoded; measure gas cost.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_35878fa4-1d4f-43fb-9b34-cab890157888?mode=deep",
+    "timestamp": "2026-06-01 00:11:25.830762",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: multicall / liquidate / bitmap loop] Can an unprivileged liquidator under the precondition that multicall has no length bound and liquidate executes a 16-iteration bitmap loop compose a multicall with N liquidate calls each targeting a different borrower with 16 activated collaterals, forcing N * 16 IOracle.price() external calls in a single transaction, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: gas griefing where a single multicall with many liquidations exhausts the block gas limit? Proof idea: fuzz N in [1, 100] liquidations in a single multicall each with 16 activated collaterals; measure total gas; assert gas grows as O(N * 16).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c70d0e8f-6e88-417e-907d-6c812b111dcc?mode=deep",
+    "timestamp": "2026-06-01 00:11:40.863632",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: UtilsLib.setBit / supplyCollateral] Can an unprivileged borrower under the precondition that setBit(bitmap, bit) assumes bit < 128 and does not validate the input call supplyCollateral with collateralIndex >= 128 (if market.collateralParams.length allows it), causing setBit to set a bit at position >= 128 in a uint128, potentially overflowing the uint128 cast, violating the invariant that collateral bitmap/list state must match actual deposited collateral, causing scoped impact: accounting corruption if the bitmap overflows and activates incorrect collateral slots? Proof idea: attempt supplyCollateral with collateralIndex = 128; assert it reverts with an array out-of-bounds error before reaching setBit; verify setBit is never called with bit >= 128.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09e1b8c1-a93c-46d7-bb2f-b4383caa6dea?mode=deep",
+    "timestamp": "2026-06-01 00:11:54.319580",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: Medium Gas griefing or unbounded loop behavior in collateral lists, market creation, liquidation, health checks, or multicall composition'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget / collateralSupplies loop] Can an unprivileged caller under the precondition that the collateralSupplies[] array in supplyCollateralAndSellWithUnitsTarget has no length bound call supplyCollateralAndSellWithUnitsTarget with a very large collateralSupplies[] array, forcing the loop to call supplyCollateral (which calls countBits and setBit) on each iteration, violating the invariant that protocol interactions must not enable low-cost DoS, causing scoped impact: gas griefing where the bundler transaction exhausts the block gas limit? Proof idea: fuzz collateralSupplies.length in [1, 1000]; assert gas cost grows linearly and crosses block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d7739f3-5e03-4d9f-bed2-77daedb13d99?mode=deep",
+    "timestamp": "2026-06-01 00:12:07.015295",
+    "report_generated": false
+  }
+]
