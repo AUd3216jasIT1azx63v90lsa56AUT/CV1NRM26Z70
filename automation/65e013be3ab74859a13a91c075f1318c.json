@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take() / payer = buyerCallback, flashLoan interaction] Can an attacker, under the precondition that they call flashLoan to temporarily fund a callback contract with loanToken, then within the flashLoan callback call take() with offer.callback set to the same callback contract (which now holds loanToken), cause take() to pull buyerAssets from the callback contract's flashLoan-funded balance, violating the invariant that flashLoan funds must only be used for the flashLoan repayment, causing scoped impact: flashLoan funds diverted to fund a take() trade instead of being repaid? Proof idea: in onFlashLoan, call take with offer.callback=self, assert flashLoan repayment fails because balance was consumed by take.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5ef22d65-5883-4730-8f98-e0e0a21e0528?mode=deep",
-    "timestamp": "2026-05-31 23:49:47.693556",
-    "report_generated": false
-  }
-]
