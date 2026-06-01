@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker, under the precondition that offer.maker == address(0) is somehow reachable (e.g., a market created with a zero-address maker offer), trigger isRatified with a crafted (v,r,s) such that ecrecover returns address(0), bypassing the _signer != address(0) check and satisfying _signer == offer.maker, allowing an unauthorized offer to be ratified and debt to be created without valid maker consent, violating the invariant that ratifier approval must bind the correct maker? Proof idea: unit test with offer.maker = address(0) and a crafted signature that ecrecover maps to address(0); assert take() succeeds and debt is created.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2ad2954c-5961-475e-9b59-0ea57598ae22?mode=deep",
+    "timestamp": "2026-06-01 00:22:50.212823",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged attacker exploit ECDSA signature malleability (substituting s' = secp256k1_order - s, v' = v ^ 1) to produce a second valid signature for the same digest, allowing replay of a ratified offer after the maker intended to invalidate it by revoking authorization, violating the invariant that cancelled or revoked offers cannot be filled? Proof idea: fuzz (v, r, s) pairs that are malleable transforms of a valid signature; assert both pass isRatified and that the second fill occurs after authorization revocation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5bf01edc-3070-40cc-b525-d22472088439?mode=deep",
+    "timestamp": "2026-06-01 00:23:02.128564",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified / HashLib.offerTreeTypeHash] Can an unprivileged taker, given a valid single-offer tree (proof.length == 0, root == hashOffer(offer)), submit the same offer with a crafted ratifierData where proof.length == 1 and proof[0] is chosen so that hashNode(hashOffer(offer), proof[0]) == root, causing offerTreeTypeHash(1) to be used instead of offerTreeTypeHash(0), producing a different EIP-712 digest that the maker never signed, and thus causing isRatified to revert with InvalidSignature or Unauthorized, blocking a valid take and leaving a borrower unable to reduce debt, making them liquidatable? Proof idea: fuzz proof[0] values; assert that a valid single-leaf signature always fails when proof.length is artificially inflated.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9830340c-bdb3-44a8-aaef-ee8e8ef67aa2?mode=deep",
+    "timestamp": "2026-06-01 00:23:14.572806",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified / HashLib.isLeaf] Can an unprivileged attacker exploit the Merkle second-preimage vulnerability where a crafted internal node hash equals a leaf hash (hashNode(A, B) == hashOffer(offer) for some A, B), allowing a proof path that traverses an internal node as if it were a leaf, causing isLeaf to return true for an offer that was never included in the signed tree, violating the invariant that ratifier approval must bind the correct offer? Proof idea: differential fuzz hashNode outputs against hashOffer outputs; assert no collision exists or demonstrate one.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7e1643fd-cc15-48d0-95c8-898a5f501542?mode=deep",
+    "timestamp": "2026-06-01 00:23:27.451699",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: cancelRoot] Can an unprivileged authorized operator (authorized via Midnight.setIsAuthorized with coarse-grained, market-unscoped authorization) call cancelRoot(maker, root) to cancel a root that contains sell offers the maker intended to keep active, blocking the maker's borrowers from taking those offers to repay debt, causing those borrowers to remain in debt past maturity and become liquidatable, violating the invariant that only the maker should control offer cancellation? Proof idea: unit test where operator calls cancelRoot on a root containing active sell offers; assert subsequent take() reverts with RootCanceled and borrower debt remains.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7a86ef0-4a62-4c31-b8bb-80b91b5ceb38?mode=deep",
+    "timestamp": "2026-06-01 00:23:40.897694",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: cancelRoot / isRatified] Can an unprivileged attacker who is authorized by maker A use cancelRoot to cancel a root for maker A, then immediately re-authorize a different signer to sign a new root containing modified offers (e.g., with different tick/price), causing takers to fill offers under terms the original maker never intended, violating the invariant that offer fill must match maker intent on price, amount, and market? Proof idea: state-transition test: authorize attacker, cancel root, re-sign with attacker key at different tick, assert take() succeeds at wrong price.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_051a058e-2a76-4b9f-a43c-10583bd02a5d?mode=deep",
+    "timestamp": "2026-06-01 00:23:54.364907",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData with proof.length > 20, causing HashLib.offerTreeTypeHash to revert with TreeTooHigh, which propagates through isRatified and causes take() to revert with RatifierFail, creating a DoS on any offer whose ratifierData is constructed with a proof longer than 20, blocking valid borrowers from taking offers to reduce debt and making them liquidatable? Proof idea: fuzz proof.length in [21, 256]; assert take() always reverts with RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5750ad4f-9665-4a93-9ca3-007ef2369e3e?mode=deep",
+    "timestamp": "2026-06-01 00:24:08.589813",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where leafIndex >= 2^proof.length (e.g., leafIndex = 2 with proof.length = 1), causing HashLib.isLeaf to revert with LeafIndexOutOfRange, which propagates through isRatified and causes take() to revert with RatifierFail, blocking a valid borrower from taking a sell offer to repay debt, making them liquidatable? Proof idea: fuzz leafIndex values near 2^proof.length boundary; assert revert behavior is consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_64d8764c-3787-4db0-bfaf-8b9873455d77?mode=deep",
+    "timestamp": "2026-06-01 00:24:22.157446",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker, given a valid 2-leaf Merkle tree where offer A is at index 0 and offer B is at index 1, submit ratifierData claiming offer A is at index 1 (with proof[0] = hashOffer(A) instead of hashOffer(B)), causing isLeaf to return false and isRatified to revert with InvalidProof, blocking a valid take of offer A, while the same ratifierData with index 0 succeeds, demonstrating that the leafIndex is correctly enforced? Proof idea: differential test with swapped leafIndex; assert exactly one succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9cd3e860-ef6c-4a00-be4a-ee44cc3cf810?mode=deep",
+    "timestamp": "2026-06-01 00:24:35.587662",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker replay a valid ratifierData (sig, root, leafIndex, proof) for offer X across a different market (same offer fields but different market.oracle), causing isRatified to succeed because hashOffer commits to the full market struct including oracle address, or does it fail because the offer hash changes? Fuzz: assert that changing market.collateralParams[i].oracle in the offer struct always changes hashOffer output and thus invalidates the Merkle proof, preventing cross-oracle replay. Proof idea: differential fuzz oracle address in offer; assert hashOffer is injective over oracle field.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c0d3a541-2926-4829-87f4-e87513ddb319?mode=deep",
+    "timestamp": "2026-06-01 00:24:49.260623",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker, given that the EIP-712 domain separator uses block.chainid (not INITIAL_CHAIN_ID), replay a signature from chain A on chain B after a hard fork where block.chainid changes, causing isRatified to revert with InvalidSignature or Unauthorized on the new chain, blocking valid offers and leaving borrowers unable to take offers to repay debt, making them liquidatable? Proof idea: unit test with vm.chainId() change; assert signature valid on original chainId fails on new chainId.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6b510c37-5e16-46ef-8dc1-9fdd1575c95e?mode=deep",
+    "timestamp": "2026-06-01 00:25:02.886075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData with an empty proof (proof.length == 0) and root == hashOffer(offer), where the signature covers offerTreeTypeHash(0) over root, and the signer is an address that is currently authorized by offer.maker but whose authorization is revoked between the time of signing and the time of taking, causing isRatified to revert with Unauthorized, blocking a valid take and leaving a borrower unable to reduce debt? Proof idea: state-transition test: sign, revoke authorization, attempt take; assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_68b611bc-6b34-4c96-82f3-6c87488a8a85?mode=deep",
+    "timestamp": "2026-06-01 00:25:16.905456",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified / Midnight.take] Can an unprivileged taker, under the precondition that offer.maker has authorized address X via Midnight.setIsAuthorized, and X has signed a root containing a sell offer (debt-increasing), trigger take() where the seller (offer.maker) is near the health threshold, such that the oracle price drops between the ratifier check and the health check in take(), causing the seller to become liquidatable mid-transaction, violating the invariant that healthy accounts must not become liquidatable due to oracle edge cases? Proof idea: fuzz oracle price drop between ratifier call and health check; assert SellerIsLiquidatable revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5962fa9b-557f-4b97-b749-76639d524a67?mode=deep",
+    "timestamp": "2026-06-01 00:25:30.223061",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged attacker submit ratifierData where the abi.decode of (Signature, bytes32, uint256, bytes32[]) succeeds but with a proof array of length 0 and a root that does not equal hashOffer(offer), causing isLeaf to return false (since root != leafHash with empty proof), and isRatified to revert with InvalidProof, demonstrating that the single-leaf case is correctly enforced? Proof idea: fuzz root != hashOffer(offer) with empty proof; assert always reverts with InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2681bfa9-9119-4f16-9444-872a1ca7322a?mode=deep",
+    "timestamp": "2026-06-01 00:25:44.683836",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the Signature struct has v not in {27, 28} (e.g., v = 0 or v = 1), causing ecrecover to return address(0), triggering the InvalidSignature revert, and blocking a valid take? Or does ecrecover silently return a non-zero address for out-of-range v values, potentially allowing signature forgery? Proof idea: fuzz v in [0, 255]; assert ecrecover behavior and that only v in {27, 28} can produce non-zero signer for valid (r, s).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c6b28659-fe52-425e-a3c5-8cf2e6d5df1e?mode=deep",
+    "timestamp": "2026-06-01 00:25:58.553925",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where sig.s is in the upper half of the secp256k1 curve order (s > secp256k1_order/2), which is a malleable signature, and ecrecover still returns a valid non-zero address, allowing the signature to pass the _signer != address(0) check and the authorization check, effectively accepting malleable signatures that the maker may not have intended to authorize? Proof idea: unit test with malleable s value; assert isRatified succeeds and compare with EIP-2 compliant check.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ff417ddc-4152-4cb8-b6f3-0f6753e22186?mode=deep",
+    "timestamp": "2026-06-01 00:26:12.541867",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: cancelRoot / isRatified] Can an unprivileged attacker who is temporarily authorized by a maker (e.g., via a flash-loan-funded authorization) call cancelRoot to cancel all active roots for that maker in a single transaction, then have the authorization revoked, permanently blocking all of the maker's existing signed offers from being filled, causing a DoS on all borrowers who rely on those offers to repay debt, violating the invariant that valid offers must remain fillable? Proof idea: multicall test: setIsAuthorized(attacker, true), cancelRoot(maker, root1), cancelRoot(maker, root2), setIsAuthorized(attacker, false); assert all roots are canceled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b86eddf8-04b8-42de-89e9-f32a23f5b41e?mode=deep",
+    "timestamp": "2026-06-01 00:26:26.919786",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the abi.decode succeeds but the proof array contains duplicate elements (proof[i] == proof[j] for i != j), causing isLeaf to compute a valid Merkle path that does not correspond to any real tree structure, potentially allowing an offer not in the signed tree to pass the proof check? Proof idea: fuzz proof arrays with duplicate elements; assert isLeaf returns false for offers not in the original tree.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9c2ea57a-e8fc-4497-94cb-acafd97f3328?mode=deep",
+    "timestamp": "2026-06-01 00:26:40.934816",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker, given a valid 4-leaf tree where offer A is at index 2, submit ratifierData with leafIndex = 2 but with proof elements reordered (proof[0] and proof[1] swapped), causing isLeaf to compute a different root and return false, blocking a valid take? Or can the reordered proof accidentally produce the correct root for a different offer, allowing unauthorized offer execution? Proof idea: fuzz proof element permutations; assert isLeaf is sensitive to proof order.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_07b56a02-bddc-401e-a15e-98d3eb6589ec?mode=deep",
+    "timestamp": "2026-06-01 00:26:54.971381",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the root is bytes32(0) and proof is empty, causing isLeaf to check if hashOffer(offer) == bytes32(0), which is computationally infeasible but theoretically possible, and if offer.maker has isRootCanceled[maker][bytes32(0)] == false (default), could a crafted offer with hashOffer == bytes32(0) bypass the proof check? Proof idea: assert hashOffer never returns bytes32(0) for any valid Offer struct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7d87767b-ef45-497d-a95e-9b6e15d77267?mode=deep",
+    "timestamp": "2026-06-01 00:27:10.664075",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified / Midnight.take] Can an unprivileged taker, under the precondition that a sell offer (debt-increasing) is ratified by EcrecoverRatifier, trigger take() where the seller's collateral oracle returns a price just above the health threshold, and the ratifier's isRatified call (which is a view function) does not consume oracle state, but the subsequent health check in take() uses a fresh oracle call that returns a lower price, causing the take to revert with SellerIsLiquidatable even though the seller was healthy at ratifier check time? Proof idea: mock oracle with price that decreases between calls; assert take() revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ab00ff0e-c193-4bb2-b7aa-413258fb7624?mode=deep",
+    "timestamp": "2026-06-01 00:27:26.981949",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the abi.decode of (Signature, bytes32, uint256, bytes32[]) is given malformed bytes that decode to a valid Signature but with extra trailing bytes, causing unexpected behavior in the proof array length, and potentially allowing a proof of unexpected length to pass the offerTreeTypeHash height check? Proof idea: fuzz malformed abi-encoded ratifierData with extra bytes; assert isRatified behavior is deterministic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1aeaea00-dfae-4bd5-acab-d59c5ecaca52?mode=deep",
+    "timestamp": "2026-06-01 00:27:41.549696",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker, given that offer.ratifier == address(ecrecoverRatifier) and isAuthorized[offer.maker][offer.ratifier] == true (required by Midnight.take line 355), but offer.maker has NOT called setIsAuthorized for the ratifier, cause take() to revert with RatifierUnauthorized before isRatified is even called, blocking a valid take? Fuzz: assert that the RatifierUnauthorized check in Midnight.take is a prerequisite that must be satisfied independently of EcrecoverRatifier state. Proof idea: unit test with missing ratifier authorization; assert revert at line 355.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ab8fb1d7-ffd6-4955-8fb2-ac7bed7a0328?mode=deep",
+    "timestamp": "2026-06-01 00:27:55.548136",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: cancelRoot] Can an unprivileged attacker, under the precondition that maker A has authorized maker B (via Midnight.setIsAuthorized), and maker B has authorized attacker C, exploit the transitive authorization chain to call cancelRoot(A, root) as attacker C, since cancelRoot only checks isAuthorized(maker, msg.sender) (one level deep, not transitive)? Proof idea: unit test with A->B->C authorization chain; assert cancelRoot(A, root) by C reverts with Unauthorized.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2e3cd625-b228-4773-8826-8ff4560f52da?mode=deep",
+    "timestamp": "2026-06-01 00:28:08.987876",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: High Oracle edge-case bug causing valid borrowers to become liquidatable, invalid borrowers to stay healthy, or withdrawals/liquidations to revert unexpectedly'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the Merkle proof is valid for offer X in a tree, but the offer passed to isRatified has been modified (e.g., different tick or expiry) compared to the signed offer, causing hashOffer(modifiedOffer) != hashOffer(originalOffer), and isLeaf to return false, correctly blocking the take? Fuzz: assert that any single-field modification to the offer struct always changes hashOffer output. Proof idea: differential fuzz all Offer fields; assert hashOffer is injective.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_24d68220-0f01-462a-b890-8085b07e034e?mode=deep",
+    "timestamp": "2026-06-01 00:28:23.676456",
+    "report_generated": false
+  }
+]
