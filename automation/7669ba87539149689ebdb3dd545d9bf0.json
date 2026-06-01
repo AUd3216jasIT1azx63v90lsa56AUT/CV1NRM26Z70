@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.setIsAuthorized recursive authorization] Can an attacker who is authorized by victim use EcrecoverAuthorizer to grant themselves authorization over victim's account, then use that authorization to call Midnight.setIsAuthorized directly to grant further authorizations, creating a recursive authorization chain that allows the attacker to authorize any callback as payer for victim's positions? Proof idea: chain EcrecoverAuthorizer → Midnight.setIsAuthorized → callback payer, assert attacker can drain victim's approved tokens.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5bbcb23c-2f27-4465-82bc-8f33b80a1a85?mode=deep",
+    "timestamp": "2026-06-01 00:31:20.872974",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) buyerCallback onBuy state observation] Can a malicious buyerCallback, during onBuy execution (before transferFrom), observe the partially updated state (buyer credit already increased, seller debt already increased) and use this information to call Midnight.withdraw or Midnight.withdrawCollateral on behalf of an authorized user, extracting value before the payer's tokens are pulled, creating a state where credit/debt is updated but payment has not yet occurred? Proof idea: deploy callback that calls withdraw during onBuy, assert solvency invariant holds after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_592b647f-030c-405c-a71a-5cf051a63927?mode=deep",
+    "timestamp": "2026-06-01 00:31:32.982654",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized ecrecover address(0)] Can an attacker submit an Authorization with a crafted (v, r, s) signature that causes ecrecover to return address(0), and if authorization.authorizer == address(0) (which cannot authorize per the Ratification.spec invariant), bypass the signer != address(0) check by having a non-zero authorizer but ecrecover returning address(0), causing the Unauthorized revert to be triggered correctly? Verify the require(signer != address(0)) guard is sufficient. Proof idea: fuzz (v, r, s) to produce ecrecover == address(0), assert InvalidSignature is always thrown.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a7f700c-2372-4c8e-9e75-5491f657f242?mode=deep",
+    "timestamp": "2026-06-01 00:31:45.855094",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: repay (Midnight.sol) callback payer + onRepay reentrancy] Can a malicious repayCallback, during onRepay execution (after debt is reduced but before transferFrom), call Midnight.repay again for the same borrower with a different callback, causing the borrower's debt to be reduced twice but tokens only pulled once (if the second repay's callback also reenters), violating the solvency invariant that withdrawable must equal tokens received? Proof idea: deploy reentrant repayCallback, assert debt reduction matches token inflow after nested repay.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84cbd4e2-0d61-4371-b2a6-564e1d609d5a?mode=deep",
+    "timestamp": "2026-06-01 00:31:58.532972",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer derivation fuzz] Can fuzzing all combinations of (offer.buy, offer.callback, takerCallback) reveal any case where payer is neither msg.sender, the buyerCallback that returned CALLBACK_SUCCESS, nor the maker (when offer.buy and no buyerCallback), violating the OnlyExplicitPayerCanLoseTokens invariant? Proof idea: stateful fuzz test over all (offer.buy, offer.callback, takerCallback) combinations, assert payer is always in the expected set.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_694fb37b-fddb-42f7-9a98-3f74b8a1c1c0?mode=deep",
+    "timestamp": "2026-06-01 00:32:12.611271",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + take cross-market payer] Can an attacker use EcrecoverAuthorizer to authorize a callback contract for victim in market A, then use that callback as payer in market B (since authorization is not scoped by market), causing tokens to be pulled from the callback in a market context the victim never intended to authorize? Proof idea: authorize callback for market A context, use as payer in market B take, assert victim's authorization is market-agnostic and tokens are pulled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3352d4fe-4fce-40bf-bfcb-3e7a8c173bce?mode=deep",
+    "timestamp": "2026-06-01 00:32:25.078808",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) sellerCallback after transferFrom] Can a malicious sellerCallback, during onSell execution (after both transferFrom calls have completed), call Midnight.take again with a different offer to create additional debt for the seller, exploiting the fact that the seller's health check (isHealthy) occurs after onSell, and the liquidation lock prevents liquidation during callbacks but not additional debt creation? Proof idea: deploy sellerCallback that calls take again, assert seller's debt and health state after nested take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e316b69d-9c65-4e8f-ad08-c8c5985775e0?mode=deep",
+    "timestamp": "2026-06-01 00:32:38.277187",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized deadline boundary] Can an attacker submit an Authorization with deadline = block.timestamp (exactly at the boundary), where the require(block.timestamp <= authorization.deadline) passes, but the authorization is for a callback that the victim intended to be time-limited, and the attacker front-runs the victim's revocation by submitting at the last valid timestamp? Proof idea: fuzz deadline = block.timestamp, assert submission succeeds at boundary and fails at deadline+1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1305419c-f1cd-49d9-a219-10413e85a7bf?mode=deep",
+    "timestamp": "2026-06-01 00:32:51.947221",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer = buyerCallback zero-asset take] Can a taker perform a zero-unit take (units=0) with a non-zero buyerCallback, causing onBuy to be called with buyerAssets=0 and the callback to return CALLBACK_SUCCESS, followed by safeTransferFrom(loanToken, buyerCallback, address(this), 0) and safeTransferFrom(loanToken, buyerCallback, receiver, 0), which are no-ops for standard ERC20 but may trigger hooks in ERC777-like tokens, causing unexpected state changes in the callback contract? Proof idea: fuzz units=0 with ERC777-like loanToken, assert no unexpected state changes in callback.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2a4d634-b57c-4a90-b865-e09936df7ffe?mode=deep",
+    "timestamp": "2026-06-01 00:33:06.244782",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + Midnight.isAuthorized check order] Can an attacker exploit the fact that EcrecoverAuthorizer first increments the nonce (nonce[authorization.authorizer]++) before verifying the signature, causing a DoS where a front-runner submits a transaction with the same nonce but an invalid signature, incrementing the nonce and invalidating the victim's pending authorization submission? Proof idea: front-run with invalid signature same nonce, assert victim's valid submission fails with InvalidNonce.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5776f305-de6c-4df6-aa4e-796424ad32a2?mode=deep",
+    "timestamp": "2026-06-01 00:33:21.926069",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer confusion fee-on-transfer token] Can a taker use a fee-on-transfer loanToken where safeTransferFrom(loanToken, payer, address(this), buyerAssets - sellerAssets) transfers less than buyerAssets - sellerAssets to Midnight, causing the protocol to credit the buyer with units but receive fewer tokens than expected, creating an insolvency gap between accounting and actual token balance? Proof idea: deploy fee-on-transfer loanToken, fuzz fee percentage, assert Midnight balance >= withdrawable + collateral + fees after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32f93cb8-e332-4d51-b11f-3f2cc67494b0?mode=deep",
+    "timestamp": "2026-06-01 00:33:38.678766",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized authorized signer grants self] Can an attacker who is authorized by victim (isAuthorized[victim][attacker]=true) use EcrecoverAuthorizer to sign Authorization{authorizer=victim, authorized=attacker, isAuthorized=true} and submit it, effectively using the EcrecoverAuthorizer as a relay to confirm their own authorization through a signed message, and then use this to call take with attacker as taker on behalf of victim, pulling tokens from attacker's callback as payer? Proof idea: attacker signs self-authorization via EcrecoverAuthorizer, assert isAuthorized[victim][attacker] is set and attacker can act as taker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_de94d263-60a4-4099-841d-e5e98a7f18d7?mode=deep",
+    "timestamp": "2026-06-01 00:33:54.392686",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) + EcrecoverAuthorizer multicall atomicity] Can an attacker use Midnight.multicall to atomically: (1) call EcrecoverAuthorizer.setIsAuthorized (via delegatecall context - note: multicall uses delegatecall so EcrecoverAuthorizer is external), then (2) call take with the newly authorized callback as payer, within a single transaction, bypassing any block-level separation between authorization and use? Proof idea: multicall([...EcrecoverAuthorizer call..., take(...)]), assert authorization and payer use are atomic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aff78a37-a286-45c9-89c4-e11e5c180969?mode=deep",
+    "timestamp": "2026-06-01 00:34:09.580994",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: repay (Midnight.sol) payer = callback, onRepay not called if callback=0] Can an authorized operator call repay(market, units, borrower, address(0), data) causing payer = msg.sender (operator), pulling tokens from the operator's balance, while the borrower's debt is reduced, effectively allowing the operator to repay the borrower's debt using the operator's own tokens without the operator explicitly consenting to be the payer (they only consented to call repay, not to be the payer)? Proof idea: operator calls repay with no callback, assert operator's tokens are pulled and borrower's debt decreases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0eabef8f-753b-4489-b054-3cd05bee536d?mode=deep",
+    "timestamp": "2026-06-01 00:34:25.457454",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized AUTHORIZATION_TYPEHASH collision] Can an attacker craft an Authorization struct where the abi.encode(AUTHORIZATION_TYPEHASH, authorization) produces the same hash as a different Authorization struct (hash collision via padding or type confusion), causing a valid signature for one authorization to be accepted as valid for a different authorization, bypassing the signature binding? Proof idea: differential test abi.encode outputs for different Authorization structs, assert no hash collision.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bd584978-bbb0-4d1c-b881-041f841c50fc?mode=deep",
+    "timestamp": "2026-06-01 00:34:40.244361",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer = buyerCallback, sellerCallback after] Can a taker of a sell offer (offer.buy=false) supply both takerCallback (buyerCallback) and the maker's offer.callback (sellerCallback), where buyerCallback pulls tokens from takerCallback and sellerCallback reenters Midnight to call repay with a different payer, causing the repay's payer (repayCallback) to be a third party, violating the invariant that repay's payer must be msg.sender or the repay callback? Proof idea: nested callback sequence: onBuy → return CALLBACK_SUCCESS, onSell → repay with third-party callback, assert repay payer is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ec54478a-2ea7-42f2-97ec-697231029c70?mode=deep",
+    "timestamp": "2026-06-01 00:34:55.588292",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + isAuthorized[authorizer][EcrecoverAuthorizer] not required] Can an attacker submit an Authorization where authorization.authorizer has NOT authorized EcrecoverAuthorizer on Midnight (isAuthorized[authorizer][EcrecoverAuthorizer]=false), causing the subsequent IMidnight(MIDNIGHT).setIsAuthorized(authorized, isAuthorized, authorizer) call to revert with Unauthorized, but the nonce has already been incremented (nonce[authorizer]++), permanently consuming the authorizer's nonce without applying the authorization? Proof idea: submit Authorization without pre-authorizing EcrecoverAuthorizer on Midnight, assert nonce increments but authorization fails.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2afa06dc-1192-4fe1-86e7-71cfc36be683?mode=deep",
+    "timestamp": "2026-06-01 00:35:10.738362",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer confusion with rebasing token] Can a taker use a rebasing loanToken where the payer's balance increases between the onBuy callback and the safeTransferFrom call, causing the protocol to pull more tokens than buyerAssets from the payer (if the token's transferFrom uses current balance), or less (if balance decreases), creating an accounting mismatch between buyerAssets credited and tokens actually received? Proof idea: deploy rebasing loanToken, trigger rebase during onBuy callback, assert Midnight balance matches accounting.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a1214bb-c90a-49a4-8c3e-300e3d652cff?mode=deep",
+    "timestamp": "2026-06-01 00:35:24.481268",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + take payer = maker bypass] Can an attacker create a buy offer (offer.buy=true) with offer.callback=address(0) where the maker (buyer) has authorized EcrecoverAuthorizer, then use EcrecoverAuthorizer to grant the attacker authorization over the maker's account, then call take with takerCallback=address(0), causing payer = maker (buyer), pulling tokens from the maker's balance without the maker's per-transaction consent for this specific take? Proof idea: EcrecoverAuthorizer grants attacker auth over maker, attacker calls take, assert maker's tokens are pulled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d387e2e-5ad9-4480-b8a1-3c225c63b2a9?mode=deep",
+    "timestamp": "2026-06-01 00:35:38.830442",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: liquidate (Midnight.sol) payer = msg.sender when callback=0] Can an unprivileged liquidator call liquidate(market, collateralIndex, seizedAssets, repaidUnits, borrower, postMaturityMode, receiver, address(0), data) causing payer = msg.sender, and if msg.sender is a contract with a standing loanToken approval to Midnight (e.g., a router or bundler), pull tokens from that contract without its per-liquidation consent, violating the explicit payer invariant for liquidation? Proof idea: liquidator is a router contract with standing approval, assert router's tokens are pulled without per-call consent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_80024fa4-df1b-4e59-81c1-25f73c986671?mode=deep",
+    "timestamp": "2026-06-01 00:35:52.719293",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized nonce increment before signature check] Can an attacker cause a DoS on a victim's EcrecoverAuthorizer nonce by submitting transactions with the victim's current nonce but invalid signatures (causing revert after nonce increment), permanently blocking the victim's ability to use EcrecoverAuthorizer for authorization? Verify: nonce is incremented with nonce[authorization.authorizer]++ before the ecrecover check, so a revert after increment would leave nonce incremented. Proof idea: submit invalid signature with correct nonce, assert nonce is incremented and victim's valid signature is now invalid.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6087be6-2429-4d06-baa4-ca4f5dbc0c4c?mode=deep",
+    "timestamp": "2026-06-01 00:36:06.985674",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer = buyerCallback, onBuy receives buyer not payer] Can a malicious buyerCallback exploit the fact that onBuy receives buyer (the credit recipient) but not payer (the token source), and use the buyer address to call Midnight.withdraw on behalf of buyer (if callback is authorized by buyer), extracting buyer's credit before the payer's tokens are pulled, creating a state where buyer has received credit and withdrawn assets but payer has not yet paid? Proof idea: deploy callback that calls withdraw during onBuy using buyer's authorization, assert solvency after take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_53ae8b34-384b-4993-80e6-7aa56f288694?mode=deep",
+    "timestamp": "2026-06-01 00:36:21.699372",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + take payer confusion cross-chain] Can a signed Authorization intended for chain A be replayed on chain B (after a hard fork) where block.chainid has changed, since EcrecoverAuthorizer uses block.chainid (not INITIAL_CHAIN_ID) in the domain separator, while Midnight uses INITIAL_CHAIN_ID for market IDs, creating a mismatch where the same market exists on both chains but the authorization is chain-specific? Proof idea: simulate chain fork, assert Authorization from chain A is rejected on chain B due to domain separator mismatch.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e73fb5ea-8799-4bbe-a530-7be645289833?mode=deep",
+    "timestamp": "2026-06-01 00:36:38.615230",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: take (Midnight.sol) payer confusion with MidnightBundles] Can an attacker use MidnightBundles.borrowWithUnitsTarget (which calls take with takerCallback=address(0)) to cause payer = msg.sender (the bundler contract), pulling tokens from the bundler's balance rather than from the taker's balance, if the bundler has a standing loanToken approval to Midnight and the taker has authorized the bundler? Proof idea: call borrowWithUnitsTarget via MidnightBundles, assert payer is bundler not taker, assert bundler's tokens are pulled.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9fd4a2a8-e7a7-4564-9db3-b65eb2c81193?mode=deep",
+    "timestamp": "2026-06-01 00:36:53.292501",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Callback payer confusion where tokens are pulled from the wrong party or an explicit payer can be bypassed'] [Function: EcrecoverAuthorizer.setIsAuthorized + take payer = callback that is also a ratifier] Can an attacker create an offer where offer.ratifier is also the buyerCallback, causing the ratifier to be called during isRatified (which can observe partial state) and then called again as onBuy (which sets payer), allowing the ratifier/callback to manipulate state between ratification and payment, bypassing the explicit payer invariant through dual-role confusion? Proof idea: deploy contract implementing both IRatifier and IBuyCallback, assert payer and ratification are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58531250-0fc3-4d2c-801c-cb5180238207?mode=deep",
+    "timestamp": "2026-06-01 00:37:09.154652",
+    "report_generated": false
+  }
+]
