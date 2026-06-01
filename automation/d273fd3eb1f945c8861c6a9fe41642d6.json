@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / take] Can an unprivileged maker, after a taker has partially filled an offer (consumed[maker][group] > 0), call setIsRootRatifier(maker, root, false) to revoke the Merkle root mid-sequence, under the precondition that the offer's group still has remaining capacity and the taker intends to fill again in a subsequent transaction, triggering RatifierFail() on the second take call, violating the invariant that a partially-consumed offer with remaining capacity must remain fillable until explicitly cancelled or expired, causing scoped impact: temporary freezing of the taker's ability to complete the fill and locking their partial position? Proof idea: fuzz (units_first_fill, units_second_fill, root_revocation_timing) and assert that consumed[maker][group] < offer.maxUnits does not guarantee a second take succeeds when setIsRootRatified is called between fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0257cd7-3d47-4997-bc70-96ecdcb042fe?mode=deep",
+    "timestamp": "2026-05-31 23:55:52.450135",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / isAuthorized] Can an authorized operator (isAuthorized[maker][operator] == true) call setIsRootRatified(maker, root, false) without the maker's explicit intent, under the precondition that the maker has granted coarse-grained authorization to the operator for unrelated purposes (e.g., repay or supplyCollateral), triggering RatifierFail() on any subsequent take of any offer in the revoked Merkle tree, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: temporary freezing of all offers in the revoked root for the maker? Proof idea: unit test where operator calls setIsRootRatified(maker, root, false) and assert all offers under that root become unfillable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_071329bb-c845-47ab-b020-51a3d9ca82dd?mode=deep",
+    "timestamp": "2026-05-31 23:56:04.399025",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified / HashLib.isLeaf] Can a taker supply a ratifierData with proof.length up to 256 (since SetterRatifier.isRatified does not call HashLib.offerTreeTypeHash and thus does not enforce the height <= 20 cap), under the precondition that the maker has ratified a root corresponding to a tree of height > 20, causing isLeaf to iterate up to 256 times and consume excessive gas, violating the invariant that ratifier validation must not be a vector for gas-based griefing, causing scoped impact: griefing of the taker via out-of-gas revert on take when proof arrays are large? Proof idea: fuzz proof.length in [21..256] with a valid root and assert gas consumption and revert behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1ae3c5f6-22e8-4289-b90a-5b123d44e03d?mode=deep",
+    "timestamp": "2026-05-31 23:56:17.308894",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / take] Can a maker atomically call multicall([setIsRootRatified(maker, root, false), take(offer, ...)]) to revoke a root and simultaneously attempt a take in the same transaction, under the precondition that the maker is also the taker (which would revert with SelfTake), or that the maker uses a different taker address, causing the root to be revoked before the ratifier check in take, violating the invariant that offer state transitions must be atomic and not composable to bypass ratification, causing scoped impact: griefing of legitimate takers who submitted transactions expecting the root to be active? Proof idea: state-transition test asserting that multicall ordering of setIsRootRatified(false) before take causes RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f3134c70-1c99-4638-bf97-b081f991b4f5?mode=deep",
+    "timestamp": "2026-05-31 23:56:29.726871",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified / HashLib.isLeaf] Can a taker supply a leafIndex where leafIndex >> proof.length != 0, under the precondition that the ratifierData is crafted with a large leafIndex and a short proof array, causing HashLib.isLeaf to revert with LeafIndexOutOfRange(), violating the invariant that invalid ratifier data must revert cleanly without corrupting state, causing scoped impact: griefing of the take call with a revert that wastes gas but leaves consumed state unchanged? Proof idea: fuzz (leafIndex, proof.length) pairs where leafIndex >= 2**proof.length and assert revert with LeafIndexOutOfRange.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ac0627a3-d3b6-402e-8059-c841804a81c9?mode=deep",
+    "timestamp": "2026-05-31 23:56:42.875498",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / consumed tracking] Can a taker fill a buy offer (offer.buy == true) with dust units such that buyerAssets = units.mulDivDown(buyerPrice, WAD) rounds to 0, under the precondition that units is very small (e.g., 1 wei) and buyerPrice < WAD, causing consumed[maker][group] to be incremented by 0 (for maxAssets-based offers) while units is still consumed from maxUnits, violating the invariant that consumed state must accurately reflect filled capacity, causing scoped impact: griefing of the maker by incrementing consumed without meaningful asset transfer, or freezing the offer by exhausting maxUnits with dust fills? Proof idea: fuzz units in [1..WAD/buyerPrice] and assert consumed[maker][group] increments correctly relative to actual assets transferred.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1a122dae-d4f8-41f1-96b1-4a5770d5b171?mode=deep",
+    "timestamp": "2026-05-31 23:56:56.008253",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / consumed tracking] Can a taker fill a sell offer (offer.buy == false) with dust units such that sellerAssets = units.mulDivUp(sellerPrice, WAD) rounds up to 1 even when units is 0, under the precondition that sellerPrice > 0 and units == 0 (no-op take), causing consumed[maker][group] to be incremented by 0 for maxUnits-based offers while the take still executes, violating the invariant that no-op takes must not advance consumed state or cause unexpected state changes, causing scoped impact: griefing via repeated no-op takes that trigger callbacks and waste gas? Proof idea: unit test with units=0 and assert consumed[maker][group] is unchanged and no assets are transferred.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_709ba959-625a-4ad7-a30c-76ec73cfd2f1?mode=deep",
+    "timestamp": "2026-05-31 23:57:09.337987",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / maturity boundary] Can a taker execute a take at block.timestamp == offer.market.maturity where sellerDebtIncrease > 0, under the precondition that the offer is a sell offer and block.timestamp is exactly equal to market.maturity, causing the CannotIncreaseDebtPostMaturity check (block.timestamp <= offer.market.maturity) to pass (since <= includes equality), allowing debt to increase at the exact maturity timestamp, violating the invariant that debt must not increase after maturity, causing scoped impact: temporary freezing of the borrower's position if the debt increase at maturity creates an immediately liquidatable position? Proof idea: state-transition test with block.timestamp == maturity and assert sellerDebtIncrease > 0 is allowed, then assert position is immediately liquidatable post-maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_af805cd7-cd29-412f-8ddf-cff32553c3ec?mode=deep",
+    "timestamp": "2026-05-31 23:57:23.351591",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / settlement fee rounding] Can a taker trigger a take where the settlement fee interpolation at an exact breakpoint boundary (e.g., timeToMaturity == 1 days exactly) causes settlementFee to be computed differently than at timeToMaturity == 1 days - 1, under the precondition that the offer tick is set such that offerPrice - settlementFee rounds to 0 or negative at the boundary, causing the take to revert or produce unexpected sellerAssets, violating the invariant that settlement fee computation must be continuous and not create cliff effects that freeze offers, causing scoped impact: temporary freezing of offers near fee breakpoint boundaries? Proof idea: fuzz timeToMaturity in [breakpoint-1, breakpoint, breakpoint+1] for all 7 breakpoints and assert settlementFee continuity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b16f80b9-df62-4e0b-951d-faa043df4945?mode=deep",
+    "timestamp": "2026-05-31 23:57:36.649385",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: supplyCollateral / collateralBitmap] Can a borrower reach the MAX_COLLATERALS_PER_BORROWER (16) bitmap limit by supplying dust amounts of 16 different collaterals, under the precondition that the market has >= 16 collateral assets and the borrower supplies 1 wei of each, causing subsequent supplyCollateral calls for a 17th collateral to revert with TooManyActivatedCollaterals(), violating the invariant that a borrower must be able to manage their collateral composition freely, causing scoped impact: temporary freezing of the borrower's ability to add new collateral types, potentially preventing them from improving their health factor? Proof idea: unit test supplying 1 wei of 16 collaterals then asserting the 17th supplyCollateral reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cae64245-6ba4-4069-b12b-fa5b8953e42d?mode=deep",
+    "timestamp": "2026-05-31 23:57:50.703406",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: supplyCollateral / collateralBitmap] Can an attacker grief a borrower by front-running their supplyCollateral call with a supplyCollateral of 1 wei on behalf of the borrower (since supplyCollateral checks isAuthorized[onBehalf][msg.sender]), under the precondition that the attacker is authorized for the borrower, causing the borrower's collateralBitmap to reach 16 bits set before the borrower's intended 16th collateral is added, violating the invariant that authorized operators must not be able to grief the authorizer's collateral management, causing scoped impact: temporary freezing of the borrower's collateral supply path? Proof idea: unit test where authorized attacker supplies dust to 15 collaterals, then borrower's 16th supply succeeds but 17th reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65649a26-148e-4bf2-8a1d-43093e3fade1?mode=deep",
+    "timestamp": "2026-05-31 23:58:04.610982",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / isAuthorized chain] Can an authorized operator call setIsAuthorized(attacker, true, maker) on behalf of the maker (since isAuthorized is coarse-grained), then have the attacker call setIsRootRatified(maker, root, false), under the precondition that the maker has authorized the operator for a different purpose, causing all offers under the revoked root to become unfillable, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: temporary freezing of all maker offers in the revoked Merkle tree? Proof idea: multi-step test: authorize operator -> operator authorizes attacker -> attacker revokes root -> assert take reverts with RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a56d5bbb-5eda-4143-b1d3-56867c0057cc?mode=deep",
+    "timestamp": "2026-05-31 23:58:18.416829",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setConsumed / take] Can an authorized operator call setConsumed(group, type(uint256).max, maker) to cancel all offers in a group, under the precondition that the maker has authorized the operator and the group contains multiple active offers with remaining capacity, causing all subsequent take calls for offers in that group to revert with ConsumedUnits() or ConsumedAssets(), violating the invariant that offer cancellation must reflect maker intent, causing scoped impact: temporary freezing of all takers who expected to fill offers in the cancelled group? Proof idea: unit test where operator calls setConsumed(group, type(uint256).max, maker) and assert all group offers revert on take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f00d74b4-aaf9-400e-bec7-191b987099df?mode=deep",
+    "timestamp": "2026-05-31 23:58:32.781583",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / partial fill rounding with maxAssets] Can a taker fill a buy offer (offer.buy == true, offer.maxAssets > 0) with units such that buyerAssets = units.mulDivDown(buyerPrice, WAD) causes consumed[maker][group] to reach offer.maxAssets - 1 (one short of the cap), under the precondition that the remaining capacity is 1 wei of buyerAssets, causing the next fill with units=1 to compute buyerAssets=0 (rounding down) and pass the ConsumedAssets check, allowing an extra fill that exceeds the maker's intended maxAssets by rounding, violating the invariant that offer fill amount cannot exceed remaining offer capacity, causing scoped impact: griefing of the maker by allowing fills beyond their stated maxAssets? Proof idea: fuzz units near offer.maxAssets/buyerPrice boundary and assert consumed[maker][group] never exceeds offer.maxAssets.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9e79cf38-0b72-439f-8ca9-f358f85f1f02?mode=deep",
+    "timestamp": "2026-05-31 23:58:48.251550",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / partial fill rounding with maxUnits] Can a taker fill a sell offer (offer.buy == false, offer.maxUnits > 0) with units = offer.maxUnits - 1 in the first fill, then units = 2 in the second fill, under the precondition that consumed[maker][group] = offer.maxUnits - 1 after the first fill, causing the second fill to set consumed = offer.maxUnits + 1 and revert with ConsumedUnits(), but the first fill has already transferred assets and updated positions, violating the invariant that partial fills must not leave the maker's position in an inconsistent state, causing scoped impact: griefing of the taker who loses gas on the reverted second fill? Proof idea: state-transition test asserting that consumed tracking prevents overfill and that partial fills are atomic.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3ed06a87-f5ab-4088-b676-d7fabe1bde15?mode=deep",
+    "timestamp": "2026-05-31 23:59:04.162796",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: isRatified / HashLib.hashOffer] Can a taker supply an offer struct where offer.callbackData is a large byte array, causing HashLib.hashOffer to compute keccak256(offer.callbackData) over a large buffer, under the precondition that the ratifierData contains a valid proof for the offer hash, causing excessive gas consumption in isRatified, violating the invariant that ratifier validation must not be a gas griefing vector, causing scoped impact: griefing of the taker via out-of-gas revert when callbackData is large? Proof idea: fuzz callbackData.length in [0..10000] and assert gas consumption of isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_efdd1763-a275-48cc-8189-8569665efb05?mode=deep",
+    "timestamp": "2026-05-31 23:59:20.927794",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / take] Can a maker ratify a root (setIsRootRatified(maker, root, true)), then immediately revoke it (setIsRootRatified(maker, root, false)) in the same block, under the precondition that a taker has a pending transaction in the mempool that references the now-revoked root, causing the taker's take to revert with RatifierFail(), violating the invariant that a ratified root must remain valid for the duration of the offer's validity window, causing scoped impact: griefing of takers via mempool front-running with root revocation? Proof idea: simulate mempool ordering where setIsRootRatified(false) is mined before take and assert RatifierFail.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9f989f01-89c9-438e-b992-7f0842cdc8a8?mode=deep",
+    "timestamp": "2026-05-31 23:59:38.087938",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / maturity boundary / CannotIncreaseDebtPostMaturity] Can a taker submit a take for a sell offer at block.timestamp == offer.market.maturity + 1 where sellerDebtIncrease > 0, under the precondition that the offer has not expired (offer.expiry > maturity + 1), causing the take to revert with CannotIncreaseDebtPostMaturity(), freezing the taker's ability to fill the offer even though it has not expired, violating the invariant that offer expiry and maturity are independent constraints, causing scoped impact: temporary freezing of sell offers that have expiry > maturity, preventing takers from filling them post-maturity? Proof idea: state-transition test with block.timestamp = maturity + 1 and offer.expiry = maturity + 1 day, assert take reverts for debt-increasing fills.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_641dbcf5-4a91-453a-ac9e-d7a0958625f0?mode=deep",
+    "timestamp": "2026-05-31 23:59:52.213857",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / settlement fee / dust] Can a taker fill a buy offer with a very low tick (near zero price) such that settlementFee > offerPrice, under the precondition that the settlement fee at the current TTM is higher than the offer's tick price, causing the take to revert because sellerPrice = offerPrice - settlementFee would underflow (or be negative), violating the invariant that settlement fee must not implicitly cancel offers with low prices, causing scoped impact: temporary freezing of low-price buy offers when settlement fees are high near maturity? Proof idea: fuzz (tick, timeToMaturity) pairs and assert that take reverts when settlementFee > offerPrice.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_315747e9-987a-49bd-b516-6317104038e9?mode=deep",
+    "timestamp": "2026-06-01 00:00:07.351344",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / collateralBitmap / TooManyActivatedCollaterals] Can a taker fill a sell offer that increases the seller's debt, triggering a health check, under the precondition that the seller has exactly 16 active collaterals (collateralBitmap has 16 bits set) and the health check iterates all 16 collaterals via the while loop in isHealthy, causing the take to succeed but the seller's position to be at the bitmap limit, violating the invariant that a borrower at the bitmap limit must still be able to manage their position, causing scoped impact: temporary freezing of the seller's ability to add new collateral types after the take increases their debt? Proof idea: unit test where seller has 16 collaterals, take increases debt, then assert supplyCollateral for a 17th collateral reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4cda1cab-b63c-41ec-97dd-9ca9e6a53729?mode=deep",
+    "timestamp": "2026-06-01 00:00:23.380180",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / pendingFee rounding] Can a taker fill a sell offer where sellerCreditDecrease > 0 and sellerPendingFeeDecrease = sellerPos.pendingFee.mulDivUp(sellerCreditDecrease, sellerPos.credit) rounds up to sellerPos.pendingFee + 1, under the precondition that sellerPos.credit == sellerCreditDecrease (full credit consumed) and sellerPos.pendingFee has a fractional component, causing sellerPos.pendingFee to underflow or be set to an incorrect value, violating the invariant that pendingFee must accurately track the lender's fee obligation, causing scoped impact: griefing of the seller via incorrect pendingFee accounting that reduces their effective credit? Proof idea: fuzz (sellerPos.credit, sellerPos.pendingFee, sellerCreditDecrease) and assert pendingFee decrease never exceeds pendingFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98b92b7a-3a31-4365-9939-7296599f5c92?mode=deep",
+    "timestamp": "2026-06-01 00:00:37.999733",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / buyerPendingFeeIncrease rounding] Can a taker fill a buy offer where buyerCreditIncrease > 0 and buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * timeToMaturity, WAD) rounds to 0 due to dust units, under the precondition that continuousFee is small and timeToMaturity is short, causing the buyer to receive credit with zero pendingFee obligation, violating the invariant that continuous fee must be crystallized correctly on credit increase, causing scoped impact: griefing of the protocol via dust fills that accumulate credit without proportional fee obligations? Proof idea: fuzz (units, continuousFee, timeToMaturity) and assert buyerPendingFeeIncrease > 0 whenever buyerCreditIncrease > 0 and continuousFee > 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3f7061e3-0191-46fb-a26c-d0bed9005ab1?mode=deep",
+    "timestamp": "2026-06-01 00:00:51.683764",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: setIsRootRatified / isRatified] Can a maker ratify bytes32(0) as a root (setIsRootRatified(maker, bytes32(0), true)), under the precondition that a taker constructs a ratifierData with root=bytes32(0) and a proof that hashes to bytes32(0), causing isRatified to pass for any offer whose hash chain produces bytes32(0), violating the invariant that root ratification must bind to a specific set of offers, causing scoped impact: griefing via unexpected offer fills if the zero root can be made to validate arbitrary offers? Proof idea: unit test with root=bytes32(0) and assert which offer hashes can satisfy isLeaf(bytes32(0), leafHash, leafIndex, proof).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7787e467-017a-42a9-a63f-243e79e8f27c?mode=deep",
+    "timestamp": "2026-06-01 00:01:04.622072",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / group consumption / cross-offer griefing] Can a taker fill one offer in a group to exhaustion (consumed[maker][group] == offer.maxUnits), under the precondition that multiple offers share the same group and the same maxUnits cap, causing all other offers in the group to revert with ConsumedUnits() on subsequent takes, violating the invariant that group budget must prevent total exposure exceeding the budget but must not freeze individual offers beyond the group cap, causing scoped impact: temporary freezing of all remaining offers in the group after one offer is fully consumed? Proof idea: unit test with two offers sharing a group, fill one to maxUnits, assert the other reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_19e8894b-8ca8-4385-af46-397fef276413?mode=deep",
+    "timestamp": "2026-06-01 00:01:18.690927",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/SetterRatifier.sol -> Scope: Medium Temporary freezing or griefing of user funds through dust, rounding, maturity boundary, bitmap limit, or partial-fill edge cases'] [Function: take / offer.start boundary] Can a taker submit a take at block.timestamp == offer.start - 1, under the precondition that the offer has a future start time, causing the take to revert with OfferNotStarted(), but the taker has already paid gas and the root is ratified, violating the invariant that offer timing constraints must be clearly enforced without griefing, causing scoped impact: griefing of the taker via wasted gas when offer.start is set to a future timestamp? Proof idea: unit test with block.timestamp = offer.start - 1 and assert OfferNotStarted revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b7e6d011-e350-467c-a54c-2f7334d232d6?mode=deep",
+    "timestamp": "2026-06-01 00:01:31.617849",
+    "report_generated": false
+  }
+]
