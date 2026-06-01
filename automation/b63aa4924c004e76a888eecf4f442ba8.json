@@ -16,5 +16,23 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4d172be8-1ab0-4690-a0aa-a63e00cad635?mode=deep",
     "timestamp": "2026-05-31 23:57:58.472357",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/supplyCollateral() for seller] Can an unprivileged taker who controls the buyerCallback and is authorized for the seller (maker), under preconditions where the seller's debt was just increased and the seller is near the health threshold, trigger take() → seller debt increased → onBuy callback → supplyCollateral(market, collateralIndex, assets, seller) to add collateral for the seller before the health check at line 476, violating the invariant that the post-take health check must reflect the true state after the take without intermediate collateral additions, causing scoped impact: healthy-account liquidation bypass where the seller appears healthy after the callback-driven collateral supply but was actually unhealthy immediately after the take? Proof idea: fuzz collateral supply amount inside onBuy and assert isHealthy at line 476 without the callback-supplied collateral.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_85f44c36-e799-4789-b821-48931a9cb10d?mode=deep",
+    "timestamp": "2026-06-01 00:10:52.500601",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/liquidate() on different borrower] Can an unprivileged taker who controls the buyerCallback and is also a liquidator, under preconditions where a different borrower (not the seller) is unhealthy and the liquidator gate allows liquidation, trigger take() → onBuy callback → liquidate(differentBorrower) → bad debt realized → lossFactor updated → _updatePosition called for lenders, violating the invariant that callbacks must not corrupt partial state through reentrancy, causing scoped impact: accounting corruption where the lossFactor update inside the callback affects the buyer's position update that was already computed before the callback? Proof idea: stateful fuzz liquidate inside onBuy and assert position[id][buyer].credit after the full take equals expected value given the lossFactor at take time.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f123cdca-c130-4169-b35f-67cb5b56632e?mode=deep",
+    "timestamp": "2026-06-01 00:11:04.304575",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Reentrancy or callback-driven state corruption across take, repay, withdraw, liquidation, fee claim, or collateral flows'] [Function: take()/IBuyCallback.onBuy()/claimSettlementFee()] Can an unprivileged taker who controls the buyerCallback and is also the feeClaimer, under preconditions where claimableSettlementFee[loanToken] > 0 and the take adds to claimableSettlementFee, trigger take() → claimableSettlementFee[loanToken] += buyerAssets - sellerAssets → onBuy callback → claimSettlementFee(loanToken, amount, receiver) where amount includes the just-added fee before the payer has transferred tokens, violating the invariant that fees must not be overclaimed, causing scoped impact: insolvency where settlement fees are claimed before the corresponding token transfer from the payer completes? Proof idea: PoC with feeClaimer as buyerCallback and assert contract loanToken balance >= claimableSettlementFee[loanToken] after the full take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5516483e-2f07-4f64-92b1-46cdc3ae5047?mode=deep",
+    "timestamp": "2026-06-01 00:11:17.809506",
+    "report_generated": false
   }
 ]
