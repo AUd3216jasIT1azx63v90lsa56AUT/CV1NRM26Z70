@@ -148,5 +148,155 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78cfc80a-edbc-416d-b92b-512f7aa73ac8?mode=deep",
     "timestamp": "2026-06-01 01:10:59.734389",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via take] Can an unprivileged taker, by choosing units such that UtilsLib.toUint128(_marketState.totalUnits + buyerCreditIncrease - sellerCreditDecrease) overflows uint128, under preconditions where totalUnits is already near type(uint128).max due to prior accumulated buy-offer takes, trigger a CastOverflow revert in take, violating the invariant that any valid take with units <= offer.maxUnits must succeed when the market is solvent, causing scoped impact: permanent DoS on all future takes in the market? Proof idea: fuzz totalUnits near type(uint128).max, then attempt a 1-unit buy take and assert it reverts with CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_380a45c4-06d9-41c4-bab8-b00aad0ab62a?mode=deep",
+    "timestamp": "2026-06-01 01:12:09.694381",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via take (buyerPendingFeeIncrease)] Can an unprivileged taker, by taking a large buy offer in a market with continuousFee = MAX_CONTINUOUS_FEE and maturity = block.timestamp + 100*365 days, cause UtilsLib.toUint128(buyerCreditIncrease.mulDivDown(_marketState.continuousFee * timeToMaturity, WAD)) to exceed type(uint128).max and revert with CastOverflow, under preconditions where continuousFee * timeToMaturity slightly exceeds WAD (317097919 * 3153600000 > 1e18), violating the invariant that take must succeed for any valid credit increase within uint128 bounds, causing scoped impact: DoS on all takes that increase buyer credit in max-fee max-maturity markets? Proof idea: set continuousFee = MAX_CONTINUOUS_FEE, maturity = block.timestamp + 100*365 days, take with buyerCreditIncrease = type(uint128).max and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_17604ec4-a2cd-4d05-8603-b60efb471e5e?mode=deep",
+    "timestamp": "2026-06-01 01:12:21.980403",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via take (buyerAssets overflow)] Can an unprivileged taker, by passing units > type(uint256).max / buyerPrice to a sell-offer take, cause units.mulDivDown(buyerPrice, WAD) to overflow uint256 and revert with arithmetic panic, under preconditions where offer.maxUnits = type(uint256).max and buyerPrice > 1 (any tick > 0), violating the invariant that take must not revert for any units within offer.maxUnits, causing scoped impact: self-DoS or griefing of any taker who passes oversized units? Proof idea: fuzz units in [type(uint256).max/WAD+1, type(uint256).max] with buyerPrice = WAD and assert arithmetic revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8bf77782-4b01-4fb4-902c-f4f560ac09fe?mode=deep",
+    "timestamp": "2026-06-01 01:12:34.229742",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivUp via take (sellerAssets overflow)] Can an unprivileged taker, by passing units near type(uint256).max to a buy-offer take where sellerPrice > 0, cause units.mulDivUp(sellerPrice, WAD) to overflow uint256 (since mulDivUp adds d-1 = WAD-1 before dividing), under preconditions where offer.maxUnits = type(uint256).max and sellerPrice = WAD - settlementFee > 0, violating the invariant that take must not revert for any units within offer.maxUnits, causing scoped impact: DoS on any taker who passes units > (type(uint256).max - WAD + 1) / sellerPrice? Proof idea: fuzz units near type(uint256).max with sellerPrice = 1 and assert mulDivUp overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ee1a899d-768e-421c-8a13-19caab691e7d?mode=deep",
+    "timestamp": "2026-06-01 01:12:47.474540",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via repay] Can an unprivileged borrower, by calling repay with units = type(uint128).max + 1, cause UtilsLib.toUint128(units) to revert with CastOverflow before the debt subtraction, under preconditions where the borrower has debt = type(uint128).max and passes units > type(uint128).max, violating the invariant that repay must succeed for any units <= debt, causing scoped impact: DoS on repay for any units exceeding uint128 even if the caller intends to overpay? Proof idea: call repay(market, type(uint128).max + 1, borrower, address(0), '') and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79163b0a-d758-4a28-be5b-0a8387368d0f?mode=deep",
+    "timestamp": "2026-06-01 01:13:00.649094",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via repay (withdrawable overflow)] Can an unprivileged borrower, by calling repay with units such that marketState[id].withdrawable + units > type(uint128).max, cause UtilsLib.toUint128(units) to revert with CastOverflow on the withdrawable update, under preconditions where withdrawable is already near type(uint128).max due to prior repayments, violating the invariant that repay must succeed for any units <= debt, causing scoped impact: DoS on repay when the market's withdrawable pool is near saturation? Proof idea: fill withdrawable to type(uint128).max - 1 via prior repays, then attempt repay(2) and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0e4fb8f9-8972-4800-81be-858bc54d0c7a?mode=deep",
+    "timestamp": "2026-06-01 01:13:14.528631",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via withdraw (units)] Can an unprivileged lender, by calling withdraw with units > type(uint128).max, cause UtilsLib.toUint128(units) to revert with CastOverflow, under preconditions where the lender has credit = type(uint128).max and passes units = type(uint128).max + 1, violating the invariant that withdraw must succeed for any units <= credit, causing scoped impact: DoS on withdraw for any units exceeding uint128? Proof idea: call withdraw(market, type(uint128).max + 1, lender, lender) and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_46d0a257-f7ed-48d2-ae1d-355d28d44c71?mode=deep",
+    "timestamp": "2026-06-01 01:13:29.065775",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivUp via withdraw (pendingFeeDecrease overflow)] Can an unprivileged lender, by constructing a position where pendingFee = credit = type(uint128).max and then calling withdraw(units = type(uint128).max), cause _position.pendingFee.mulDivUp(units, _position.credit) = mulDivUp(type(uint128).max, type(uint128).max, type(uint128).max) to overflow uint256 (since x*y = (2^128-1)^2 = 2^256 - 2^129 + 1, and adding d-1 = 2^128-2 gives 2^256 - 2^128 - 1 which fits), or alternatively trigger CastOverflow if the result exceeds uint128, under preconditions where pendingFee = credit = type(uint128).max, violating the invariant that withdraw must succeed for any units <= credit, causing scoped impact: DoS on full-credit withdrawal for max-fee positions? Proof idea: fuzz pendingFee, credit, units at uint128 boundaries and assert no revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_58719fae-d365-4c5e-b6df-962b0c64ad21?mode=deep",
+    "timestamp": "2026-06-01 01:13:44.510094",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via liquidate (seizedAssets)] Can an unprivileged liquidator, by passing repaidUnits near type(uint128).max to liquidate, cause repaidUnits.mulDivDown(lif, WAD).mulDivDown(ORACLE_PRICE_SCALE, liquidatedCollatPrice) to exceed type(uint128).max and trigger CastOverflow in UtilsLib.toUint128(seizedAssets), under preconditions where lif = maxLif (up to 2*WAD) and liquidatedCollatPrice is small (e.g., 1), violating the invariant that liquidate must succeed for any repaidUnits <= borrower.debt, causing scoped impact: DoS on liquidation when the liquidator passes large repaidUnits with low oracle price? Proof idea: set liquidatedCollatPrice = 1, lif = 2*WAD, repaidUnits = type(uint128).max / 2 and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4786fc14-956d-45fa-b7b6-ad32307b7ae2?mode=deep",
+    "timestamp": "2026-06-01 01:13:58.303235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown division by zero via liquidate (liquidatedCollatPrice = 0)] Can an unprivileged borrower, by activating a collateral whose oracle returns price = 0, cause seizedAssets = repaidUnits.mulDivDown(lif, WAD).mulDivDown(ORACLE_PRICE_SCALE, liquidatedCollatPrice) to divide by zero and revert with arithmetic panic, under preconditions where the borrower has debt > 0, the position is unhealthy (other collaterals have nonzero price), and the liquidator passes repaidUnits > 0 targeting the zero-price collateral, violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent DoS on liquidation of the targeted collateral index? Proof idea: set oracle.price() = 0 for collateralIndex, call liquidate with repaidUnits = 1 and assert division-by-zero revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7108cb45-2797-41df-a6c7-6b3be4be7857?mode=deep",
+    "timestamp": "2026-06-01 01:14:11.920402",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivUp via liquidate (repaidUnits from seizedAssets)] Can an unprivileged liquidator, by passing seizedAssets near type(uint128).max to liquidate, cause seizedAssets.mulDivUp(liquidatedCollatPrice, ORACLE_PRICE_SCALE).mulDivUp(WAD, lif) to overflow uint256 when liquidatedCollatPrice is near the oracle bound (collateral * price <= uint256), under preconditions where seizedAssets = type(uint128).max and liquidatedCollatPrice is at the maximum allowed by the oracle bound, violating the invariant that liquidate must succeed for any seizedAssets <= collateral, causing scoped impact: DoS on liquidation via seizedAssets input path? Proof idea: fuzz seizedAssets and liquidatedCollatPrice near their respective maxima and assert no arithmetic overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_269e83b0-94bf-4cd1-bac4-cb1d56cc3963?mode=deep",
+    "timestamp": "2026-06-01 01:14:26.810648",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via liquidate (repaidUnits overflow)] Can an unprivileged liquidator, by passing seizedAssets such that the computed repaidUnits = seizedAssets.mulDivUp(liquidatedCollatPrice, ORACLE_PRICE_SCALE).mulDivUp(WAD, lif) exceeds type(uint128).max, cause UtilsLib.toUint128(repaidUnits) to revert with CastOverflow, under preconditions where seizedAssets is large and lif = WAD (post-maturity at t=maturity), violating the invariant that liquidate must succeed for any seizedAssets <= collateral, causing scoped impact: DoS on liquidation via seizedAssets path when lif is near WAD? Proof idea: set lif = WAD, seizedAssets = type(uint128).max, liquidatedCollatPrice = ORACLE_PRICE_SCALE and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4747ae3-6d74-479d-8baa-e5e4e59c41c6?mode=deep",
+    "timestamp": "2026-06-01 01:14:41.706168",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via liquidate (lossFactor)] Can an unprivileged liquidator, by triggering bad debt realization in a market where totalUnits is near type(uint128).max and badDebt is small, cause UtilsLib.toUint128(type(uint128).max - (type(uint128).max - _lossFactor).mulDivDown(_totalUnits - badDebt, _totalUnits)) to exceed type(uint128).max and revert with CastOverflow, under preconditions where _lossFactor is near type(uint128).max and the mulDivDown result rounds down causing the subtraction to underflow, violating the invariant that bad debt realization must always succeed, causing scoped impact: DoS on liquidation when lossFactor is near saturation? Proof idea: fuzz _lossFactor near type(uint128).max and badDebt near _totalUnits and assert no CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_780ce851-6c46-433b-845c-f64c1531eb1e?mode=deep",
+    "timestamp": "2026-06-01 01:14:56.128532",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via liquidate (continuousFeeCredit scaling)] Can an unprivileged liquidator, by triggering bad debt realization in a market where continuousFeeCredit is near type(uint128).max and the new lossFactor is much larger than the old, cause UtilsLib.toUint128(continuousFeeCredit.mulDivDown(type(uint128).max - newLossFactor, type(uint128).max - oldLossFactor)) to exceed type(uint128).max and revert with CastOverflow, under preconditions where continuousFeeCredit = type(uint128).max and the ratio (type(uint128).max - newLossFactor) / (type(uint128).max - oldLossFactor) > 1, violating the invariant that bad debt realization must always succeed, causing scoped impact: DoS on liquidation when continuousFeeCredit is at maximum? Proof idea: set continuousFeeCredit = type(uint128).max, trigger bad debt with small badDebt and assert no CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae3e8ce6-1e9e-4456-8bf1-377bf9da6525?mode=deep",
+    "timestamp": "2026-06-01 01:15:10.886106",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: msb via liquidate (bitmap loop)] Can an unprivileged borrower, by activating exactly MAX_COLLATERALS_PER_BORROWER = 16 collaterals and then having one oracle revert, cause the msb-driven while loop in liquidate to revert mid-iteration when IOracle.price() reverts, under preconditions where the reverting oracle is not the last bit in the bitmap (so msb returns a valid index but the oracle call fails), violating the invariant that unhealthy positions must remain liquidatable, causing scoped impact: permanent DoS on liquidation for any borrower with a reverting oracle? Proof idea: activate 16 collaterals, set one oracle to revert, call liquidate and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6a2bb5c7-33ac-40a2-8c01-ecaf21ed8e8a?mode=deep",
+    "timestamp": "2026-06-01 01:15:25.751248",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: msb via isHealthy (bitmap loop in take)] Can an unprivileged borrower, by activating a collateral whose oracle reverts, cause the msb-driven while loop in isHealthy (called at the end of take to check SellerIsLiquidatable) to revert, under preconditions where the seller has debt > 0 and an activated collateral with a reverting oracle, violating the invariant that take must succeed for valid offers, causing scoped impact: DoS on all takes where the seller has a reverting oracle collateral? Proof idea: activate a collateral with reverting oracle, take a sell offer and assert revert at isHealthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6223199b-1e34-4138-b497-836ca5e09568?mode=deep",
+    "timestamp": "2026-06-01 01:15:42.023203",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: clearBit via liquidate (bitmap desync)] Can an unprivileged liquidator, by calling liquidate with seizedAssets = 0 and repaidUnits = 0 (bad-debt-only path) on a borrower whose collateralBitmap has a bit set for a collateral index >= market.collateralParams.length, cause market.collateralParams[i] to revert with array out-of-bounds during the msb/clearBit loop, under preconditions where the bitmap was set via a market with more collaterals than the current market struct, violating the invariant that liquidate must succeed for any borrower with debt > 0, causing scoped impact: DoS on bad-debt realization? Proof idea: create a market with N collaterals, supply collateral at index N-1, then call liquidate with a market struct having fewer collaterals and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ca4035a4-9c6b-43eb-851d-1e2d39bde950?mode=deep",
+    "timestamp": "2026-06-01 01:15:58.575622",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: tExchange via take (liquidation lock not reset on revert)] Can an unprivileged taker, by constructing a take where the seller callback reverts after tExchange sets the liquidation lock to true, cause the liquidation lock to remain set in transient storage for the seller within the same transaction (if the revert is caught by a try/catch in a multicall), under preconditions where multicall is used and the inner take reverts but the outer call continues, violating the invariant that liquidationLocked must be false at the start of any new top-level call, causing scoped impact: DoS on liquidation of the seller within the same transaction? Proof idea: use multicall to call take (which sets lock and reverts) then call liquidate and assert NotLiquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_995c33af-dcae-4d4a-a018-633630b0aba9?mode=deep",
+    "timestamp": "2026-06-01 01:16:15.578369",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: tExchange via take (wasLocked = true prevents unlock)] Can an unprivileged taker, by nesting a take inside a buyer callback where the inner take targets the same seller, cause the inner take to see wasLocked = true (since the outer take already set the lock), preventing the inner take from resetting the lock at the end, and then the outer take's final tExchange(false) correctly resets it, under preconditions where the buyer callback calls take again with the same seller, violating the invariant that the liquidation lock must be correctly managed across nested takes, causing scoped impact: DoS on liquidation of the seller if the lock is not properly reset? Proof idea: implement a buyer callback that re-enters take with the same seller and assert liquidationLocked is false after the outer take completes.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_eece469d-f39b-4465-a31f-f3478869a1ea?mode=deep",
+    "timestamp": "2026-06-01 01:16:29.064428",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: tGet via liquidate (liquidationLocked check)] Can an unprivileged taker, by executing a take where the seller callback calls liquidate on the seller (who is locked), cause liquidate to revert with NotLiquidatable due to liquidationLocked(id, seller) = true, under preconditions where the seller is unhealthy and the callback attempts to liquidate them, violating the invariant that unhealthy positions must be liquidatable, causing scoped impact: DoS on liquidation of the seller during the take callback window? Proof idea: create unhealthy seller, take with callback that calls liquidate(seller) and assert NotLiquidatable.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c3a08b86-09fa-483f-9439-a2c66c7e6baf?mode=deep",
+    "timestamp": "2026-06-01 01:16:44.401318",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: toUint128 via _updatePosition (continuousFeeCredit)] Can an unprivileged user, by triggering _updatePosition on a lender with a large accruedFee in a market where continuousFeeCredit is already near type(uint128).max, cause marketState[id].continuousFeeCredit += UtilsLib.toUint128(accruedFee) to overflow uint128 and revert with CastOverflow, under preconditions where continuousFeeCredit + accruedFee > type(uint128).max, violating the invariant that _updatePosition must succeed for any valid lender position, causing scoped impact: DoS on take, withdraw, and repay (which all call _updatePosition) when continuousFeeCredit is near saturation? Proof idea: accumulate continuousFeeCredit near type(uint128).max via many small updatePosition calls, then trigger a large accruedFee and assert CastOverflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dd131920-0b3e-478b-a101-593b4802a801?mode=deep",
+    "timestamp": "2026-06-01 01:16:58.352035",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: mulDivDown via _updatePosition (postSlashCredit)] Can an unprivileged user, by calling updatePosition on a lender whose lastLossFactor = 0 and the market's lossFactor = type(uint128).max - 1, cause credit.mulDivDown(type(uint128).max - lossFactor, type(uint128).max - lastLossFactor) = credit.mulDivDown(1, type(uint128).max) to round down to 0 for any credit < type(uint128).max, effectively zeroing the lender's credit, under preconditions where the market has experienced near-total bad debt, violating the invariant that credit must not be zeroed unless bad debt equals total credit, causing scoped impact: DoS on withdraw for lenders whose credit is rounded to zero? Proof idea: set lossFactor near type(uint128).max, call updatePosition and assert credit is not incorrectly zeroed.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1e6a79ca-54dd-489d-bcf2-77ea2d8732ca?mode=deep",
+    "timestamp": "2026-06-01 01:17:13.129876",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: zeroFloorSub via take (timeToMaturity = 0)] Can an unprivileged taker, by taking a sell offer at exactly block.timestamp = market.maturity, cause UtilsLib.zeroFloorSub(offer.market.maturity, block.timestamp) = 0, making buyerPendingFeeIncrease = 0 regardless of continuousFee, under preconditions where the market has nonzero continuousFee and the take is at the maturity boundary, violating the invariant that pendingFee must correctly reflect the continuous fee obligation, causing scoped impact: DoS on fee accrual at the maturity boundary (fee undercharge)? Proof idea: warp to market.maturity, take a buy offer and assert buyerPendingFeeIncrease = 0 even with nonzero continuousFee.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_15504dd6-3db3-4bba-84dc-77620835bffe?mode=deep",
+    "timestamp": "2026-06-01 01:17:26.407454",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: zeroFloorSub via liquidate (badDebt computation)] Can an unprivileged liquidator, by calling liquidate on a borrower with multiple collaterals where the sum of mulDivUp(collateral_i * price_i / ORACLE_PRICE_SCALE, WAD, maxLif_i) exceeds originalDebt, cause zeroFloorSub to return 0 for badDebt, preventing bad debt realization even when the position is technically insolvent, under preconditions where oracle prices are high enough to make the position appear solvent by maxLif valuation, violating the invariant that bad debt must be realized when collateral value < debt, causing scoped impact: DoS on bad debt realization and lender credit loss accounting? Proof idea: set oracle prices such that sum of maxLif-valued collateral > debt and assert badDebt = 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4288095b-72dd-47b7-b606-91461746b40b?mode=deep",
+    "timestamp": "2026-06-01 01:17:40.237349",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: min via liquidate (lif computation)] Can an unprivileged liquidator, by calling post-maturity liquidate at block.timestamp = market.maturity + TIME_TO_MAX_LIF, cause UtilsLib.min(_maxLif, WAD + (_maxLif - WAD) * TIME_TO_MAX_LIF / TIME_TO_MAX_LIF) = UtilsLib.min(_maxLif, WAD + (_maxLif - WAD)) = _maxLif, and verify that the lif ramp is correctly bounded, under preconditions where block.timestamp is exactly at the ramp endpoint, violating the invariant that lif must not exceed maxLif, causing scoped impact: DoS on liquidation if lif computation overflows when (_maxLif - WAD) * (block.timestamp - market.maturity) overflows uint256? Proof idea: set _maxLif = 2*WAD, block.timestamp - market.maturity = type(uint256).max / WAD + 1 and assert overflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4066e433-df27-4be7-859a-ccf8c0a0f6d2?mode=deep",
+    "timestamp": "2026-06-01 01:17:54.666046",
+    "report_generated": false
   }
 ]
