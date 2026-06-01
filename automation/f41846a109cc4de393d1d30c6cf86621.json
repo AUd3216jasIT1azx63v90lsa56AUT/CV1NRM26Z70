@@ -148,5 +148,155 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5a4e8bcb-3c40-4445-ab4d-d7e4f031a54e?mode=deep",
     "timestamp": "2026-06-01 00:39:29.621198",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a blocklist and the 'from' address (msg.sender) is blocklisted, causing permit() to revert, which is silently swallowed, and then safeTransferFrom also reverts (because the blocklisted address cannot transfer), resulting in a double-revert scenario where the user gets a misleading error from safeTransferFrom instead of from permit()? Proof idea: deploy a token with a blocklist; blocklist msg.sender; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom with a transfer error rather than a permit error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4234217-7cfb-4959-ab80-ae07944cff16?mode=deep",
+    "timestamp": "2026-06-01 00:42:21.111054",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a blocklist and the 'spender' address (MidnightBundles) is blocklisted, causing permit() to revert, which is silently swallowed, and then safeTransferFrom reverts because the bundler cannot receive tokens? Proof idea: deploy a token with a blocklist; blocklist address(midnightBundles); call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_61a484d3-b75f-4c7f-8e14-18a5d8ff8a5b?mode=deep",
+    "timestamp": "2026-06-01 00:42:33.099436",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token is in a paused state (e.g., USDC-style pause), causing permit() to revert, which is silently swallowed, and then safeTransferFrom also reverts (because transfers are paused), resulting in a misleading error from safeTransferFrom? Proof idea: deploy a pausable token; pause the token; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom with a transfer error rather than a permit error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c4677bc2-3161-4a5f-aa73-9002b906fd79?mode=deep",
+    "timestamp": "2026-06-01 00:42:45.488207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard DOMAIN_SEPARATOR that does not include the 'version' field (e.g., some tokens omit 'version' from the EIP-712 domain), causing the digest computed by the token to differ from the digest signed by the user, causing permit() to revert with 'invalid permit', which is silently swallowed, and then safeTransferFrom reverts? Proof idea: deploy a token with a non-standard DOMAIN_SEPARATOR; sign a permit using the standard EIP-712 domain; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b2c12e4d-4e67-4c10-9f71-08ba3c73e80a?mode=deep",
+    "timestamp": "2026-06-01 00:42:58.239187",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token uses a non-standard PERMIT_TYPEHASH (e.g., includes additional fields like 'salt' or 'version'), causing the digest to differ from the ERC2612 standard, causing permit() to revert with 'invalid permit', which is silently swallowed, and then safeTransferFrom reverts? Proof idea: deploy a token with a non-standard PERMIT_TYPEHASH; sign a permit using the standard ERC2612 typehash; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d5717a7f-2c08-4587-bb08-042c414f3495?mode=deep",
+    "timestamp": "2026-06-01 00:43:13.189684",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard nonce mechanism (e.g., nonces are per-spender rather than per-owner), causing the nonce in the permit data to be incorrect, causing permit() to revert, which is silently swallowed, and then safeTransferFrom reverts? Proof idea: deploy a token with per-spender nonces; sign a permit using the standard per-owner nonce; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e2d98eac-059d-4b3d-bad5-9bc5d7c729a6?mode=deep",
+    "timestamp": "2026-06-01 00:43:26.116600",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that takes additional parameters (e.g., a 'salt' parameter), causing the IERC20Permit interface call to invoke the wrong function selector or revert with a function-not-found error, which is silently swallowed, and then safeTransferFrom reverts? Proof idea: deploy a token with a permit(address,address,uint256,uint256,uint8,bytes32,bytes32,bytes32) function; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e8e9fab9-7ce6-4ac7-9dca-89ee05d504a6?mode=deep",
+    "timestamp": "2026-06-01 00:43:39.227562",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that returns a boolean (unlike IERC20Permit which has no return value), causing the ABI decoding to fail or the return value to be ignored, and then safeTransferFrom reverts? Proof idea: deploy a token whose permit() returns bool; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert whether the return value is correctly handled or causes unexpected behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3fa27516-777a-4b66-a00f-e0d56460bbbc?mode=deep",
+    "timestamp": "2026-06-01 00:43:53.255291",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a custom error (not a string), and the try/catch silently swallows the custom error, causing safeTransferFrom to revert with a different error, making it impossible for the user to diagnose the root cause? Proof idea: deploy a token whose permit() reverts with a custom error; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom with a different error than the original custom error.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f329115f-8d4d-4474-83ef-54615cb48dd6?mode=deep",
+    "timestamp": "2026-06-01 00:44:06.826252",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with an empty revert (no reason), and the try/catch silently swallows the empty revert, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with no reason; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aa534699-aad5-496e-a045-1f26caa02c12?mode=deep",
+    "timestamp": "2026-06-01 00:44:20.385508",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string longer than 32 bytes, and the try/catch silently swallows the long reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 100-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_841a5bf0-dca9-48b5-b936-41e8211c6e13?mode=deep",
+    "timestamp": "2026-06-01 00:44:34.350329",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 32 bytes, and the try/catch silently swallows the reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 32-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4cb4141e-0d22-4f1e-aec9-3eba45ce09ba?mode=deep",
+    "timestamp": "2026-06-01 00:44:48.358357",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 0 bytes (empty string), and the try/catch silently swallows the empty string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with an empty string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0ec9f545-f9d4-45cd-bdcd-15e61b4d7abd?mode=deep",
+    "timestamp": "2026-06-01 00:45:02.372051",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 1 byte, and the try/catch silently swallows the 1-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 1-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78e5a3fc-dad7-4021-8118-47f645f8650b?mode=deep",
+    "timestamp": "2026-06-01 00:45:17.418120",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 64 bytes, and the try/catch silently swallows the 64-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 64-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_70735557-ee24-419c-8f6d-27da61fdf94a?mode=deep",
+    "timestamp": "2026-06-01 00:45:30.942031",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 128 bytes, and the try/catch silently swallows the 128-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 128-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_74f3e99d-8d3e-42e5-b377-c05462228a3a?mode=deep",
+    "timestamp": "2026-06-01 00:45:45.231039",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 256 bytes, and the try/catch silently swallows the 256-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 256-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a1150e33-e4fc-4166-824f-9689a36930dc?mode=deep",
+    "timestamp": "2026-06-01 00:45:58.612704",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 512 bytes, and the try/catch silently swallows the 512-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 512-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ad6ebcc-27d0-4339-bdf4-f2b6920014f0?mode=deep",
+    "timestamp": "2026-06-01 00:46:12.367833",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 1024 bytes, and the try/catch silently swallows the 1024-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 1024-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_18db6182-0444-4f29-b14d-ea2006c5d104?mode=deep",
+    "timestamp": "2026-06-01 00:46:26.287076",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 2048 bytes, and the try/catch silently swallows the 2048-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 2048-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_72924b11-ac4c-44b0-bd53-f7d5fe5eda1d?mode=deep",
+    "timestamp": "2026-06-01 00:46:39.879256",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 4096 bytes, and the try/catch silently swallows the 4096-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 4096-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f8a73e0-faa8-4463-939d-d3dcd65ee6dc?mode=deep",
+    "timestamp": "2026-06-01 00:46:54.448226",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 8192 bytes, and the try/catch silently swallows the 8192-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 8192-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57480af8-f097-40ea-95e7-cea8920c71a4?mode=deep",
+    "timestamp": "2026-06-01 00:47:09.560172",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 16384 bytes, and the try/catch silently swallows the 16384-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 16384-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d90e868c-ab8e-4066-b436-6d6175bcfd7e?mode=deep",
+    "timestamp": "2026-06-01 00:47:24.151002",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 32768 bytes, and the try/catch silently swallows the 32768-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 32768-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_98379b44-596b-43cf-b2d9-21e3f7cf5598?mode=deep",
+    "timestamp": "2026-06-01 00:47:37.784869",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IERC20Permit.sol'] [Function: pullToken (MidnightBundles.sol)] Can a user be blocked from executing a bundle when the loan token's permit() reverts because the token has a non-standard permit() function that reverts with a reason string that is exactly 65536 bytes, and the try/catch silently swallows the 65536-byte reason string, causing safeTransferFrom to revert with a different error? Proof idea: deploy a token whose permit() reverts with a 65536-byte reason string; call buyWithUnitsTargetAndWithdrawCollateral with PermitKind.ERC2612; assert the call reverts at safeTransferFrom.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2de6083c-e9d2-4080-9227-5ef745d1b154?mode=deep",
+    "timestamp": "2026-06-01 00:47:51.293879",
+    "report_generated": false
   }
 ]
