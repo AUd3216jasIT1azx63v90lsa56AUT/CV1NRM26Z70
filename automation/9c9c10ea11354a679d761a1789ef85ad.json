@@ -1,0 +1,38 @@
+[
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified is called with offer.market containing a different continuousFee than the market's stored continuousFee, and the ratifier does not validate this, causing buyerPendingFeeIncrease to be computed with the wrong continuousFee value, violating the invariant that continuous fee accrual must use the market's current continuousFee, causing scoped impact: pendingFee is under-accrued, reducing claimable continuous fees and corrupting fee accounting? Proof idea: set market continuousFee to X; pass offer.market with continuousFee=0; assert buyerPendingFeeIncrease is 0 instead of expected value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ddcada36-6df7-4286-a8d5-5ed5f2eaae6f?mode=deep",
+    "timestamp": "2026-06-01 00:20:17.605109",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified does not validate the offer's market.collateralParams[i].token addresses, allowing the taker to substitute different collateral token addresses, violating the invariant that collateral accounting must correspond to the actual tokens deposited, causing scoped impact: health checks use wrong token prices, enabling undercollateralized borrows or preventing valid collateral withdrawals? Proof idea: deploy ratifier ignoring collateral token addresses; substitute different token in collateralParams; assert isHealthy uses wrong oracle for health computation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_84cdcc5e-697a-4255-a748-587434b12ec8?mode=deep",
+    "timestamp": "2026-06-01 00:20:29.589018",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified is called with offer.market.maturity far in the future (near MAX_MATURITY), causing timeToMaturity to be very large, and buyerPendingFeeIncrease = units.mulDivDown(continuousFee * timeToMaturity, WAD) to overflow uint256 before being cast to uint128, violating the invariant that pendingFee must not overflow, causing scoped impact: pendingFee wraps around, zeroing the fee obligation and corrupting continuous fee accounting? Proof idea: set maturity to block.timestamp + 100*365 days; set continuousFee to MAX_CONTINUOUS_FEE; fuzz units near type(uint128).max; assert mulDivDown overflows.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2c9154d8-6fe1-453c-85cd-831e8a86c568?mode=deep",
+    "timestamp": "2026-06-01 00:20:41.841319",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified does not validate the offer's market.enterGate or market.liquidatorGate addresses, allowing the taker to substitute address(0) for both gates, violating the invariant that gate checks must apply to all entry paths as specified by the market creator, causing scoped impact: credit/debt increases bypass the enter gate, allowing unauthorized users to enter a gated market? Proof idea: create market with enterGate=restrictiveGate; deploy ratifier ignoring gates; substitute enterGate=address(0) in offer.market; assert canIncreaseCredit is not called and credit increases.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb916514-af50-401e-bf08-c152e8901ac2?mode=deep",
+    "timestamp": "2026-06-01 00:20:54.610858",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified is called with a valid offer, but the ratifier internally calls IMidnight(MIDNIGHT).setIsAuthorized(maker, attacker, true) via a delegatecall or authorized call, granting the attacker full control over the maker's position, violating the invariant that ratifier calls must not modify authorization state, causing scoped impact: attacker gains full authorization over maker's position, enabling withdrawal of all credit and collateral? Proof idea: deploy AuthorizationGrantingRatifier; maker authorizes it; taker calls take(); assert isAuthorized[maker][attacker] is set to true after isRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fad8798f-4c22-4931-bf67-5904d51c2a7e?mode=deep",
+    "timestamp": "2026-06-01 00:21:07.527158",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: take / IRatifier.isRatified] Can an unprivileged taker pass an Offer where offer.ratifier is authorized and the ratifier's isRatified does not validate the offer's market.collateralParams array against the market's stored collateralParams (retrieved via toMarket(id)), allowing the taker to pass a market struct with different collateral params than what was used to create the market, violating the invariant that market params are immutable after creation, causing scoped impact: health checks, liquidations, and fee computations use wrong market params, corrupting all accounting? Proof idea: create market with collateralParams A; pass offer.market with collateralParams B; assert toId(offer.market) == toId(market A) but collateral params differ.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8ce48af9-eb7b-44dc-adb9-6794525c5e02?mode=deep",
+    "timestamp": "2026-06-01 00:21:20.748368",
+    "report_generated": false
+  }
+]
