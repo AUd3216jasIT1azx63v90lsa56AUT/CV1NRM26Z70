@@ -40,5 +40,47 @@
     "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c070cb6a-4d78-4037-a18c-4f18571f7c24?mode=deep",
     "timestamp": "2026-05-31 19:05:16.192715",
     "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker, using a flashLoan from Midnight to temporarily hold loan tokens, submit a take with a valid EcrecoverRatifier signature during the onFlashLoan callback, and does the flashLoan callback context affect any state that isRatified reads (isAuthorized, isRootCanceled) in a way that bypasses normal authorization checks? Proof idea: initiate flashLoan, in callback submit take with valid ratifierData, assert isRatified checks are unaffected by flashLoan context.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_18fb60b0-7c31-42a7-849a-72ccc9fe92d6?mode=deep",
+    "timestamp": "2026-06-01 00:52:31.965747",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker submit a take where the offer has offer.start > block.timestamp (not yet started), causing Midnight.take to revert with OfferNotStarted before isRatified is called — and does this ordering mean the ratifier is never invoked for not-yet-started offers, confirming that start-time enforcement is in Midnight not the ratifier? Proof idea: set offer.start = block.timestamp + 1, assert OfferNotStarted revert before ratifier call.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_0bd1aa15-fc8e-4241-bc4a-d9f36ff34be2?mode=deep",
+    "timestamp": "2026-06-01 00:52:43.879148",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker, in a market with an enterGate that restricts credit increases, use a valid EcrecoverRatifier signature to fill a buy offer (credit-increasing), and does the enterGate check in Midnight.take execute after isRatified, meaning the ratifier approves the offer but the gate still blocks it — confirming that gate and ratifier are independent layers and a valid signature does not bypass the gate? Proof idea: set enterGate to reject taker, submit take with valid ratifierData, assert BuyerGatedFromIncreasingCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d66ae22f-7bd2-4e34-be58-51a0628d09be?mode=deep",
+    "timestamp": "2026-06-01 00:52:56.631182",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker submit ratifierData where the Signature has v not in {27, 28} (e.g., v=0 or v=1 or v=29), causing ecrecover to return address(0) or an unexpected address, and does the require(_signer != address(0)) check correctly handle all invalid v values, or are there v values that cause ecrecover to return a non-zero address that happens to be an authorized signer? Proof idea: fuzz v in [0, 255], assert ecrecover behavior for each v value with fixed r, s.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2d40063e-85ee-4d51-ac87-45457be89cab?mode=deep",
+    "timestamp": "2026-06-01 00:53:09.264526",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker, given that the EcrecoverRatifier's domain separator uses block.chainid (dynamic, read at call time) rather than a cached INITIAL_CHAIN_ID (as Midnight.sol does for its own domain), exploit a hard fork scenario where block.chainid changes between when the maker signed the root and when the take is submitted, causing the domain separator to change and the signature to become invalid — and does the contract's comment correctly document this behavior? Proof idea: simulate chainid change via vm.chainId, assert signature valid before fork, invalid after.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_941768c9-2937-4755-8b99-a7040456524e?mode=deep",
+    "timestamp": "2026-06-01 00:53:22.171207",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified] Can an unprivileged taker submit a take where the offer is structurally valid but the ratifierData contains a signature over a root that includes the offer at a different tick (e.g., offer.tick = X in the signed tree, but offer.tick = Y in the submitted take), causing hashOffer to differ and the Merkle proof to fail — confirming that tick is bound by the signature and cannot be substituted to get a better price? Proof idea: sign root with offer.tick=T1, submit take with offer.tick=T2, assert InvalidProof.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bb6f6e56-e4f3-4442-8420-0e3b83600c55?mode=deep",
+    "timestamp": "2026-06-01 00:53:35.107024",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/EcrecoverRatifier.sol -> Scope: Medium Signature replay, nonce desync, deadline edge case, or EIP-712 domain mistake that affects delegated authorization'] [Function: isRatified / cancelRoot] Can an unprivileged attacker who gains temporary authorization for maker M (e.g., via a social engineering or a temporary grant) sign a new root R' containing malicious offers (e.g., offers at unfavorable ticks or with attacker-controlled callbackData), and since the signature is valid (attacker is authorized at signing time), the offers can be filled even after the attacker's authorization is revoked — because the signature was created while authorized and the root is not canceled? Proof idea: authorize attacker, attacker signs root with malicious offer, revoke attacker, assert take with attacker's signature still succeeds (authorization checked at take time, not signing time).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fe17aa50-9453-4ffb-8040-c412de63e77f?mode=deep",
+    "timestamp": "2026-06-01 00:53:48.184560",
+    "report_generated": false
   }
 ]
