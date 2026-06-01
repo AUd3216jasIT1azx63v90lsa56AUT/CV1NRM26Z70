@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/interfaces/IRatifier.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: IRatifier.isRatified / take] Can an unprivileged taker, under a buy offer with offer.maxAssets > 0, call take() with units chosen such that buyerAssets = mulDivDown(units, buyerPrice, WAD) = 0 (when units * buyerPrice < WAD), causing consumed[maker][group] += 0 and the offer capacity to not decrease, while the ratifier is called and returns CALLBACK_SUCCESS, violating the invariant that every successful take advances the offer's consumed state, causing scoped impact: infinite free ratifier calls without consuming offer capacity? Proof idea: assert consumed increases by at least 1 on every successful take, or take reverts when buyerAssets == 0.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_340eae4f-ef89-4385-bd8b-079efd2b1c40?mode=deep",
-    "timestamp": "2026-05-31 21:40:27.087975",
-    "report_generated": false
-  }
-]
