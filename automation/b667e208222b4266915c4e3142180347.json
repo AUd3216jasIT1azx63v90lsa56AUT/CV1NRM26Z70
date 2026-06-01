@@ -1,0 +1,56 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, claimableSettlementFee accounting)] Can an unprivileged authorized operator call take() on behalf of a buyer with units <= buyerPos.debt (skipping _updatePosition) under the precondition that buyerAssets > sellerAssets (settlement fee > 0), triggering claimableSettlementFee[loanToken] += buyerAssets - sellerAssets, violating the invariant that settlement fee must be correctly accounted regardless of whether _updatePosition is called, causing scoped impact: verify that settlement fee accounting is independent of _updatePosition and cannot be manipulated by choosing units to skip the update? Proof idea: assert claimableSettlementFee increases by exactly buyerAssets - sellerAssets for every take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7f1a1723-bde8-49b0-9dca-a941a2ed5974?mode=deep",
+    "timestamp": "2026-06-01 00:46:53.765520",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, then updatePosition called externally)] Can an unprivileged authorized operator call take() on behalf of a buyer (skipping _updatePosition) followed by updatePosition() externally under the precondition that a bad debt event occurred between the take and the updatePosition call, triggering updatePosition to slash the buyer's credit (which is 0 since they only had debt), violating the invariant that updatePosition must be idempotent when credit is 0, causing scoped impact: verify that calling updatePosition on a zero-credit position with stale lastLossFactor does not corrupt marketState.continuousFeeCredit? Proof idea: assert continuousFeeCredit is unchanged after updatePosition on zero-credit position.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_56476429-e5c1-4279-8aa7-ad430328c865?mode=deep",
+    "timestamp": "2026-06-01 00:47:05.682178",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, then withdraw by authorized operator)] Can an unprivileged authorized operator call take() on behalf of a buyer (reducing debt, skipping _updatePosition) followed by withdraw() on behalf of the same user under the precondition that the user has credit C (from a prior lend) and debt D, units == D (take reduces debt to 0, _updatePosition skipped since hasCredit is false... wait, hasCredit would be true if credit > 0), violating the invariant that _updatePosition must be called before withdraw (withdraw does call _updatePosition), causing scoped impact: verify that the combination of take (skipping update) + withdraw (calling update) leaves the position in a consistent state? Proof idea: sequence take(D) + withdraw(C) and assert credit after withdraw == updatePositionView credit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8adcbe0b-098b-438b-b83c-e0dc0ea77bf2?mode=deep",
+    "timestamp": "2026-06-01 00:47:18.040112",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (seller: _updatePosition skipped, then supplyCollateral)] Can an unprivileged authorized operator call take() on behalf of a seller (increasing debt, _updatePosition skipped) followed by supplyCollateral() under the precondition that the seller has zero credit and the new debt makes them unhealthy, triggering the take to revert with SellerIsLiquidatable before supplyCollateral is called, violating the invariant that a user must be able to supply collateral before taking a sell position to avoid the health check failure, causing scoped impact: user cannot atomically borrow and supply collateral in the same transaction without using a callback? Proof idea: assert that take with sell callback that calls supplyCollateral succeeds when the final position is healthy.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_315cca03-c8da-48b4-a390-5d41f846da9f?mode=deep",
+    "timestamp": "2026-06-01 00:47:30.792986",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition condition: units > debt with uint128 comparison)] Can an unprivileged authorized operator call take() on behalf of a buyer under the precondition that buyerPos.debt == type(uint128).max and units == type(uint128).max + 1 (if units is uint256), triggering units > buyerPos.debt as true (uint256 > uint128), causing _updatePosition to be called, then buyerCreditIncrease = zeroFloorSub(units, buyerPos.debt) = 1, and buyerPos.debt -= (units - 1) = type(uint128).max - (type(uint128).max - 1) = 1... wait, buyerPos.debt -= toUint128(units - buyerCreditIncrease) = toUint128(type(uint128).max) which succeeds, violating the invariant that toUint128 must not overflow, causing scoped impact: verify that units as uint256 cannot cause overflow in toUint128 casts? Proof idea: fuzz units near type(uint128).max and assert toUint128 reverts with CastOverflow for values > type(uint128).max.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1a66d450-c03e-46db-8c3c-e61cf857f955?mode=deep",
+    "timestamp": "2026-06-01 00:47:44.647064",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (seller: _updatePosition skipped, then bad debt realization)] Can an unprivileged authorized operator call take() on behalf of a seller (increasing debt, _updatePosition skipped) under the precondition that the seller's new debt is immediately bad debt (no collateral), triggering liquidate() with badDebt > 0 which reduces position.debt and updates marketState.lossFactor, violating the invariant that bad debt realization must correctly account for the seller's lastLossFactor (which was never updated), causing scoped impact: lossFactor computation uses totalUnits that includes the seller's debt, but the seller's lastLossFactor is stale, leading to incorrect slashing of other lenders? Proof idea: assert lossFactor after bad debt realization equals expected value based on totalUnits and badDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ade2489a-fec3-4c9a-9fdb-3c7e0c818c72?mode=deep",
+    "timestamp": "2026-06-01 00:47:57.923730",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, then market maturity)] Can an unprivileged authorized operator call take() on behalf of a buyer (reducing debt, skipping _updatePosition) under the precondition that the market matures between the take and the buyer's next interaction, triggering post-maturity liquidation of the buyer (if they still have debt), violating the invariant that a buyer who reduced their debt via take must have their lastLossFactor updated before post-maturity liquidation, causing scoped impact: post-maturity liquidation uses stale lastLossFactor to compute bad debt, potentially over- or under-realizing bad debt? Proof idea: sequence take(D/2) + warp(maturity+1) + liquidate and assert bad debt == expected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_9dae0457-3bae-41c9-9a1d-3c569bf9d4ce?mode=deep",
+    "timestamp": "2026-06-01 00:48:11.882676",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, then setConsumed)] Can an unprivileged authorized operator call take() on behalf of a buyer (skipping _updatePosition) followed by setConsumed() to cancel the maker's offer group under the precondition that the take partially filled the offer, triggering setConsumed(group, type(uint256).max) to cancel remaining capacity, violating the invariant that offer cancellation must not affect already-executed position changes, causing scoped impact: verify that setConsumed after a take does not retroactively affect the buyer's position state? Proof idea: assert position state is unchanged after setConsumed following a take.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78b5850e-f916-416a-886e-79b78518c776?mode=deep",
+    "timestamp": "2026-06-01 00:48:26.875248",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: EcrecoverAuthorizer.setIsAuthorized / Midnight.take (buyer: _updatePosition skipped, EIP-712 domain separator)] Can an unprivileged attacker construct an Authorization with a crafted deadline just before expiry under the precondition that the EcrecoverAuthorizer uses block.chainid in the domain separator (not INITIAL_CHAIN_ID), triggering a hard fork scenario where block.chainid changes, making previously signed authorizations invalid on the new chain but valid on the old chain, violating the invariant that authorization signatures must not be replayable across chains, causing scoped impact: on the old chain, stale authorizations remain valid and can be used to manipulate positions? Proof idea: simulate chain fork by changing block.chainid and assert old signatures are rejected.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_cc0aa066-de42-4562-ad29-72d50a41ba53?mode=deep",
+    "timestamp": "2026-06-01 00:48:40.660707",
+    "report_generated": false
+  }
+]
