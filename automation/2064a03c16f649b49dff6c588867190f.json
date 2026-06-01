@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/periphery/interfaces/IEcrecoverAuthorizer.sol -> Scope: High Denial of service against core market actions with low attacker cost, especially take, repay, withdraw, liquidate, or claim fee'] [Function: EcrecoverAuthorizer.setIsAuthorized] Can an attacker who is an authorized agent of victim call setIsAuthorized with Authorization(authorizer=victim, authorized=agent, isAuthorized=false, nonce=N) where agent is the only entity authorized to call Midnight.claimContinuousFee on behalf of the feeClaimer, under the precondition that the feeClaimer relies on this agent and the market has accumulated significant continuousFeeCredit, causing the fee claim to be permanently blocked until the feeClaimer re-authorizes the agent directly on Midnight? Invariant tested: fee claim authorization must not be permanently blockable by co-authorized agents. Scoped impact: DoS on claimContinuousFee, trapping accumulated fees. Proof idea: feeClaimer authorizes claimAgent and attacker; attacker deauthorizes claimAgent; assert claimContinuousFee reverts with Unauthorized.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4f94be55-9e8e-4407-871d-25843d3c5a23?mode=deep",
-    "timestamp": "2026-05-31 17:48:14.303361",
-    "report_generated": false
-  }
-]
