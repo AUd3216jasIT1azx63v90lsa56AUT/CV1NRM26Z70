@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/ratifiers/interfaces/IEcrecoverRatifier.sol -> Scope: High Incorrect credit/debt netting where a user can hold incompatible position states or bypass required position updates'] [Function: take()/EcrecoverRatifier.isRatified()] Can an unprivileged taker use a valid EcrecoverRatifier signature for a sell offer where the seller has credit=C and the market is post-maturity (block.timestamp > maturity), trigger take() where timeToMaturity = zeroFloorSub(maturity, block.timestamp) = 0, causing buyerPendingFeeIncrease = 0 (correct), but the seller's _updatePosition uses accrualEnd = min(block.timestamp, maturity) = maturity, under preconditions where the seller's lastAccrual < maturity, violating the invariant that post-maturity trading must not mint free credit or erase debt incorrectly, causing scoped impact: the seller's credit is reduced by the fee accrued up to maturity, but the netting uses the post-update credit, potentially creating unexpected debt? Proof idea: warp past maturity, take sell offer, assert credit and debt accounting matches expected post-maturity netting.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4aaecfe5-53c4-4eca-aea3-2984158cf9f6?mode=deep",
-    "timestamp": "2026-05-31 18:11:14.911532",
-    "report_generated": false
-  }
-]
