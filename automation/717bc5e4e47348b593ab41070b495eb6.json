@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator pass market.maturity = 0 (already expired) to touchMarket, which only checks maturity <= block.timestamp + 100 * 365 days but not maturity >= block.timestamp, creating a market that is immediately in post-maturity mode, allowing any borrower's debt to be liquidated via postMaturityMode=true on the very next block? Proof idea: fuzz maturity in [0, block.timestamp - 1], call touchMarket, assert tickSpacing > 0, then call liquidate with postMaturityMode=true and assert it succeeds without any prior debt accrual.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_489c3595-d046-44b1-8d6a-880f975e7564?mode=deep",
+    "timestamp": "2026-06-01 01:06:35.646165",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator create a market with maturity = block.timestamp - 1 (already expired), then attempt a take that would increase sellerDebtIncrease, and confirm that CannotIncreaseDebtPostMaturity is triggered immediately, permanently freezing the borrow side of the market from inception? Proof idea: unit test with maturity = block.timestamp - 1, call take with a sell offer, assert revert with CannotIncreaseDebtPostMaturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_bc2c9139-590c-4e0b-aed3-d87954ac9fd2?mode=deep",
+    "timestamp": "2026-06-01 01:06:47.606049",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with maturity = 0, then a borrower supplies collateral and borrows via a sell offer (which fails due to CannotIncreaseDebtPostMaturity), but if debt was established before maturity in a different scenario, confirm that post-maturity liquidation with LIF ramping from 1 to maxLif over TIME_TO_MAX_LIF = 15 minutes is immediately available, allowing liquidators to seize collateral at LIF=1 (no incentive) from block 0? Proof idea: state-test with maturity=0, warp to TIME_TO_MAX_LIF, assert lif == maxLif in liquidate.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0d3264f-b01e-4c6a-9a20-0d351b33239e?mode=deep",
+    "timestamp": "2026-06-01 01:06:59.959073",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / isHealthy] Can an unprivileged market creator set collateralParams[i].oracle = address(0) (no validation in touchMarket), causing IOracle(address(0)).price() to return 0 (EVM call to codeless address returns empty bytes decoded as 0), making maxDebt = 0 for that collateral slot, so any borrower with debt and that collateral activated is immediately unhealthy and liquidatable? Proof idea: create market with oracle=address(0), supply collateral, borrow, call isHealthy and assert false, then liquidate and assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_564cc2e9-f90d-4f0a-9a3e-77de82a554b5?mode=deep",
+    "timestamp": "2026-06-01 01:07:12.595208",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / supplyCollateral / withdrawCollateral] Can an unprivileged market creator set collateralParams[i].oracle = address(0), then a borrower calls supplyCollateral (which does NOT call the oracle), activating the collateral bitmap bit, then calls withdrawCollateral which calls isHealthy which calls oracle.price() returning 0, making the position appear unhealthy and reverting with UnhealthyBorrower, permanently freezing the borrower's collateral? Proof idea: unit test with oracle=address(0), supply collateral, attempt withdrawCollateral, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_323251b2-0e33-487c-8615-9d04135bb0dc?mode=deep",
+    "timestamp": "2026-06-01 01:07:26.683869",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator set collateralParams[i].oracle = address(0) for a multi-collateral market, causing liquidate to call IOracle(address(0)).price() during the collateral bitmap loop, returning 0 for that collateral's price, making badDebt computation incorrect (underestimating maxDebt), potentially triggering spurious bad debt realization and incorrect lossFactor updates? Proof idea: multi-collateral market with one oracle=address(0), liquidate a healthy position, assert lossFactor changes unexpectedly.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_1917f1e2-261e-43c6-89eb-e6f06306ccae?mode=deep",
+    "timestamp": "2026-06-01 01:07:41.978306",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator set market.loanToken = address(0) (no validation in touchMarket), successfully creating a market with tickSpacing > 0, then any subsequent take or repay that calls SafeTransferLib.safeTransferFrom(address(0), ...) will revert, permanently freezing all loan-side operations in that market? Proof idea: touchMarket with loanToken=address(0), assert tickSpacing > 0, then attempt take and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b0dfccb3-2acf-4f1b-8a1b-86c7c9db9e8b?mode=deep",
+    "timestamp": "2026-06-01 01:07:56.011761",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator set market.rcfThreshold = type(uint256).max, which causes the RCF deactivation condition (_position.collateral[collateralIndex].mulDivDown(...).zeroFloorSub(maxRepaid) < market.rcfThreshold) to always be true (since any uint256 < type(uint256).max), permanently disabling the recovery close factor for all normal-mode liquidations in that market, allowing full liquidation of any unhealthy position regardless of how close it is to health? Proof idea: create market with rcfThreshold=type(uint256).max, make position slightly unhealthy, liquidate full debt, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_99d587a9-9a58-49a7-a4fe-c8de72501080?mode=deep",
+    "timestamp": "2026-06-01 01:08:09.878451",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator set market.rcfThreshold = 0 (default), then confirm that the RCF deactivation condition zeroFloorSub(maxRepaid) < 0 is never true (since uint256 >= 0), meaning RCF is always enforced when lltv < WAD, and fuzz rcfThreshold across [0, type(uint256).max] to find the exact boundary where full liquidation becomes possible for a given collateral amount and price? Proof idea: fuzz rcfThreshold, collateral, price, assert liquidation success/failure matches RCF formula.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_954a34df-8937-434c-895e-b20ac1c823c2?mode=deep",
+    "timestamp": "2026-06-01 01:08:24.257478",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with LLTV_8 = 1e18 (WAD), where maxLif = WAD (no liquidation incentive), and confirm that in normal mode the maxRepaid formula sets maxRepaid = type(uint256).max (since lltv < WAD is false), effectively disabling RCF for LLTV=1 markets, allowing full liquidation of any unhealthy position, and that badDebt is always realized since collateral * price / maxLif = collateral * price (no incentive buffer)? Proof idea: create LLTV=1 market, make position unhealthy, liquidate full debt, assert success and lossFactor change.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f7f5ab66-1ce3-4366-979d-435c43496fd3?mode=deep",
+    "timestamp": "2026-06-01 01:08:39.585467",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / isHealthy] Can an unprivileged market creator create a multi-collateral market where collateral[0] has LLTV=0.385e18 (LLTV_0) and collateral[1] has LLTV=1e18 (LLTV_8), then a borrower activates both collaterals, and fuzz oracle prices to find a state where the position is healthy (maxDebt >= debt) but liquidating collateral[0] with its low LLTV leaves the position still unhealthy, while liquidating collateral[1] with LLTV=1 and maxLif=1 provides no incentive, creating a liquidation trap? Proof idea: differential test across LLTV combinations, assert post-liquidation health.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d7fe428d-cb16-4cba-81bf-35b2440a157d?mode=deep",
+    "timestamp": "2026-06-01 01:08:55.908331",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with collateralParams[i].maxLif = maxLif(lltv, LIQUIDATION_CURSOR_HIGH) (0.5 cursor, higher LIF) vs maxLif(lltv, LIQUIDATION_CURSOR_LOW) (0.25 cursor, lower LIF), and confirm that with LIQUIDATION_CURSOR_HIGH the liquidator seizes more collateral per unit repaid (seizedAssets = repaidUnits * maxLif / WAD * ORACLE_PRICE_SCALE / price), potentially over-seizing relative to the debt, and fuzz repaidUnits near the RCF boundary to find rounding-induced over-seizure? Proof idea: fuzz repaidUnits, lif, price, assert seizedAssets * price / ORACLE_PRICE_SCALE <= repaidUnits * maxLif / WAD + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b45d82d2-3548-4bbe-859c-9e306de6ee3b?mode=deep",
+    "timestamp": "2026-06-01 01:09:12.496125",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / IdLib.storeInCode] Can an unprivileged attacker pre-deploy a contract at the CREATE2 address computed by IdLib.toId (keccak256(0xff ++ midnight ++ chainId ++ keccak256(SSTORE2_PREFIX ++ abi.encode(market)))), causing IdLib.storeInCode to return address(0) and revert with SStore2DeploymentFailed, permanently DoS-ing the creation of that specific market? Proof idea: compute CREATE2 address for a target market, deploy any contract there, call touchMarket and assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09cbd536-3e5d-49cb-9e19-b9dca8b0e059?mode=deep",
+    "timestamp": "2026-06-01 01:09:28.690945",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: MidnightBundles.buyWithUnitsTargetAndWithdrawCollateral / touchMarket] Can an unprivileged taker pass takes[0].offer.market with maturity = 0 to buyWithUnitsTargetAndWithdrawCollateral, causing touchMarket to create an already-expired market, then the subsequent collateral withdrawals use takes[0].offer.market (the expired market), allowing the taker to withdraw collateral from a market that is immediately in post-maturity mode without any prior borrow? Proof idea: call buyWithUnitsTargetAndWithdrawCollateral with maturity=0 market, assert market created and collateral withdrawal succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a0e7cd96-ef45-4fda-b8f5-33546e679ae2?mode=deep",
+    "timestamp": "2026-06-01 01:09:44.706574",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: MidnightBundles.supplyCollateralAndSellWithUnitsTarget / touchMarket] Can an unprivileged taker pass takes[0].offer.market with oracle=address(0) to supplyCollateralAndSellWithUnitsTarget, causing touchMarket to create a market with a zero oracle, then supplyCollateral succeeds (no oracle call), but any subsequent withdrawCollateral by the taker reverts because isHealthy calls oracle.price() returning 0, permanently freezing the taker's collateral in the bundle? Proof idea: call supplyCollateralAndSellWithUnitsTarget with oracle=address(0), supply collateral, attempt withdrawCollateral, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ae5782b1-f129-4623-81db-6ed92adf2b6e?mode=deep",
+    "timestamp": "2026-06-01 01:10:00.991773",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: MidnightBundles.repayAndWithdrawCollateral] Can an unprivileged caller pass a market with malformed params (e.g., oracle=address(0)) to repayAndWithdrawCollateral, which does NOT call touchMarket directly but calls repay(market, ...) which calls touchMarket internally, creating the malformed market, then the subsequent withdrawCollateral calls isHealthy with oracle=address(0) returning 0, causing the withdrawal to revert even if the borrower has no debt? Proof idea: call repayAndWithdrawCollateral with oracle=address(0) market, assert market created, then assert withdrawCollateral reverts.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_27c6a28b-73cb-4e70-ae06-2bff550eaf33?mode=deep",
+    "timestamp": "2026-06-01 01:10:15.110556",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator create a market with market.loanToken == market.collateralParams[0].token (same token for both loan and collateral, no check in touchMarket), then a borrower supplies the token as collateral and a lender takes a sell offer, causing the protocol to transfer the same token twice (once as collateral in supplyCollateral, once as loan in take), potentially breaking the solvency invariant balance >= withdrawable + sum(collateral) + claimableSettlementFee? Proof idea: create market with loanToken==collateralToken, supply collateral, take offer, assert solvency invariant.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b2fd4e75-5b6a-4c51-b56f-e2fb9e613801?mode=deep",
+    "timestamp": "2026-06-01 01:10:30.142641",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator create a market with maturity = block.timestamp (exact boundary), confirm that block.timestamp > market.maturity is false (so post-maturity liquidation is not available), but block.timestamp <= market.maturity is true (so debt increase is still allowed), then in the same block a borrower increases debt, and in the next block (block.timestamp = maturity + 1) the debt is immediately liquidatable via post-maturity mode? Proof idea: create market with maturity=block.timestamp, take sell offer, warp +1, liquidate with postMaturityMode=true, assert success.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7ef7990e-c85a-434e-9dc4-8cc724c2f2df?mode=deep",
+    "timestamp": "2026-06-01 01:10:44.612931",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / settlementFee] Can an unprivileged market creator create a market with maturity = block.timestamp - 1 (already expired), causing settlementFee to always use the cbp0 breakpoint (post-maturity fee = fee at 0d), and if defaultSettlementFeeCbp[loanToken][0] = 0, the settlement fee is always 0, allowing takers to trade at zero fee in the post-maturity market? Proof idea: create market with maturity=block.timestamp-1, set cbp0=0, take offer, assert claimableSettlementFee == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6144f92c-7f0b-463f-bd30-4f0c4a629726?mode=deep",
+    "timestamp": "2026-06-01 01:10:59.419357",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / isHealthy] Can an unprivileged market creator create a market with 128 collateral params (MAX_COLLATERALS), each with a different LLTV tier, then a borrower activates MAX_COLLATERALS_PER_BORROWER = 16 collaterals, and fuzz oracle prices across all 16 to find a state where isHealthy returns true but liquidate computes a different maxDebt due to mulDivDown rounding differences between the two functions, causing a healthy position to appear liquidatable? Proof idea: differential fuzz between isHealthy and liquidate's maxDebt computation with 16 collaterals.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8f243710-4488-470a-a6dc-b99e2c6f0d14?mode=deep",
+    "timestamp": "2026-06-01 01:11:14.962643",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with collateralParams[0].lltv = LLTV_0 = 0.385e18 and collateralParams[1].lltv = LLTV_8 = 1e18, then a borrower activates both, and a liquidator liquidates collateral[1] (LLTV=1, maxLif=1) with repaidUnits input, causing seizedAssets = repaidUnits * 1 * ORACLE_PRICE_SCALE / price (no incentive), while the RCF formula uses lltv=1 making maxRepaid = type(uint256).max, allowing full liquidation of collateral[1] even if the position could be restored to health by liquidating collateral[0] instead? Proof idea: multi-collateral market, liquidate LLTV=1 collateral, assert full liquidation succeeds.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2361570b-e814-409d-92a9-3bff3a3abb31?mode=deep",
+    "timestamp": "2026-06-01 01:11:32.098739",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / take] Can an unprivileged market creator create a market with enterGate set to a contract that always returns false for canIncreaseDebt, then any taker attempting to increase debt via a sell offer is blocked (SellerGatedFromIncreasingDebt), but the market is still created and collateral can be supplied, effectively creating a lend-only market where borrowers can never borrow? Proof idea: create market with always-false enterGate, attempt take with debt increase, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_39a27a4d-2ee7-4562-bda7-c5d8440de259?mode=deep",
+    "timestamp": "2026-06-01 01:11:49.651194",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with liquidatorGate set to a contract that always returns false for canLiquidate, then any liquidator is blocked (LiquidatorGatedFromLiquidating), and if the enterGate allows debt increase, borrowers can borrow but their positions can never be liquidated, creating a market where bad debt accumulates without recourse? Proof idea: create market with always-false liquidatorGate, make position unhealthy, attempt liquidate, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e482b6d1-f1f3-4062-b6e4-e3fecf88b469?mode=deep",
+    "timestamp": "2026-06-01 01:12:08.066939",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket / liquidate] Can an unprivileged market creator create a market with liquidatorGate set to a contract that always reverts on canLiquidate, causing liquidate to revert (since the gate check propagates the revert), permanently freezing all liquidations in that market and allowing bad debt to accumulate indefinitely? Proof idea: create market with reverting liquidatorGate, make position unhealthy, attempt liquidate, assert revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_65d48553-f2e4-4c21-8c3c-1a155236e0e9?mode=deep",
+    "timestamp": "2026-06-01 01:12:23.573643",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/periphery/interfaces/IMidnightBundles.sol -> Scope: High Market creation parameter bug allowing malformed markets, unsorted collateral lists, duplicate collateral, invalid LLTV, invalid LIF, or unsafe maturity values'] [Function: touchMarket] Can an unprivileged market creator fuzz all 9 LLTV tiers × 2 cursor values (18 valid (lltv, maxLif) pairs) combined with all 128 possible collateral indices, and confirm that touchMarket accepts exactly these 18 combinations per collateral slot, while any off-by-one in maxLif (e.g., maxLif(lltv, LIQUIDATION_CURSOR_LOW) + 1) is rejected with InvalidMaxLif? Proof idea: fuzz lltv in [0, type(uint256).max] and maxLif in [0, type(uint256).max], assert touchMarket reverts iff (lltv, maxLif) not in the 18 valid pairs.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2f2a679c-eeef-432f-bc64-81cbeb2d7f21?mode=deep",
+    "timestamp": "2026-06-01 01:12:39.115608",
+    "report_generated": false
+  }
+]
