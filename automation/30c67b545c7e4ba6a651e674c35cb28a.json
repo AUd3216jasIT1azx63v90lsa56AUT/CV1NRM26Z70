@@ -1,0 +1,44 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashMarket + IdLib.toId (market identity)] Can an unprivileged market creator under the precondition that hashMarket (used in EIP-712 signing) and IdLib.toId (used for on-chain market identity) use different encodings of the same Market struct trigger create market M with id=IdLib.toId(M) -> sign offer for M using hashMarket(M) -> if hashMarket and IdLib.toId can produce the same id for different markets, EcrecoverRatifier.isRatified accepts the signature for a different market, violating the invariant that the signed market and the executed market are the same, causing scoped impact: offer fills in wrong market with different collateral/LLTV, corrupting debt accounting? Proof idea: differential test hashMarket vs IdLib.toId encoding for all valid market configurations and assert they are consistent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b89ba774-1480-4f01-889b-5def4762f341?mode=deep",
+    "timestamp": "2026-06-01 00:14:32.833570",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashOffer (bool encoding in abi.encode)] Can an unprivileged taker under the precondition that abi.encode pads bool fields (offer.buy, offer.reduceOnly) to 32 bytes but the EIP-712 type string specifies them as bool (1 byte) trigger sign offer off-chain with a tool that encodes bool as 1 byte -> on-chain hashOffer uses abi.encode which pads to 32 bytes -> ecrecover returns wrong address -> isRatified reverts, violating the invariant that bool fields are encoded consistently between on-chain and off-chain EIP-712 implementations, causing scoped impact: all offers with buy=true or reduceOnly=true are permanently unfillable via EcrecoverRatifier? Proof idea: verify that abi.encode(bool) == abi.encode(uint256(1)) in Solidity and assert this matches the EIP-712 spec for bool encoding.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d980ad4e-0542-4993-9fd6-1725ef390efb?mode=deep",
+    "timestamp": "2026-06-01 00:14:44.592840",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: isLeaf (proof length = 20, max tree)] Can an unprivileged taker under the precondition that isLeaf is called with proof.length=20 (maximum allowed by offerTreeTypeHash) and leafIndex=2^20-1 trigger provide a valid proof for the rightmost leaf in a height-20 tree -> HashLib.isLeaf correctly verifies the proof -> EcrecoverRatifier.isRatified accepts it -> Midnight.take executes, violating the invariant that the maximum tree height boundary (20) is handled without off-by-one errors in the leafIndex bounds check, causing scoped impact: if the bounds check fails, an attacker could provide leafIndex=2^20 with proof.length=20 and forge a proof? Proof idea: unit test isLeaf with proof.length=20 and leafIndex=2^20-1 (valid) and leafIndex=2^20 (should revert with LeafIndexOutOfRange).",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b24ad50f-72b6-40a8-aca5-3f3ddda6775b?mode=deep",
+    "timestamp": "2026-06-01 00:14:57.313995",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashOffer + EcrecoverRatifier (authorized signer)] Can an unprivileged authorized signer under the precondition that isAuthorized[maker][signer]=true and signer signs an offer tree trigger signer signs root R containing offer O with maxUnits=100 -> maker later revokes isAuthorized[maker][signer] -> attacker fills O using the old signature -> EcrecoverRatifier.isRatified checks isAuthorized[maker][signer] at fill time, violating the invariant that authorization revocation immediately invalidates all pending signatures, causing scoped impact: offer fills after authorization revocation, creating unauthorized credit or debt for the maker? Proof idea: simulate revoke-then-fill and assert EcrecoverRatifier.isRatified reverts after isAuthorized is set to false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_75793b77-6a2b-456d-8558-4326fcb080dc?mode=deep",
+    "timestamp": "2026-06-01 00:15:09.726023",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashOffer + hashMarket (collateralParams length encoding)] Can an unprivileged attacker under the precondition that hashMarket encodes collateralParams as keccak256(abi.encodePacked(hashes)) where abi.encodePacked of different-length arrays of 32-byte elements is injective trigger create market M1 with 2 collateral params [C1,C2] and market M2 with 1 collateral param [C3] where hashCollateralParams(C1)||hashCollateralParams(C2) == hashCollateralParams(C3) (impossible for keccak256 but worth testing), violating the invariant that the collateralParams array hash is injective over all valid arrays, causing scoped impact: offer signed for M1 accepted in M2 with different LLTV/oracle? Proof idea: fuzz all combinations of 1-128 collateral params and assert no two distinct arrays produce the same collateralParamsHash.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5eba7f74-5452-4a22-8ba7-e331396ea03a?mode=deep",
+    "timestamp": "2026-06-01 00:15:22.500187",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashOffer + Midnight.take (pendingFee accounting)] Can an unprivileged taker under the precondition that hashOffer does not commit to offer.market.continuousFee (stored in MarketState, not Market struct) trigger sign offer for market M at time T1 when continuousFee=F1 -> fee setter changes continuousFee to F2 -> taker fills offer at T2 -> Midnight.take computes buyerPendingFeeIncrease using F2 instead of F1, violating the invariant that the maker's signed offer terms include the fee rate at signing time, causing scoped impact: buyer's pendingFee is higher than expected, reducing their effective credit and causing incorrect fee accounting? Proof idea: assert that continuousFee changes between signing and filling correctly affect pendingFee and document this as an accepted risk or invariant violation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ae4a57a-69d1-454c-bd42-37ad9f181b59?mode=deep",
+    "timestamp": "2026-06-01 00:15:35.331424",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/libraries/HashLib.sol -> Scope: Critical Direct loss of user funds through incorrect credit, debt, collateral, withdrawable, or fee accounting'] [Function: hashOffer (full differential test)] Can an unprivileged attacker under the precondition that any of the 14 fields of Offer are not committed to by hashOffer trigger construct two offers O1 and O2 differing in exactly one field such that hashOffer(O1) == hashOffer(O2) -> EcrecoverRatifier.isRatified accepts O1's signature for O2 -> Midnight.take executes O2 with O1's authorization, violating the invariant that hashOffer is injective over all 14 Offer fields, causing scoped impact: attacker fills offer with different terms than maker signed, corrupting credit, debt, collateral, or fee accounting? Proof idea: differential fuzz test mutating each of the 14 Offer fields independently and assert hashOffer output changes for every single-field mutation.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_78af4cd7-92d1-4e31-9ef8-296f0ad2c42e?mode=deep",
+    "timestamp": "2026-06-01 00:15:48.189612",
+    "report_generated": false
+  }
+]
