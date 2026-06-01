@@ -1,8 +1,0 @@
-[
-  {
-    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol -> Scope: Critical Multicall or sequencing bug that breaks invariants only when multiple protocol actions are composed in one transaction'] [Function: Midnight.multicall + Midnight.take (with rcfThreshold manipulation)] Can an attacker compose a multicall of [take(sellOffer, units, borrower, ...) to create debt, liquidate(market, collateralIndex, seizedAssets, 0, borrower, false, ...)] where the liquidate uses the rcfThreshold to determine if the RCF is deactivated, and the take in step 1 changes the borrower's debt such that the RCF condition is exactly at the boundary, under the precondition that the borrower's position is near the RCF threshold and the take increases debt to exactly the threshold, triggering a sequence where the take makes the borrower unhealthy and the liquidate can seize more collateral than the RCF would normally allow, violating the invariant that the RCF must correctly cap liquidation amounts, causing scoped impact: RCF bypass — liquidator seizes more collateral than allowed by the recovery close factor? Proof idea: fuzz units and seizedAssets near the rcfThreshold boundary; assert repaidUnits <= maxRepaid after the multicall.",
-    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6d087300-8103-4258-8719-418e1ffe3811?mode=deep",
-    "timestamp": "2026-05-31 19:20:58.321961",
-    "report_generated": false
-  }
-]
