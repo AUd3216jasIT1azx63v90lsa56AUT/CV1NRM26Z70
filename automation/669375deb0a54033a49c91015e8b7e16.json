@@ -1,0 +1,152 @@
+[
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR who holds isAuthorized[maker][operator]==true (granted for any purpose, e.g. repayment) call setIsRootRatified(maker, maliciousRoot, true) to ratify a Merkle root containing offers the maker never intended, then call midnight.take with those offers, violating the invariant that ratifier approval must bind correct maker intent, causing scoped impact: unauthorized credit/debt increase in a restricted market? Proof idea: fuzz operator address and maliciousRoot; assert isRootRatified[maker][maliciousRoot] cannot be set true by any address other than maker without explicit maker ratification intent.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dc91d269-1ae8-483b-bbc7-56455e3322e6?mode=deep",
+    "timestamp": "2026-06-01 00:37:27.907993",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call midnight.setIsAuthorized(address(maliciousRatifier), true, maker) followed by midnight.take with a maliciousRatifier that returns CALLBACK_SUCCESS unconditionally, bypassing SetterRatifier.isRootRatified entirely, violating the invariant that gates and ratifiers must not be bypassable, causing scoped impact: unauthorized access to restricted market credit/debt increase? Proof idea: deploy a ratifier returning CALLBACK_SUCCESS for any input, authorize it via operator on behalf of maker, assert take succeeds without any root ratification.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ca2c44d6-2d9c-4633-9116-10f96d6758a3?mode=deep",
+    "timestamp": "2026-06-01 00:37:40.038314",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call midnight.setIsAuthorized(attacker, true, maker) to chain-delegate authorization to a third party, who then calls setIsRootRatified(maker, root, true) to ratify arbitrary roots, violating the invariant that authorization must only allow intended account delegation, causing scoped impact: unauthorized ratification enabling restricted market access? Proof idea: chain operator->attacker via setIsAuthorized, assert attacker can ratify roots for maker.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_43d0b517-88e3-4920-827a-7d2b89c57414?mode=deep",
+    "timestamp": "2026-06-01 00:37:53.569391",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, legitimateRoot, false) to deactivate a root the maker intended to keep active, causing all pending takes against that root to revert with NotRatified, violating the invariant that valid offers must remain fillable, causing scoped impact: fund freeze where maker's legitimate offers cannot be taken? Proof idea: authorize operator, maker ratifies root, operator deactivates root, assert subsequent take reverts with NotRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b453d25-c24f-4b7b-8d93-0e54963b819e?mode=deep",
+    "timestamp": "2026-06-01 00:38:05.822843",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing sell offers (debt-increasing for taker), then take those offers as a non-whitelisted taker in a market with enterGate blocking canIncreaseDebt, violating the invariant that enter gate must restrict debt increase on all entry paths, causing scoped impact: unauthorized debt increase in a gated market? Proof idea: create market with enterGate, ratify sell offer root, attempt take as non-whitelisted seller, assert take reverts with SellerGatedFromIncreasingDebt.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5f16b82c-3768-441d-8c37-e969153dc919?mode=deep",
+    "timestamp": "2026-06-01 00:38:19.572331",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker call setIsRootRatified(maker, root, true) for a root containing buy offers (credit-increasing for maker), then take those offers as a non-whitelisted taker in a market with enterGate blocking canIncreaseCredit, violating the invariant that enter gate must restrict credit increase on all entry paths, causing scoped impact: unauthorized credit increase in a gated market? Proof idea: create market with enterGate blocking canIncreaseCredit for maker, ratify buy offer root, take as taker, assert take reverts with BuyerGatedFromIncreasingCredit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2040fe8b-50b3-4525-acfb-6163d9da2372?mode=deep",
+    "timestamp": "2026-06-01 00:38:32.542036",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: setIsRootRatified] Can an unprivileged OPERATOR authorized by maker use midnight.multicall to atomically call setIsRootRatified(maker, root, true) and midnight.take in the same transaction, ratifying a root and immediately filling an offer before the maker can react, violating the invariant that maker intent must precede offer fill, causing scoped impact: unauthorized credit/debt increase in a restricted market? Proof idea: batch setIsRootRatified and take in multicall, assert the take succeeds with the freshly ratified root and gate checks still apply.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_fc9f92c6-38fc-40bd-99c4-d0117507f7a4?mode=deep",
+    "timestamp": "2026-06-01 00:38:45.918719",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER call setterRatifier.isRatified(offer, ratifierData) directly (not through MIDNIGHT) to probe ratifier state or trigger side effects, bypassing the NotMidnight guard, violating the invariant that gates and ratifiers must not be bypassable, causing scoped impact: unauthorized ratifier invocation? Proof idea: call setterRatifier.isRatified from any address != MIDNIGHT, assert it reverts with NotMidnight.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_362f4799-d223-4ceb-8201-f1dca00c10eb?mode=deep",
+    "timestamp": "2026-06-01 00:39:00.093076",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a manipulated leafIndex that causes HashLib.isLeaf to verify for a sibling offer (not the actual offer being taken), exploiting the bit-based left/right ordering in isLeaf, violating the invariant that ratifier approval must bind the correct offer, causing scoped impact: unauthorized fill of an offer not intended by the maker? Proof idea: for a 2-leaf tree with offers A and B, supply proof for A but leafIndex pointing to B's position, assert isLeaf returns false.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_21780486-c44c-47a0-b786-d44237e1f046?mode=deep",
+    "timestamp": "2026-06-01 00:39:15.321239",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with proof.length=0 and leafIndex=0 for an offer whose hashOffer happens to equal a ratified root (single-leaf tree), where the maker intended the root to be a node hash in a larger tree, violating the invariant that ratifier approval must bind the correct offer, causing scoped impact: unauthorized fill of an unintended offer? Proof idea: construct scenario where hashOffer(offer)==ratifiedRoot, assert isLeaf returns true with empty proof and this is the only valid single-leaf case.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_6b8453bb-dd66-4f72-96e3-f8b18e1b9edd?mode=deep",
+    "timestamp": "2026-06-01 00:39:29.063596",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData where the decoded root is ratified for maker A but offer.maker is maker B, exploiting any confusion between the isRootRatified lookup key (offer.maker) and the root parameter, violating the invariant that ratifier approval must bind the correct maker, causing scoped impact: unauthorized fill of maker B's offer using maker A's ratified root? Proof idea: construct offer with offer.maker=B, supply root ratified by A, assert isRatified reverts with NotRatified.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ecb451f3-86c6-4d47-8b51-f0069e07856b?mode=deep",
+    "timestamp": "2026-06-01 00:39:43.051044",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y (with different tick/price) to midnight.take, exploiting any mismatch between the offer struct hashed in isLeaf and the offer struct used for accounting, violating the invariant that ratifier approval must bind the correct price, causing scoped impact: unauthorized fill at wrong price? Proof idea: fuzz offer.tick, assert hashOffer(offer) in isLeaf always matches the offer passed to take and proof fails for mismatched tick.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_da56ff4f-8588-47b6-bc9d-b3c6e8992421?mode=deep",
+    "timestamp": "2026-06-01 00:39:56.887650",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different market.enterGate field, causing the take to bypass the intended gate restriction, violating the invariant that gate checks must apply to all entry paths, causing scoped impact: unauthorized access to a restricted market? Proof idea: fuzz offer.market.enterGate, assert hashOffer includes enterGate and proof fails for mismatched gate address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_79c305fc-9117-4377-b82b-e6e631a95485?mode=deep",
+    "timestamp": "2026-06-01 00:40:09.511554",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different market.liquidatorGate field, causing the take to bypass the intended liquidator gate restriction, violating the invariant that liquidator gate must not be bypassed, causing scoped impact: unauthorized liquidation in a gated market? Proof idea: fuzz offer.market.liquidatorGate, assert hashOffer includes liquidatorGate and proof fails for mismatched gate address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_3b8dd0da-26a7-493e-b68e-7c64509c9814?mode=deep",
+    "timestamp": "2026-06-01 00:40:23.453848",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different market.maturity field, causing the offer to be filled in a market with a different maturity than intended, violating the invariant that ratifier approval must bind the correct market, causing scoped impact: unauthorized fill in wrong market? Proof idea: fuzz offer.market.maturity, assert hashOffer includes maturity and proof fails for mismatched maturity.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_4ffb9a62-0c4d-4254-a98a-868a7c9c19c7?mode=deep",
+    "timestamp": "2026-06-01 00:40:36.025797",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different market.loanToken field, causing accounting to use a different loan token than intended, violating the invariant that ratifier approval must bind the correct market, causing scoped impact: unauthorized fill in wrong market? Proof idea: fuzz offer.market.loanToken, assert hashOffer includes loanToken and proof fails for mismatched token.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e20ccce5-5cd8-4281-b8fc-f7dbeee69384?mode=deep",
+    "timestamp": "2026-06-01 00:40:48.819704",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different group field, causing consumed accounting to use a different group than the ratified offer, violating the invariant that ratifier approval must bind the correct consumption group, causing scoped impact: offer overfill or consumption group budget bypass? Proof idea: fuzz offer.group, assert hashOffer includes group and proof fails for mismatched group.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d2b35196-59ed-4f55-9ffa-41ad77f2ab67?mode=deep",
+    "timestamp": "2026-06-01 00:41:02.216068",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with different maxUnits or maxAssets fields, causing the offer to be filled beyond the maker's intended cap, violating the invariant that offers must not be overfilled, causing scoped impact: offer overfill? Proof idea: fuzz offer.maxUnits and offer.maxAssets, assert hashOffer includes these fields and proof fails for mismatched values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_8bb24f2b-489f-426e-ad04-f0adf9c48c58?mode=deep",
+    "timestamp": "2026-06-01 00:41:15.332119",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different expiry field, causing an expired offer to be filled, violating the invariant that expired offers cannot be filled, causing scoped impact: unauthorized fill of an expired offer? Proof idea: fuzz offer.expiry, assert hashOffer includes expiry and proof fails for mismatched expiry.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a10e678-c636-427f-be30-a17550681755?mode=deep",
+    "timestamp": "2026-06-01 00:41:27.684649",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different buy field (direction), causing a buy offer to be treated as a sell offer or vice versa, violating the invariant that ratifier approval must bind the correct offer direction, causing scoped impact: unauthorized credit/debt increase? Proof idea: fuzz offer.buy, assert hashOffer includes buy field and proof fails for mismatched direction.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a6b3d0de-02c7-434e-9957-6cd1dd656e35?mode=deep",
+    "timestamp": "2026-06-01 00:41:40.392194",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different callback or callbackData field, causing the maker's callback to be replaced with an attacker-controlled callback, violating the invariant that maker intent must be preserved, causing scoped impact: unauthorized callback execution during take? Proof idea: fuzz offer.callback and offer.callbackData, assert hashOffer includes these fields and proof fails for mismatched values.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_21b267f4-3587-47e4-bc23-758f0d9eb3fd?mode=deep",
+    "timestamp": "2026-06-01 00:41:52.895217",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different receiverIfMakerIsSeller field, causing the seller's assets to be sent to an unintended receiver, violating the invariant that maker intent must be preserved, causing scoped impact: unauthorized asset redirection? Proof idea: fuzz offer.receiverIfMakerIsSeller, assert hashOffer includes this field and proof fails for mismatched value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e7d08e8a-a17b-4a88-b3e3-e1937fb830e1?mode=deep",
+    "timestamp": "2026-06-01 00:42:05.757730",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different reduceOnly field, causing a non-reduce-only offer to be treated as reduce-only or vice versa, violating the invariant that maker intent must be preserved, causing scoped impact: unauthorized credit/debt increase? Proof idea: fuzz offer.reduceOnly, assert hashOffer includes reduceOnly and proof fails for mismatched value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_f669bf16-fec2-4a1c-89a7-14c989859df2?mode=deep",
+    "timestamp": "2026-06-01 00:42:18.240106",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different ratifier field (not SetterRatifier), causing the take to use a different ratifier than the one that validated the root, violating the invariant that ratifier approval must bind the correct ratifier, causing scoped impact: unauthorized fill using wrong ratifier? Proof idea: fuzz offer.ratifier, assert hashOffer includes ratifier field and proof fails for mismatched ratifier address.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5b009a29-d40e-423d-8119-002c488ef1f2?mode=deep",
+    "timestamp": "2026-06-01 00:42:31.209337",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/ratifiers/interfaces/ISetterRatifier.sol'] [Function: isRatified] Can an unprivileged TAKER supply ratifierData with a valid proof for offer X but pass offer Y with a different market.rcfThreshold field, causing the recovery close factor to be applied differently than intended, violating the invariant that liquidation must be consistent with market params, causing scoped impact: unauthorized liquidation behavior? Proof idea: fuzz offer.market.rcfThreshold, assert hashOffer includes rcfThreshold and proof fails for mismatched value.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_09c396be-535b-487e-8752-29cb89f158c5?mode=deep",
+    "timestamp": "2026-06-01 00:42:44.579456",
+    "report_generated": false
+  }
+]
