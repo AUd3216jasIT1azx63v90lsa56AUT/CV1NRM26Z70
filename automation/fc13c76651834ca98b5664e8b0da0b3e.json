@@ -1,0 +1,68 @@
+[
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: integer division / settlementFee (breakpoint boundary)] Can an unprivileged taker, calling take() at TTM = 1 day exactly vs TTM = 1 day - 1 second, observe a discontinuity in settlementFee() where TTM < 1 day uses the [0,1d] bracket (feeLower=cbp0, feeUpper=cbp1) and TTM = 1 day uses the [1d,7d] bracket (feeLower=cbp1, feeUpper=cbp2), causing a fee jump if cbp1 != cbp2, violating the invariant that the piecewise-linear fee schedule is continuous at breakpoints, causing scoped impact: extractable value from timing trades to the lower-fee side of a breakpoint? Proof idea: assert settlementFee(id, 1 days) == settlementFee(id, 1 days - 1) when cbp1 is set.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_951b947c-3126-472e-bd05-85ea82b10be4?mode=deep",
+    "timestamp": "2026-06-01 00:29:17.888151",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / isHealthy (price=0 edge)] Can an unprivileged liquidator, in a market where a collateral oracle returns price=0, trigger isHealthy() where collateral.mulDivDown(0, ORACLE_PRICE_SCALE) = 0 for that collateral, causing maxDebt to exclude that collateral's contribution entirely, making a position with only that collateral appear unhealthy (maxDebt=0 < debt), violating the invariant that a position is only liquidatable if it is genuinely undercollateralized, causing scoped impact: liquidation of a borrower whose collateral oracle temporarily returns 0? Proof idea: unit test with oracle returning 0 and assert liquidate reverts or isHealthy returns false only when all collateral values are 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_a198ac2e-4e9f-47a5-b2ae-947172cd5aed?mode=deep",
+    "timestamp": "2026-06-01 00:29:29.689533",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / updatePositionView (maturity - lastAccrual = 0)] Can an unprivileged actor, calling updatePosition() on a lender whose lastAccrual == market.maturity, trigger fee = postSlashPendingFee.mulDivDown(accrualEnd - lastAccrual, maturity - lastAccrual) with denominator = 0, causing a division-by-zero revert, violating the invariant that updatePosition() must always succeed for valid positions, causing scoped impact: permanent DoS on withdraw/take for lenders whose lastAccrual equals maturity? Proof idea: unit test with lastAccrual = maturity and assert updatePosition does not revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_331e9722-a893-4e55-89bd-434f4c267236?mode=deep",
+    "timestamp": "2026-06-01 00:29:42.313205",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / updatePositionView (accrualEnd clamping)] Can an unprivileged actor, calling updatePosition() post-maturity where accrualEnd = min(block.timestamp, maturity) = maturity and lastAccrual < maturity, trigger fee = postSlashPendingFee.mulDivDown(maturity - lastAccrual, maturity - lastAccrual) = postSlashPendingFee, consuming all remaining pendingFee in one call, and then a second call with lastAccrual = maturity triggering division by zero, violating the invariant that post-maturity accrual is idempotent, causing scoped impact: DoS on withdraw for lenders who call updatePosition twice post-maturity? Proof idea: call updatePosition twice post-maturity and assert second call does not revert.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_dbc69729-c323-408d-a323-0a5c3ea6e8c5?mode=deep",
+    "timestamp": "2026-06-01 00:29:54.707321",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown (multiple slashes) / updatePositionView] Can an unprivileged actor, by triggering N sequential bad debt events each realizing a small badDebt, cause N sequential mulDivDown truncations in lossFactor updates that accumulate to a total lender credit loss significantly greater than the sum of individual bad debts, violating the invariant that total credit loss equals total bad debt socialized, causing scoped impact: lenders lose more credit than the actual bad debt realized across multiple liquidations? Proof idea: invariant fuzz test with N=10 bad debt events and assert sum(creditLoss_i) <= sum(badDebt_i) + N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_c69d0bb4-7579-4565-8ad9-c516c6a9b06d?mode=deep",
+    "timestamp": "2026-06-01 00:30:07.445781",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / ConstantsLib.maxLif] Can an unprivileged market creator, creating a market with lltv and cursor chosen so that mulDivDown(cursor, WAD - lltv, WAD) truncates by 1 wei, trigger maxLif = mulDivDown(WAD, WAD, WAD - mulDivDown(cursor, WAD - lltv, WAD)) to be slightly higher than the exact formula, causing the liquidation incentive to exceed the intended cap, violating the invariant that maxLif <= 1 / (1 - cursor * (1 - lltv)), causing scoped impact: liquidators receive slightly more collateral than the protocol-intended maximum incentive? Proof idea: fuzz (lltv, cursor) over allowed values and assert maxLif <= WAD * WAD / (WAD - cursor * (WAD - lltv) / WAD) + 1.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_57898a59-9007-423d-9b85-e6125cd0a7aa?mode=deep",
+    "timestamp": "2026-06-01 00:30:21.230833",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (buyerPendingFeeIncrease, TTM=0)] Can an unprivileged taker, taking a buy offer at exactly block.timestamp == market.maturity (TTM=0), trigger buyerPendingFeeIncrease = buyerCreditIncrease.mulDivDown(continuousFee * 0, WAD) = 0, causing the buyer to receive credit with zero pending fee obligation even though the credit was created at maturity, violating the invariant that all credit created before maturity carries a proportional continuous fee, causing scoped impact: free credit creation at the maturity boundary with no continuous fee? Proof idea: unit test with block.timestamp = maturity and assert pendingFee increase = 0 is correct behavior.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5cdca2c8-0885-433e-86fd-95016a949b1a?mode=deep",
+    "timestamp": "2026-06-01 00:30:34.230438",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (sellerPendingFeeDecrease, credit=1)] Can an unprivileged taker, taking a sell offer where the seller has credit=1 and pendingFee=1, trigger sellerPendingFeeDecrease = 1.mulDivUp(1, 1) = 1 on a full credit reduction, correctly zeroing pendingFee, but then a subsequent take with credit=0 triggering the branch sellerPendingFeeDecrease = 0 (credit == 0 guard), causing pendingFee to remain nonzero when credit is 0, violating the invariant noRemainingContinuousFeeWithoutCredit (pendingFee == 0 when credit == 0), causing scoped impact: accounting desync between credit and pendingFee? Proof idea: state test with credit=0 after take and assert pendingFee == 0.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_32f3b0ec-24b4-48ca-bfa2-4be23185add8?mode=deep",
+    "timestamp": "2026-06-01 00:30:48.243013",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / isHealthy (LLTV=1)] Can an unprivileged liquidator, in a market with lltv = WAD (LLTV_8), trigger isHealthy() where maxDebt += collateral.mulDivDown(price, ORACLE_PRICE_SCALE).mulDivDown(WAD, WAD) = collateral.mulDivDown(price, ORACLE_PRICE_SCALE) with one mulDivDown truncation, causing maxDebt to be underestimated by up to 1 wei, making a position with collateral * price / ORACLE_PRICE_SCALE == debt appear unhealthy, violating the invariant that LLTV=1 positions are healthy when collateral value equals debt, causing scoped impact: unauthorized liquidation of a fully-collateralized LLTV=1 position? Proof idea: unit test with lltv=WAD, collateral * price % ORACLE_PRICE_SCALE != 0 and assert isHealthy returns true.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_5af53818-81c4-4bc3-8d1c-6ea73ce3bdad?mode=deep",
+    "timestamp": "2026-06-01 00:31:02.319878",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / liquidate (lossFactor, totalUnits=badDebt)] Can an unprivileged liquidator, realizing bad debt where badDebt == totalUnits, trigger (type(uint128).max - _lossFactor).mulDivDown(0, totalUnits) = 0, causing lossFactor = type(uint128).max, and then a subsequent take() to revert with MarketLossFactorMaxedOut(), violating the invariant that a market with all debt repaid should remain functional, causing scoped impact: permanent DoS on take() after total bad debt realization? Proof idea: unit test with badDebt = totalUnits and assert take reverts with MarketLossFactorMaxedOut.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_aacf0785-4caf-4516-b4f6-4c7c88ad4d08?mode=deep",
+    "timestamp": "2026-06-01 00:31:15.892590",
+    "report_generated": false
+  },
+  {
+    "question": "[File: 'src/libraries/UtilsLib.sol -> Scope: High Rounding, fixed-point math, mulDiv, fee, spread, or time-to-maturity error that creates extractable value or systematic value leakage'] [Function: mulDivDown / take (sellerPrice underflow)] Can an unprivileged taker, taking a buy offer where offerPrice < settlementFee(id, ttm), trigger sellerPrice = offerPrice - _settlementFee to underflow (Solidity 0.8 checked arithmetic revert), causing the take to revert, violating the invariant that a maker's offer should be fillable at any time before expiry, causing scoped impact: implicit offer cancellation when the settlement fee is increased above the offer price? Proof idea: unit test with offerPrice = 1 and settlementFee = 2 and assert take reverts with arithmetic underflow.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_e74c33c5-2348-4277-b6d2-b36c9d296df3?mode=deep",
+    "timestamp": "2026-06-01 00:31:29.965957",
+    "report_generated": false
+  }
+]
