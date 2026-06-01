@@ -1,0 +1,8 @@
+[
+  {
+    "question": "[File: 'src/Midnight.sol -> Scope: Critical Unauthorized borrowing, withdrawal, collateral seizure, or debt reduction caused by broken authorization, signature, ratifier, gate, or callback logic'] [Function: take] Can an unprivileged taker under the precondition that the offer struct includes offer.market.rcfThreshold and that this value is used in the RCF check in liquidate() but comes from calldata trigger the call sequence: attacker calls liquidate(market{rcfThreshold=type(uint256).max}, ...) -> the RCF condition _position.collateral[i].mulDivDown(...).zeroFloorSub(maxRepaid) < market.rcfThreshold is always true (since any value < type(uint256).max) -> the RCF is always deactivated -> attacker can fully liquidate any unhealthy position regardless of how small the undercollateralization is, violating the invariant that the RCF must limit liquidation to what is needed to restore health, causing scoped impact: unauthorized full liquidation of positions that should only be partially liquidatable? Proof idea: unit test calling liquidate() with rcfThreshold=type(uint256).max; assert full liquidation succeeds when partial liquidation should be the limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_7506b67b-d88d-4e19-9310-9a86591a36f3?mode=deep",
+    "timestamp": "2026-06-01 00:20:37.075126",
+    "report_generated": false
+  }
+]
