@@ -1,0 +1,202 @@
+I have read the full `repay()` and `take()` functions, the Certora spec, and the security/researcher docs. Let me verify the critical code paths before rendering a verdict.
+
+**`repay()` authorization and payer logic (lines 502–521):** [1](#0-0) 
+
+The only gate is `isAuthorized[onBehalf][msg.sender]` — there is no check that `callback` (the designated payer) has authorized `msg.sender` to use it as a payer or to invoke `onRepay` on it.
+
+**`take()` — `onSell` callback window (lines 444–476):** [2](#0-1) 
+
+The liquidation lock at line 444 only prevents the seller from being liquidated during the callback window. It does not prevent re-entrancy into `repay()`.
+
+**Certora spec assumption (lines 13–14, 108):** [3](#0-2) [4](#0-3) 
+
+`onSell` is not listed in the `methods` block and defaults to `HAVOC_ALL`. The comment states "onSell cannot authorize a payer" — but this is the incorrect assumption the report identifies: `onSell` *can* re-enter `repay()` with `callback=victim`, and `HAVOC_ALL` does not model this re-entrant path, so the prover cannot detect it.
+
+The exploit path is fully traceable through the actual code with no speculative steps:
+
+1. `isAuthorized[seller][maliciousContract] = true` (standard precondition for any seller callback).
+2. Seller places a sell offer with `offer.callback = maliciousContract`.
+3. Taker calls `take(offer, ...)`.
+4. `take()` sets the liquidation lock and calls `onSell` on `maliciousContract`.
+5. Inside `onSell`, `maliciousContract` calls `repay(market, units, seller, callback=victim, data)`:
+   - `msg.sender = maliciousContract`; authorization check passes.
+   - `payer = victim`.
+   - `IRepayCallback(victim).onRepay(...)` is called; if victim returns `CALLBACK_SUCCESS`, execution continues.
+   - `safeTransferFrom(loanToken, victim, midnight, units)` pulls tokens from victim.
+6. Seller's debt is reduced; the post-callback health check at line 476 passes because the debt was repaid.
+
+All three preconditions (seller authorizes callback, victim implements `onRepay` returning `CALLBACK_SUCCESS` without validating `onBehalf`, victim holds loanToken balance and has approved Midnight) are realistic for any Midnight-integrated repay-callback contract. No privileged keys are required.
+
+---
+
+Audit Report
+
+## Title
+Unchecked `callback` payer designation in `repay()` enables theft of loanToken from victim contracts via `onSell` re-entrancy - (File: src/Midnight.sol)
+
+## Summary
+`repay()` enforces that `msg.sender` is authorized to act on behalf of `onBehalf` (the borrower), but imposes no authorization check on the `callback` parameter, which becomes the payer and receives the `onRepay` call. A malicious seller callback contract can, from within the `onSell` window of `take()`, call `repay(market, units, seller, callback=victim, data)` to designate an arbitrary victim contract as the payer, pulling victim's loanToken into Midnight to retire the seller's debt at the victim's expense.
+
+## Finding Description
+
+**Root cause — missing payer authorization in `repay()`:**
+
+```solidity
+// src/Midnight.sol:505
+require(onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], Unauthorized());
+// ...
+// src/Midnight.sol:511
+address payer = callback != address(0) ? callback : msg.sender;
+// src/Midnight.sol:514-518
+if (callback != address(0)) {
+    require(
+        IRepayCallback(callback).onRepay(id, market, units, onBehalf, data) == CALLBACK_SUCCESS,
+        WrongRepayCallbackReturnValue()
+    );
+}
+// src/Midnight.sol:520
+SafeTransferLib.safeTransferFrom(market.loanToken, payer, address(this), units);
+```
+
+The sole gate is that `msg.sender` is authorized to repay on behalf of `onBehalf`. There is no check that `callback` (the designated payer) has authorized `msg.sender` to use it as a payer or to call `onRepay` on it.
+
+**Exploit flow:**
+
+1. Attacker deploys `maliciousContract` and calls `setIsAuthorized(maliciousContract, true, seller)` — standard precondition for any callback that needs to act on the seller's behalf.
+2. Seller creates a sell offer with `offer.callback = maliciousContract`.
+3. Taker calls `take(offer, ...)`.
+4. Inside `take()`, the liquidation lock is set for the seller at line 444: `bool wasLocked = UtilsLib.tExchange(LIQUIDATION_LOCK_SLOT, id, seller, true)`.
+5. After the buyer-side token pull (lines 455–456), `onSell` is invoked on `maliciousContract` (lines 458–473).
+6. Inside `onSell`, `maliciousContract` calls `repay(market, units, seller, callback=victim, data)`:
+   - `msg.sender = maliciousContract`; `isAuthorized[seller][maliciousContract] = true` → authorization check passes.
+   - `payer = victim`.
+   - `IRepayCallback(victim).onRepay(id, market, units, seller, data)` is called on victim; if victim returns `CALLBACK_SUCCESS`, execution continues.
+   - `safeTransferFrom(loanToken, victim, midnight, units)` pulls `units` loanToken from victim.
+7. Seller's debt is reduced. The post-callback health check at line 476 passes because the debt was repaid: `require(liquidationLocked(id, seller) || isHealthy(offer.market, id, seller), SellerIsLiquidatable())`.
+
+**Why existing checks fail:**
+
+- The `repay` authorization check (`isAuthorized[onBehalf][msg.sender]`) only verifies the right to repay on behalf of the seller; it says nothing about who may be designated as payer.
+- The liquidation lock prevents the seller from being liquidated during the callback window but does not restrict what the callback may do to third parties.
+- There is no reentrancy guard on `repay()`.
+- The Certora spec `OnlyExplicitPayerCanLoseTokens.spec` sets `repayCallbackAllowed = false` for `take` (line 108) and models `onSell` with `HAVOC_ALL` under the stated assumption that "onSell cannot authorize a payer." This assumption is incorrect: `onSell` can re-enter `repay` with an arbitrary `callback`, and the `HAVOC_ALL` abstraction prevents the prover from detecting this re-entrant path.
+
+## Impact Explanation
+
+Victim loses loanToken equal to `units` (the repaid amount). The seller's debt is retired at the victim's expense while the seller retains collateral and is protected from liquidation throughout the window. This is a direct, concrete theft of assets from any Midnight-integrated contract that implements `IRepayCallback`, holds a loanToken balance, and has approved Midnight — all standard properties of repay-callback contracts. The attack is repeatable as long as the victim contract remains deployed and approved.
+
+## Likelihood Explanation
+
+**Required preconditions:**
+1. Seller authorizes their callback contract — standard practice for any callback that calls `supplyCollateral` or similar on the seller's behalf.
+2. Victim contract implements `IRepayCallback.onRepay` returning `CALLBACK_SUCCESS` without validating `onBehalf` — realistic for aggregators, vaults, or any Midnight-integrated contract that uses repay callbacks for its own operations and does not defensively check the `onBehalf` parameter.
+3. Victim has approved Midnight to spend loanToken and holds a loanToken balance — true for any active repay-callback contract.
+
+All three preconditions are reachable by an unprivileged attacker who controls the seller account and callback contract. The attack requires no privileged keys, no oracle manipulation, and no external dependencies beyond a victim contract meeting the above criteria.
+
+## Recommendation
+
+Add an explicit authorization check in `repay()` requiring that `callback` has authorized `msg.sender` to use it as a payer:
+
+```solidity
+if (callback != address(0)) {
+    require(
+        callback == msg.sender || isAuthorized[callback][msg.sender],
+        Unauthorized()
+    );
+    // ...
+}
+```
+
+Alternatively, restrict `callback` to be `msg.sender` only (i.e., the caller always pays when using a callback), which eliminates the third-party payer pattern entirely and removes the attack surface.
+
+## Proof of Concept
+
+**Minimal reproduction steps:**
+
+1. Deploy `VictimRepayCallback` implementing `onRepay` that returns `CALLBACK_SUCCESS` unconditionally, holds loanToken, and has approved Midnight.
+2. Deploy `MaliciousCallback` implementing `onSell` that calls `repay(market, units, seller, callback=VictimRepayCallback, data)`.
+3. Call `setIsAuthorized(MaliciousCallback, true, seller)` from the seller account.
+4. Create a sell offer with `offer.callback = MaliciousCallback`.
+5. Call `take(offer, ...)` as any taker.
+6. Observe that `VictimRepayCallback`'s loanToken balance decreases by `units` and the seller's debt is reduced to zero — tokens were stolen from the victim.
+
+**Invariant test:** Assert that for any call to `take`, no address other than `msg.sender`, the explicit buyer callback, or the offer maker loses loanToken balance — this invariant is violated by the above scenario.
+
+### Citations
+
+**File:** src/Midnight.sol (L444-476)
+```text
+        bool wasLocked = UtilsLib.tExchange(LIQUIDATION_LOCK_SLOT, id, seller, true);
+        if (buyerCallback != address(0)) {
+            bytes memory buyerCallbackData = offer.buy ? offer.callbackData : takerCallbackData;
+            require(
+                IBuyCallback(buyerCallback)
+                    .onBuy(id, offer.market, buyerAssets, units, buyerPendingFeeIncrease, buyer, buyerCallbackData)
+                == CALLBACK_SUCCESS,
+                WrongBuyCallbackReturnValue()
+            );
+        }
+
+        SafeTransferLib.safeTransferFrom(offer.market.loanToken, payer, address(this), buyerAssets - sellerAssets);
+        SafeTransferLib.safeTransferFrom(offer.market.loanToken, payer, receiver, sellerAssets);
+
+        if (sellerCallback != address(0)) {
+            bytes memory sellerCallbackData = offer.buy ? takerCallbackData : offer.callbackData;
+            require(
+                ISellCallback(sellerCallback)
+                    .onSell(
+                        id,
+                        offer.market,
+                        sellerAssets,
+                        units,
+                        sellerPendingFeeDecrease,
+                        seller,
+                        receiver,
+                        sellerCallbackData
+                    ) == CALLBACK_SUCCESS,
+                WrongSellCallbackReturnValue()
+            );
+        }
+        if (!wasLocked) UtilsLib.tExchange(LIQUIDATION_LOCK_SLOT, id, seller, false);
+        require(liquidationLocked(id, seller) || isHealthy(offer.market, id, seller), SellerIsLiquidatable());
+```
+
+**File:** src/Midnight.sol (L502-521)
+```text
+    function repay(Market memory market, uint256 units, address onBehalf, address callback, bytes calldata data)
+        external
+    {
+        require(onBehalf == msg.sender || isAuthorized[onBehalf][msg.sender], Unauthorized());
+        bytes32 id = touchMarket(market);
+
+        position[id][onBehalf].debt -= UtilsLib.toUint128(units);
+        marketState[id].withdrawable += UtilsLib.toUint128(units);
+
+        address payer = callback != address(0) ? callback : msg.sender;
+        emit EventsLib.Repay(msg.sender, id, units, onBehalf, payer);
+
+        if (callback != address(0)) {
+            require(
+                IRepayCallback(callback).onRepay(id, market, units, onBehalf, data) == CALLBACK_SUCCESS,
+                WrongRepayCallbackReturnValue()
+            );
+        }
+        SafeTransferLib.safeTransferFrom(market.loanToken, payer, address(this), units);
+    }
+```
+
+**File:** certora/specs/OnlyExplicitPayerCanLoseTokens.spec (L13-14)
+```text
+    // eg onLiquidate is only called by liquidate. onRatify and onSell cannot authorize a payer, so we
+    // model them with a plain HAVOC_ALL.
+```
+
+**File:** certora/specs/OnlyExplicitPayerCanLoseTokens.spec (L106-110)
+```text
+    buyCallbackAllowed = true;
+    liquidateCallbackAllowed = false;
+    repayCallbackAllowed = false;
+    flashLoanCallbackAllowed = false;
+    badPullSeen = false;
+```
