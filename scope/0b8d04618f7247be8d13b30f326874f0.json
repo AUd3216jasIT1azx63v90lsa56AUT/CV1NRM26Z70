@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: Medium post-resolution donation or repeated-sweep behavior causing bounded fund lock, griefing, or incorrect recipient accounting'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium post-resolution donation or repeated-sweep behavior causing bounded fund lock, griefing, or incorrect recipient accounting'"
-]
