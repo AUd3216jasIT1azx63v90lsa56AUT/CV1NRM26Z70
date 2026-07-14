@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High SURVIVED or EXPIRED claim accounting flaw that overpays one staker, under-reserves others, or makes claims order-dependent'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_23b9eefd-a02c-44fa-a1f4-ede8dbc57e01?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High SURVIVED or EXPIRED claim accounting flaw that overpays one staker, under-reserves others, or makes claims order-dependent'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_401c0513-b6a1-4b49-bb51-a5b12d9b0ee3?mode=deep",
+    "questions_generated": false
+  }
+]
