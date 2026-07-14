@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: High expiry mutation, timestamp boundary, or truncation flaw that changes promised withdrawal, staking, resolution, or bounty windows'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High expiry mutation, timestamp boundary, or truncation flaw that changes promised withdrawal, staking, resolution, or bounty windows'"
-]
