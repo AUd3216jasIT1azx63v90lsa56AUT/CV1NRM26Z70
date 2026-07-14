@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: Medium multi-staker or multi-deposit ordering flaw where equivalent economic positions receive inconsistent payouts'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium multi-staker or multi-deposit ordering flaw where equivalent economic positions receive inconsistent payouts'"
-]
