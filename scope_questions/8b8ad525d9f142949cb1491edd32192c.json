@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Critical clone initialization or factory upgrade flaw allowing ownership takeover, malicious implementation use, or theft from newly created pools'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e5144737-6057-4bb6-8785-e2b8b35e84a7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Critical clone initialization or factory upgrade flaw allowing ownership takeover, malicious implementation use, or theft from newly created pools'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b8dbe5cc-0553-4b23-90d6-5370fba6d8d3?mode=deep",
+    "questions_generated": false
+  }
+]
