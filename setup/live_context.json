@@ -1,415 +1,337 @@
 {
   "protocol": {
-    "name": "Morpho Midnight",
-    "type": "EVM non-custodial fixed-rate fixed-maturity lending protocol",
-    "repo_focus": "Solidity protocol with core contract, interfaces, libraries, periphery, and ratifiers",
-    "core_contracts_or_dirs": [
-      "src/Midnight.sol",
-      "src/interfaces",
-      "src/libraries",
-      "src/periphery",
-      "src/ratifiers"
+    "name": "BattleChain Confidence Pools",
+    "type": "EVM ERC20 staking, confidence signaling, and outcome-settlement protocol",
+    "chain": "BattleChain, EVM-compatible L2",
+    "solidity": "0.8.26, via-IR, optimizer 200 runs",
+    "contest_dates": {
+      "starts": "2026-07-09",
+      "ends": "2026-07-16"
+    },
+    "in_scope": [
+      "src/ConfidencePool.sol",
+      "src/ConfidencePoolFactory.sol"
     ],
-    "main_design": [
-      "isolated immutable markets",
-      "permissionless market creation",
-      "fixed maturity per market",
-      "arbitrary loan token",
-      "single or multi-collateral markets",
-      "credit units for lenders",
-      "debt units for borrowers",
-      "offer-based trading instead of pooled liquidity",
-      "makers do not lock capital when publishing offers",
-      "takers execute offers onchain",
-      "ratifier validates offer authority",
-      "optional maker callback can source funds during take",
-      "optional market gates restrict entry or liquidation"
+    "out_of_scope_dependencies": [
+      "BattleChain IAgreement",
+      "BattleChain IAttackRegistry",
+      "BattleChain IBattleChainSafeHarborRegistry",
+      "OpenZeppelin contracts",
+      "tests, mocks, scripts, and deployment configuration"
+    ],
+    "architecture": [
+      "ConfidencePoolFactory is UUPS-upgradeable behind ERC1967Proxy",
+      "the factory deploys non-upgradeable deterministic ConfidencePool clones",
+      "one agreement may have multiple independently scoped pools",
+      "each pool holds all staker principal and contributed bonus ERC20 assets",
+      "the factory allowlists stake tokens at pool creation time",
+      "each pool stores its own BattleChain-only account scope",
+      "registry and attack-registry state are read live and are not cached",
+      "resolution is SURVIVED, EXPIRED, or CORRUPTED",
+      "SURVIVED and EXPIRED distribute principal plus k=2 time-weighted bonus",
+      "CORRUPTED routes value to a named good-faith attacker or recovery address"
     ]
   },
-  "audit_mode": {
-    "attacker_model": [
-      "unprivileged borrower",
-      "unprivileged lender",
-      "maker",
-      "taker",
-      "liquidator",
-      "market creator",
-      "callback receiver",
-      "authorized operator",
-      "signature user",
-      "router/composer using multicall"
+  "live_dependency_context": {
+    "network": "BattleChain testnet",
+    "chain_id": 627,
+    "rpc_url": "https://testnet.battlechain.com",
+    "pin_block": 16000,
+    "safe_harbor_registry": "0x0a652e265336a0296816aC4D8400880e3E537C24",
+    "attack_registry": "0xdD029a6374095EEb4c47a2364Ce1D0f47f007350",
+    "agreement_factory": "0x2Bee2970f10FDc2aeA28662BB6F6A501278Ebd46",
+    "demo_agreement": "0xE550894617Ac4C1bbc019C2AA5D47495a0F07716",
+    "demo_agreement_owner": "0x3EfcFc441c1e70A141850D4da0d5C7314952Fc3d",
+    "demo_agreement_in_scope_account": "0xeEFCFBeFCE9a8fbB20694483DA9E6fBbcD5084A7",
+    "limitations": [
+      "these are dependency addresses used by the repository fork tests",
+      "no deployed ConfidencePool or ConfidencePoolFactory address is supplied",
+      "do not invent pool balances, parameters, actors, or deployment state",
+      "dependency behavior may verify assumptions but dependency-only bugs are out of scope"
+    ]
+  },
+  "actors_and_trust": {
+    "unprivileged_actors": [
+      "staker",
+      "bonus contributor",
+      "permissionless risk-window keeper",
+      "permissionless expiry resolver",
+      "permissionless sweep caller",
+      "named good-faith whitehat attacker",
+      "arbitrary ERC20 donor"
+    ],
+    "conditionally_privileged": [
+      "pool sponsor and agreement owner controls pool creation, recoveryAddress, pre-stake expiry, pre-lock scope, and pool pause",
+      "moderator flags SURVIVED or CORRUPTED and identifies a good-faith attacker",
+      "factory owner controls registry, implementation, moderator, stake-token allowlist, pause, and UUPS upgrades"
+    ],
+    "trusted_assumptions": [
+      "factory owner and moderator are trusted protocol DAO roles",
+      "SafeHarborRegistry and its AttackRegistry pointer are trusted singleton infrastructure",
+      "stake tokens are standard ERC20s selected through the owner allowlist",
+      "stakers verify public pool parameters before depositing"
     ],
     "do_not_rely_on": [
-      "admin key compromise",
-      "governance capture",
-      "leaked private keys",
-      "malicious maintainer",
-      "pure external oracle failure",
-      "impossible oracle values",
-      "user mistake only",
-      "gas-only optimizations",
-      "style or docs-only issues"
-    ],
-    "best_bug_classes": [
-      "direct loss of user funds",
-      "protocol insolvency",
-      "bad debt creation",
-      "unauthorized collateral withdrawal",
-      "unauthorized collateral seizure",
-      "permanent or long-term fund freeze",
-      "liquidation bypass",
-      "healthy-account liquidation",
-      "offer replay or overfill",
-      "gate or ratifier bypass",
-      "credit/debt accounting corruption",
-      "callback or multicall state corruption"
+      "factory owner, pool sponsor, moderator, or registry deliberately acting maliciously by itself",
+      "private-key compromise or governance capture",
+      "a vulnerability whose root cause exists only in an out-of-scope dependency",
+      "unsupported fee-on-transfer or rebasing behavior without a distinct scoped implementation flaw",
+      "invented deployment addresses, balances, or impossible registry transitions",
+      "victim mistakes, style, documentation, gas optimization, or best-practice concerns alone"
     ]
   },
-  "whitepaper_constants_and_rules": {
-    "markets": {
-      "market_config_is_immutable_after_creation": true,
-      "market_has_loan_token": true,
-      "market_has_maturity": true,
-      "market_has_accepted_collateral_set": true,
-      "market_can_have_multiple_collateral_assets": true
-    },
-    "units": {
-      "one_debt_unit": "obligation to repay one loan token before maturity",
-      "one_credit_unit": "claim on repaid loan tokens",
-      "buying_units": "increases credit or reduces existing debt first",
-      "selling_units": "increases debt or reduces existing credit first",
-      "positions_are_market_level_fungible": true,
-      "positions_are_not_bilateral": true
-    },
-    "maturity": {
-      "trading_after_maturity_allowed": true,
-      "debt_increase_after_maturity_forbidden": true,
-      "post_maturity_trading_purpose": "facilitate unwinding when liquidations are unprofitable",
-      "overdue_debt_after_maturity_is_liquidatable_even_if_healthy": true
-    },
-    "offers": {
-      "offers_are_not_protocol_broadcasted": true,
-      "offers_can_be_distributed_offchain": true,
-      "partial_fills_allowed": true,
-      "offer_can_be_filled_multiple_times_until_exhausted": true,
-      "settlement_is_atomic": true,
-      "offer_ratifier_called_at_take_time": true,
-      "ratifier_may_validate_signature_or_custom_logic": true,
-      "ratifier_may_support_merkle_root_offer_sets": true
-    },
-    "callbacks": {
-      "maker_callback_optional": true,
-      "callback_executes_at_take_time": true,
-      "callback_can_source_funds_or_collateral_at_execution": true,
-      "callback_can_roll_exposure_between_maturities": true
-    },
-    "multi_market_offers": {
-      "offers_can_share_consumption_group": true,
-      "executing_one_offer_decreases_group_remaining_budget": true,
-      "group_budget_prevents_total_exposure_exceeding_budget": true
-    },
-    "routing": {
-      "routing_is_off_protocol": true,
-      "no_protocol_orderbook_queue": true,
-      "no_protocol_price_time_priority": true,
-      "no_protocol_capital_reservation": true
-    },
-    "ticks": {
-      "discrete_price_tick_grid": true,
-      "initial_relative_tick_increment": "2%",
-      "possible_tick_increment_reductions": [
-        "1%",
-        "0.5%"
-      ],
-      "finer_ticks_keep_previous_ticks_valid": true,
-      "price_quantization_near_maturity": "1e-6",
-      "ties_round_down": true
-    },
-    "liquidation": {
-      "max_debt_formula": "sum(collateral_amount_i * oracle_price_i * LLTV_i)",
-      "healthy_if_max_debt_not_below_debt": true,
-      "unhealthy_positions_liquidatable_before_and_after_maturity": true,
-      "liquidator_repays_debt_and_seizes_collateral": true,
-      "repay_amount_capped_by_recovery_close_factor": true,
-      "full_liquidation_allowed_if_residual_collateral_below_dust": true,
-      "liquidation_cursor_gamma_values": [
-        "0.25",
-        "0.5"
-      ],
-      "lif_max_formula": "1 / (1 - gamma * (1 - LLTV))",
-      "post_maturity_liquidation_incentive_starts_at": "1",
-      "post_maturity_liquidation_incentive_ramps_to": "LIFmax",
-      "post_maturity_liquidation_ramp_window": "15 minutes"
-    },
-    "bad_debt": {
-      "bad_debt_reduces_lenders_credit_proportionally": true,
-      "bad_debt_realized_during_liquidation": true,
-      "excess_debt_realized_immediately_regardless_of_collateral_chosen_to_seize": true
-    },
-    "gates": {
-      "up_to_two_optional_gate_contracts_per_market": true,
-      "gates_fixed_at_market_creation": true,
-      "enter_gate_restricts_credit_or_debt_increase": true,
-      "enter_gate_must_not_block_exit": true,
-      "users_can_exit_even_if_enter_gate_reverts": true,
-      "liquidator_gate_restricts_who_may_liquidate": true
-    },
-    "authorization": {
-      "authorization_is_coarse_grained": true,
-      "authorization_not_scoped_by_action": true,
-      "authorization_not_scoped_by_market": true,
-      "authorized_address_has_full_control_over_authorizer_midnight_state": true,
-      "authorized_address_can_add_or_remove_authorizations": true
-    },
-    "fees": {
-      "settlement_fee_charged_at_take_time": true,
-      "settlement_fee_depends_on_time_to_maturity": true,
-      "settlement_fee_inserts_spread_between_buyer_and_seller_prices": true,
-      "settlement_fee_breakpoints_days": [
-        0,
-        1,
-        7,
-        30,
-        90,
-        180,
-        360
-      ],
-      "settlement_fee_constant_after_maturity_and_above_360_days": true,
-      "settlement_fee_annualized_cap": "50 bps",
-      "settlement_fee_ttm_zero_cap": "0.14 bps",
-      "continuous_fee_accrues_each_second_on_outstanding_credit": true,
-      "continuous_fee_borne_by_lenders": true,
-      "continuous_fee_crystallized_when_credit_increases": true,
-      "continuous_fee_cap": "1% annualized"
-    }
+  "registry_states": {
+    "pre_attack_states": [
+      "NOT_DEPLOYED",
+      "NEW_DEPLOYMENT",
+      "ATTACK_REQUESTED"
+    ],
+    "active_risk_states": [
+      "UNDER_ATTACK",
+      "PROMOTION_REQUESTED"
+    ],
+    "terminal_states": [
+      "PRODUCTION",
+      "CORRUPTED"
+    ],
+    "rules": [
+      "UNDER_ATTACK and PROMOTION_REQUESTED mean legally attackable, not an ongoing breach",
+      "riskWindowStart seals on first observation of UNDER_ATTACK or PROMOTION_REQUESTED",
+      "riskWindowEnd seals on first observation of PRODUCTION or CORRUPTED",
+      "scope locks on first observation beyond NOT_DEPLOYED or NEW_DEPLOYMENT",
+      "withdraw is allowed only before riskWindowStart and in a permitted pre-attack state",
+      "PROMOTION_REQUESTED, PRODUCTION, and CORRUPTED reject new stake and bonus deposits",
+      "UNDER_ATTACK deposits are intentionally allowed",
+      "only CORRUPTED proves an agreement-level breach"
+    ]
+  },
+  "constants_and_economic_rules": {
+    "minimum_expiry_lead": "30 days",
+    "corrupted_claim_window": "180 days",
+    "moderator_corrupted_grace": "180 days",
+    "minimum_stake": "nonzero pool-specific value",
+    "expiry_storage": "uint32, validated against type(uint32).max during pool initialization",
+    "bonus_formula": "sum(amount * (T - effectiveEntryTime)^2) per deposit",
+    "effective_entry_time": "max(deposit timestamp, riskWindowStart)",
+    "survived_T": "first-observed riskWindowEnd",
+    "expired_T": "pool expiry",
+    "zero_score_fallback": "amount-weighted bonus split when risk was observed but global score is zero",
+    "no_observed_risk": "zero staker bonus; excess bonus can be swept to recoveryAddress",
+    "good_faith_corrupted_bounty": "snapshotTotalStaked plus snapshotTotalBonus",
+    "bad_faith_corrupted_destination": "recoveryAddress",
+    "token_support": "standard ERC20 only; fee-on-transfer and rebasing tokens unsupported"
   },
   "core_invariants": {
     "solvency": [
-      "contract token balances must cover withdrawable assets, collateral claims, credit redemptions, and accrued fees",
-      "total claimable credit must not exceed repaid loan assets plus valid recoverable debt after loss accounting",
-      "bad debt must reduce lender credit exactly once and proportionally"
+      "pool ERC20 balance covers all remaining principal, bonus, bounty, and corrupted-path liabilities",
+      "aggregate payouts and sweeps never exceed the pool balance or the applicable snapshots",
+      "a claim, withdrawal, bounty, or sweep cannot consume value reserved for another entitled party",
+      "post-resolution donations do not corrupt snapshotted entitlement accounting"
     ],
-    "credit_debt": [
-      "every credit increase must correspond to valid debt creation, debt reduction, or settled repayment state",
-      "every debt increase must pass collateral and gate checks",
-      "buying units must reduce existing debt before increasing credit",
-      "selling units must reduce existing credit before increasing debt",
-      "debt must not increase after maturity"
+    "stake_and_score_accounting": [
+      "totalEligibleStake equals the sum of all eligibleStake balances",
+      "sumStakeTime and sumStakeTimeSq equal the sum of active users' clamped accumulators",
+      "withdrawing removes the user's full principal and score contribution exactly once",
+      "received token balance delta, not requested amount, is credited",
+      "equivalent deposits cannot gain bonus merely by splitting across addresses or transactions",
+      "all user bonus shares together remain bounded by snapshotTotalBonus"
     ],
-    "offers": [
-      "offer fill amount cannot exceed remaining offer capacity",
-      "consumption group budget cannot be exceeded across offers",
-      "cancelled, expired, invalid, or already-consumed offers cannot be filled",
-      "ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group",
-      "partial fills must update consumed state before any exploitable reentry point"
+    "lifecycle": [
+      "expiry locks permanently on the first successful stake and never reopens after withdrawal",
+      "scope becomes permanently immutable at its documented registry-state boundary",
+      "riskWindowStart and riskWindowEnd are one-way observations",
+      "withdrawals cannot reopen after active risk even if upstream state rewinds",
+      "no stake or bonus contribution succeeds at or after expiry",
+      "resolved outcomes cannot return to UNRESOLVED"
     ],
-    "collateral": [
-      "collateral cannot be withdrawn if it would make debt unhealthy",
-      "collateral cannot be seized unless liquidation rules allow it",
-      "collateral bitmap/list state must match actual deposited collateral",
-      "multi-collateral valuation must not skip or double count collateral"
+    "resolution_and_finality": [
+      "only permitted live registry states support SURVIVED or CORRUPTED moderator outcomes",
+      "claimExpired deterministically chooses its branch from live state, observed risk, expiry, and grace",
+      "claimsStarted prevents outcome changes after economically meaningful value movement",
+      "re-flagging before claims cannot duplicate snapshots, reserves, bounty entitlement, or claim windows",
+      "SURVIVED, EXPIRED, good-faith CORRUPTED, and bad-faith CORRUPTED accounting cannot overlap",
+      "claim order cannot change total rightful entitlement"
     ],
-    "liquidation": [
-      "healthy positions cannot be health-liquidated before maturity",
-      "unhealthy positions must remain liquidatable",
-      "overdue debt after maturity must be liquidatable",
-      "repay amount, seize amount, LIF, close factor, dust, and bad-debt realization must be mutually consistent",
-      "liquidation must not leave accounting desynced between borrower debt, lender credit, protocol balances, and seized collateral"
-    ],
-    "maturity": [
-      "pre-maturity and post-maturity paths must not be composable to bypass debt repayment",
-      "maturity boundary must not allow debt increase by rounding, timestamp equality, or callback sequencing",
-      "post-maturity unwinding must not mint free credit or erase debt incorrectly"
-    ],
-    "auth_and_gates": [
-      "authorization must only allow intended account delegation",
-      "gate checks must apply to all entry paths",
-      "exit paths must remain available even when enter gate reverts",
-      "liquidator gate must not be bypassed through alternate liquidation or callback paths"
-    ],
-    "external_calls": [
-      "callbacks must not corrupt partial state through reentrancy",
-      "ERC20 transfer deltas must match accounting deltas",
-      "fee-on-transfer, rebasing, false-return, ERC777-like hooks, and non-standard decimals should be tested if not explicitly excluded",
-      "multicall must not bypass per-action invariants"
+    "factory_and_clones": [
+      "only the agreement owner can create a pool for that agreement",
+      "only allowlisted tokens can be selected at pool creation",
+      "each clone initializes exactly once with the intended immutable dependencies and owner",
+      "deterministic salts remain collision-free across multiple pools for one agreement",
+      "factory bookkeeping matches every successfully created clone",
+      "only the factory owner can mutate configuration, pause, or authorize upgrades"
     ]
   },
+  "accepted_design_behaviors": [
+    "resolving EXPIRED while the registry remains in an active-risk state is intended",
+    "deposits during UNDER_ATTACK are intended and late-entry bonus is time-weighted",
+    "the moderator correction window ends on the first value-moving claim",
+    "no observed risk causes stakers to receive zero bonus",
+    "the documented no-risk-window CORRUPTED claimExpired race is accepted",
+    "the 180-day auto-CORRUPTED backstop is scope-blind and staker-pessimistic by design",
+    "risk timestamps use first observation because the registry exposes no transition timestamp",
+    "globalScore equal to zero falls back to an amount-weighted bonus split",
+    "the pool-local scope is a commitment but does not programmatically gate moderator judgement",
+    "pre-risk withdrawal forfeits bonus and withdrawal permanently closes once risk is observed",
+    "the registry singleton and moderator are trusted",
+    "the good-faith attacker bounty is the entire snapshotted pool",
+    "auto-resolution branch selection is fixed by live registry state",
+    "claim and sweep functions may be repeatable to recover later donations",
+    "pause intentionally affects inflows but not withdrawals, resolution, claims, or sweeps"
+  ],
   "high_value_attack_flows": [
     {
-      "name": "deposit_take_withdraw_same_tx",
+      "name": "multi_staker_bonus_conservation",
       "sequence": [
-        "deposit collateral",
-        "take offer to borrow",
-        "callback or multicall tries to withdraw collateral",
-        "assert health and balance conservation"
+        "multiple users stake before and during the observed risk window",
+        "users top up or split economically equivalent deposits",
+        "registry reaches PRODUCTION or pool expires",
+        "claim in every ordering",
+        "assert principal conservation, bonus bound, and order independence"
       ]
     },
     {
-      "name": "partial_fill_over_consumption",
+      "name": "withdraw_score_cleanup",
       "sequence": [
-        "create/sign offer with max amount",
-        "fill partially",
-        "fill again through same or related offer",
-        "assert consumed amount and group budget cannot exceed cap"
+        "multiple users stake before active risk",
+        "one user withdraws after one or more top-ups",
+        "active risk starts and outcome resolves SURVIVED or EXPIRED",
+        "assert withdrawn weight cannot dilute or steal remaining users' bonus"
       ]
     },
     {
-      "name": "callback_reentrancy_take",
+      "name": "risk_observation_boundaries",
       "sequence": [
-        "take offer with maker callback",
-        "callback reenters take/withdraw/repay/liquidate/authorize",
-        "assert no partial state can be reused"
+        "stake around transitions into UNDER_ATTACK or PROMOTION_REQUESTED",
+        "permute pokeRiskWindow, stake, contributeBonus, withdraw, and timestamp warps",
+        "transition to PRODUCTION or CORRUPTED",
+        "assert one-way timestamps, scope lock, deposit gate, and withdrawal gate"
       ]
     },
     {
-      "name": "maturity_boundary_trade",
+      "name": "outcome_reflag_finality",
       "sequence": [
-        "open position before maturity",
-        "warp to maturity - 1",
-        "take/repay/settle",
-        "warp to maturity",
-        "try debt-increasing trade",
-        "assert debt cannot increase after maturity"
+        "moderator flags a terminal outcome",
+        "re-flag outcome and attacker before any claim",
+        "perform each possible claim or sweep",
+        "attempt another re-flag",
+        "assert snapshots and liabilities are consistent and finality cannot be bypassed"
       ]
     },
     {
-      "name": "healthy_to_liquidatable_rounding",
+      "name": "good_faith_bounty_deadline",
       "sequence": [
-        "create near-threshold multi-collateral position",
-        "fuzz decimals/prices/LLTV/rounding",
-        "liquidate",
-        "assert healthy position cannot be liquidated"
+        "resolve CORRUPTED in good faith with a named attacker",
+        "re-flag before claims and add ERC20 donations",
+        "claim before, at, and after corruptedClaimDeadline",
+        "invoke corrupted sweeps in different orders",
+        "assert deadline cannot renew and bounty cannot be duplicated or stolen"
       ]
     },
     {
-      "name": "bad_debt_double_realization",
+      "name": "expired_branch_matrix",
       "sequence": [
-        "create undercollateralized debt",
-        "liquidate partially",
-        "liquidate again or settle",
-        "assert lender credit loss is not double-counted or skipped"
+        "create stake and bonus liabilities",
+        "warp to expiry and expiry plus moderator grace",
+        "fuzz every registry state with and without observed risk",
+        "call claimExpired from arbitrary actors",
+        "assert the exact intended outcome and beneficiary accounting"
       ]
     },
     {
-      "name": "gate_bypass_entry",
+      "name": "sweep_reserve_conservation",
       "sequence": [
-        "create gated market",
-        "attempt direct entry and indirect entry via callback/multicall/authorization",
-        "assert every credit/debt increase hits enter gate"
+        "resolve with multiple entitled stakers",
+        "claim only a subset and donate additional tokens",
+        "repeat sweepUnclaimedBonus or corrupted-path sweeps",
+        "let remaining users claim",
+        "assert no entitled principal or bonus was swept"
       ]
     },
     {
-      "name": "liquidator_gate_bypass",
+      "name": "clone_creation_and_initialization",
       "sequence": [
-        "create market with liquidator gate",
-        "attempt liquidation through alternate actor/callback/authorized address",
-        "assert only approved liquidator can liquidate"
+        "create several pools for the same agreement with different scope and token parameters",
+        "predict deterministic addresses and fuzz failed initialization paths",
+        "attempt unauthorized creation, reinitialization, and salt collision",
+        "assert owner, dependencies, scope, bookkeeping, and balances are isolated"
       ]
     },
     {
-      "name": "coarse_authorization_abuse",
+      "name": "token_balance_delta_and_reentry",
       "sequence": [
-        "user authorizes operator",
-        "operator performs unexpected market/action/authorization mutation",
-        "assert behavior matches documented full-control model and cannot be confused by integrations"
-      ]
-    },
-    {
-      "name": "fee_crystallization_edge",
-      "sequence": [
-        "increase credit",
-        "change/override fee if allowed",
-        "reduce credit later",
-        "assert old credit fee terms are crystallized and not retroactively changed"
+        "exercise stake and bonus contribution with standard and adversarial token mocks",
+        "attempt callback reentry and abnormal balance deltas",
+        "resolve, withdraw, claim, and sweep",
+        "separate explicitly unsupported token behavior from exploitable scoped accounting defects"
       ]
     }
   ],
-  "audit_priority": {
-    "highest_priority_files_or_modules": [
-      "src/Midnight.sol",
-      "src/libraries/* accounting/math libraries",
-      "src/ratifiers/*",
-      "src/periphery/* callback or helper contracts",
-      "src/interfaces/* for exact external-call expectations"
-    ],
-    "highest_priority_questions": [
-      "Can credit/debt/collateral accounting desync from actual ERC20 balances?",
-      "Can callback or multicall observe and reuse partial state?",
-      "Can an offer or consumption group be overfilled across multiple markets?",
-      "Can maturity boundary allow debt increase or invalid settlement?",
-      "Can liquidation seize too much, too little, or realize bad debt incorrectly?",
-      "Can gates or ratifiers be bypassed through alternate entry paths?",
-      "Can rounding near LLTV/LIF/dust/tick/fee boundaries create extractable value?",
-      "Can non-standard token behavior break accounting assumptions?"
-    ]
-  },
   "recommended_fuzz_axes": {
     "amounts": [
       "0",
-      "1 wei",
-      "dust - 1",
-      "dust",
-      "dust + 1",
-      "max uint bounds where safe",
-      "near offer remaining amount",
-      "near debt amount",
-      "near collateral threshold"
+      "1",
+      "minStake - 1",
+      "minStake",
+      "minStake + 1",
+      "large values below multiplication overflow bounds",
+      "one wei of rounding dust",
+      "balance exactly equal to and one below each remaining liability"
     ],
     "time": [
-      "maturity - 1",
-      "maturity",
-      "maturity + 1",
-      "maturity + 15 minutes",
-      "fee breakpoint days: 0, 1, 7, 30, 90, 180, 360"
+      "expiry - 1",
+      "expiry",
+      "expiry + 1",
+      "riskWindowStart - 1, equal, and +1",
+      "riskWindowEnd - 1, equal, and +1",
+      "expiry + 180 days - 1, equal, and +1",
+      "corruptedClaimDeadline - 1, equal, and +1",
+      "timestamps near type(uint32).max"
     ],
-    "prices_and_risk": [
-      "near health threshold",
-      "LLTV finite allowed values",
-      "gamma 0.25",
-      "gamma 0.5",
-      "LIFmax boundary",
-      "multi-collateral mixed decimals",
-      "oracle price rounding boundaries"
+    "registry_state": [
+      "NOT_DEPLOYED",
+      "NEW_DEPLOYMENT",
+      "ATTACK_REQUESTED",
+      "UNDER_ATTACK",
+      "PROMOTION_REQUESTED",
+      "PRODUCTION",
+      "CORRUPTED",
+      "state rewind after risk observation",
+      "direct transition to terminal state without observed active risk"
     ],
-    "offer_state": [
-      "first fill",
-      "partial fill",
-      "exact full fill",
-      "overfill by 1",
-      "shared consumption group exhausted",
-      "cancel then fill",
-      "deadline boundary",
-      "same signature different market",
-      "same signature different taker"
+    "actors_and_order": [
+      "one and many stakers",
+      "same total stake split across users or deposits",
+      "claims in all permutations",
+      "moderator re-flags before and after every value-moving path",
+      "arbitrary caller pokes, resolves, donates, and sweeps",
+      "pool owner differs from factory owner and moderator"
     ],
-    "external_behavior": [
-      "callback reverts",
-      "callback reenters",
-      "token returns false",
-      "token charges fee",
-      "token rebases",
-      "token has 6/8/18/27 decimals",
-      "receiver is contract",
-      "payer is different from msg.sender"
+    "token_behavior": [
+      "standard ERC20",
+      "false return or revert",
+      "fee on transfer",
+      "fee on sender",
+      "positive or negative rebase",
+      "token callback reentry",
+      "post-allowlist token implementation change"
     ]
   },
-  "reporting_bias": {
+  "reporting_requirements": {
     "valid_finding_requires": [
-      "exact reachable code path",
-      "attacker-controlled input or timing",
-      "broken invariant",
-      "existing checks shown insufficient",
-      "concrete scoped impact",
-      "Foundry PoC or stateful fuzz reproduction"
+      "root cause in one of the two in-scope contracts",
+      "exact reachable function and code path",
+      "realistic attacker-controlled call, timing, or ordering",
+      "existing guards and DESIGN.md treatment explicitly reviewed",
+      "concrete contest-scoped impact",
+      "Foundry unit, fuzz, invariant, or fork proof with decisive assertions"
     ],
-    "likely_invalid_if": [
-      "requires admin misuse only",
-      "requires oracle compromise only",
-      "requires malicious token owner only",
-      "only causes failed transaction for attacker",
-      "only affects offchain routing quality",
-      "only proves integration misuse without protocol-level bug",
-      "matches documented coarse authorization behavior without additional confusion bug"
+    "reject_if": [
+      "the behavior is explicitly accepted in docs/DESIGN.md without a distinct implementation defect",
+      "trusted-role malice or dependency failure is the only root cause",
+      "the issue requires an unsupported token and proves no bypass of scoped defenses",
+      "the result is only a reverted attacker transaction, theoretical discrepancy, gas cost, or informational concern",
+      "the claim assumes a deployed Confidence Pool or live balance not supplied by the project",
+      "the recommendation would contradict an explicit protocol guarantee without resolving the trade-off"
     ]
   }
 }

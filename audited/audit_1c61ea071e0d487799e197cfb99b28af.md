@@ -1,1 +1,0 @@
-Looking at the external report's vulnerability class — **delayed balance update creating a race condition where users exit before loss is applied** — I need to map this to Morpho Midnight's bad debt socialization mechanism.

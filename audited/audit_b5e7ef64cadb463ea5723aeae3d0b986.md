@@ -1,1 +1,0 @@
-Looking at the in-scope code for an analog to the oracle-deprecation / try-catch vulnerability class.

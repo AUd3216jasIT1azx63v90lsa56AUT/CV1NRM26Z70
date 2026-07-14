@@ -1,1 +1,0 @@
-Let me read the HashLib and SetterRatifier to complete the picture.
