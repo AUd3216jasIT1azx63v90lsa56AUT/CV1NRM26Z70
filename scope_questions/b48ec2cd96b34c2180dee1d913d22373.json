@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High scope validation or scope-lock bypass that changes a pool's committed covered accounts after risk begins'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ba716df9-1ef2-48ab-8693-3617464ae489?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High scope validation or scope-lock bypass that changes a pool's committed covered accounts after risk begins'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_30399bb5-38c8-43ea-9f6c-423fc9ccbc36?mode=deep",
+    "questions_generated": false
+  }
+]
