@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Critical outcome-state confusion allowing the same value to be paid twice or principal to be routed to the wrong resolution beneficiary'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f231d852-3678-4b3a-aefb-063232460847?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Critical outcome-state confusion allowing the same value to be paid twice or principal to be routed to the wrong resolution beneficiary'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b05c2b54-20b6-40c0-8234-daf7dc4ab303?mode=deep",
+    "questions_generated": false
+  }
+]
