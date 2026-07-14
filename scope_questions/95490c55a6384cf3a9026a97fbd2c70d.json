@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Low non-critical invariant mismatch or missing edge-case coverage in the two in-scope contracts'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_85735648-993a-46d3-9287-07535423e546?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Low non-critical invariant mismatch or missing edge-case coverage in the two in-scope contracts'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8491d608-7732-467c-847d-078b77bb7789?mode=deep",
+    "questions_generated": false
+  }
+]
