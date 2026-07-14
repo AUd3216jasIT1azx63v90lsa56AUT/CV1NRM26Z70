@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High factory deterministic-clone or per-agreement indexing flaw causing address collision, incorrect initialization, or pool substitution'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_46d2b120-b36b-465b-b125-aa560cc7dd07?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High factory deterministic-clone or per-agreement indexing flaw causing address collision, incorrect initialization, or pool substitution'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_cd15c1a5-d53b-4c14-aa75-aa8cbcad5229?mode=deep",
+    "questions_generated": false
+  }
+]
