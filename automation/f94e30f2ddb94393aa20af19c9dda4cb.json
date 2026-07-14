@@ -1,0 +1,74 @@
+[
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement with N accounts in scope, allowlisted token) call createPool with accounts[] of length N, causing the total gas cost to scale as O(N) due to N isContractInScope external calls, N _scopeAccounts.push operations, and N isAccountInScope SSTORE operations, bypassing the existing guard (no gas cost documentation or cap), violating the invariant that createPool gas cost is bounded by a protocol-reasonable constant independent of scope size, causing scoped impact: medium — pool creation becomes prohibitively expensive or impossible for large scopes, effectively limiting the protocol's usability for agreements with many in-scope contracts? Proof idea: Foundry fuzz test; measure createPool gas for N in [1, 1 000]; assert gas grows linearly with N; document the maximum N at which createPool fits within block gas limit.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_23959b58-0a69-4715-931e-eb869d7a8536?mode=deep",
+    "timestamp": "2026-07-14 10:09:02.885944",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token, accounts[] of length N) call createPool, causing the calldata cost alone (N * 32 bytes * 16 gas/byte for non-zero bytes) to consume a significant fraction of the block gas limit before any execution begins, bypassing the existing guard (no calldata size limit on accounts[]), violating the invariant that createPool is callable for any valid scope, causing scoped impact: medium — for large N, calldata cost alone may push the transaction over the block gas limit? Proof idea: Foundry unit test; compute calldata gas cost for N = 10 000 accounts (10 000 * 32 * 16 = 5 120 000 gas); assert this is a significant fraction of the block gas limit; assert createPool reverts with OOG for large N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_16c07813-41a3-4975-b7eb-6ba725933243?mode=deep",
+    "timestamp": "2026-07-14 10:09:15.159682",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePool.sol] [Function: setPoolScope (triggered via ConfidencePoolFactory.sol createPool path)] Can a pool sponsor under preconditions (pool created with old scope of N accounts, registry in NOT_DEPLOYED, scopeLocked == false) call setPoolScope with an empty accounts[] array, causing _replaceScope to revert with EmptyScope after clearing the old scope (N SSTOREs to false, delete _scopeAccounts), bypassing the existing guard (EmptyScope check is at the top of _replaceScope, before clearing), violating the invariant that a failed setPoolScope must not modify state, causing scoped impact: medium — wait, the EmptyScope check is FIRST in _replaceScope (line 750), so the old scope is NOT cleared before the revert; this is a non-issue. Proof idea: Foundry unit test; call setPoolScope with empty array; assert revert with EmptyScope; assert old scope is unchanged; confirm the guard order is correct.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_2a50ae92-3c16-476d-88e7-6d896f794c29?mode=deep",
+    "timestamp": "2026-07-14 10:09:27.381202",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePool.sol] [Function: setPoolScope (triggered via ConfidencePoolFactory.sol createPool path)] Can a pool sponsor under preconditions (pool created with old scope of N accounts, registry in NOT_DEPLOYED) call setPoolScope with a new accounts[] of M accounts where all M accounts are valid, causing _replaceScope to first clear N accounts (N isAccountInScope SSTOREs to false, delete _scopeAccounts which clears the dynamic array length and all slots) then add M accounts (M isContractInScope calls, M isAccountInScope SSTOREs to true, M _scopeAccounts.push), bypassing the existing guard (no cap on N or M), violating the invariant that setPoolScope gas cost is bounded, causing scoped impact: medium — for large N and M, setPoolScope exceeds block gas limit and scope replacement becomes impossible? Proof idea: Foundry fuzz test with N and M both fuzzed in [1, 5 000]; assert setPoolScope gas < block.gaslimit; find the (N, M) threshold.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_b4548832-9066-4438-8bcc-6b50a14da79a?mode=deep",
+    "timestamp": "2026-07-14 10:09:39.880005",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement with N accounts in scope, allowlisted token) call createPool with accounts[] of length N, causing ConfidencePool.initialize to call _replaceScope(accounts) which iterates N times calling IAgreement.isContractInScope and pushing to _scopeAccounts, bypassing the existing guard (no accounts.length cap in createPool, initialize, or _replaceScope), violating the invariant that pool initialization must complete within block gas limit for any valid scope, causing scoped impact: medium — pool creation is blocked for agreements with large scopes, effectively preventing the protocol from serving large agreements? Proof idea: Foundry fuzz test; for N in [1, 10 000], call createPool with N valid accounts; assert gas < block.gaslimit; find the maximum N; assert the threshold is below a reasonable protocol maximum.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_52094ce3-b982-470b-bdf8-96181aedd3aa?mode=deep",
+    "timestamp": "2026-07-14 10:09:52.453019",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token, accounts[] of length N) call createPool, causing the accounts[] calldata to be passed through createPool → IConfidencePool(pool).initialize(... accounts) as a calldata slice, bypassing the existing guard (no size validation at the factory level before forwarding to initialize), violating the invariant that the factory validates all inputs before forwarding to the clone, causing scoped impact: medium — the factory forwards an unbounded accounts[] to initialize without any size check, making the factory complicit in the OOG DoS? Proof idea: Foundry unit test; assert createPool with N=10 000 accounts OOGs; assert the factory has no accounts.length check; assert adding a cap at the factory level would prevent the DoS.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_d1c7a6d9-baa0-49be-a425-60dd9a452cdb?mode=deep",
+    "timestamp": "2026-07-14 10:10:06.067519",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: getPoolsByAgreement] Can a pool sponsor under preconditions (valid agreement, allowlisted token) call createPool N times for the same agreement, then cause getPoolsByAgreement to return an array of N addresses in a single call, bypassing the existing guard (no pagination interface, no length cap), violating the invariant that enumeration functions must support pagination for large datasets, causing scoped impact: medium — the absence of a paginated getPoolsByAgreement(agreement, offset, limit) interface means the function becomes unusable on-chain once N is large, and off-chain callers must handle arbitrarily large return values? Proof idea: Foundry unit test; create N=1 000 pools; assert getPoolsByAgreement returns all N addresses; assert gas consumed; assert no paginated alternative exists; document the missing interface.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_487bcb6b-6a5d-48be-9c46-93255a48a405?mode=deep",
+    "timestamp": "2026-07-14 10:10:18.758545",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: getPoolsByAgreement] Can a pool sponsor under preconditions (valid agreement, allowlisted token) call createPool N times for the same agreement, then cause a contract that calls getPoolsByAgreement in a low-gas context (e.g. a callback with 100 000 gas) to OOG, bypassing the existing guard (no gas check in getPoolsByAgreement, no pagination), violating the invariant that view functions must be callable in constrained gas contexts, causing scoped impact: medium — any protocol integration that calls getPoolsByAgreement in a callback or low-gas context is DoS'd once N is large? Proof idea: Foundry unit test with a PoolConsumer contract that calls getPoolsByAgreement with a gas limit of 100 000; assert PoolConsumer.process() reverts with OOG after N pools; find the threshold N.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_615d4f88-7461-4275-9ad7-119685f6624c?mode=deep",
+    "timestamp": "2026-07-14 10:10:31.666080",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token, accounts[] of length N where all accounts are valid at createPool time) call createPool successfully, then have the agreement owner remove accounts from the agreement scope after pool creation, causing the pool's _scopeAccounts to reference accounts no longer in the agreement scope, bypassing the existing guard (isContractInScope is only checked at createPool/setPoolScope time, not at stake/claim time), violating the invariant that pool scope must be a valid subset of the agreement scope at all times, causing scoped impact: medium — the pool's committed scope diverges from the agreement's current scope, but this is documented as an accepted trade-off in DESIGN.md §8? Proof idea: Foundry unit test; create pool with N accounts; remove accounts from agreement; assert pool.isAccountInScope still returns true; assert DESIGN.md §8 documents this as intentional.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_602e7757-a7ed-4e7f-9f0f-b4eec8faf78c?mode=deep",
+    "timestamp": "2026-07-14 10:10:45.351235",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token, accounts[] of length N) call createPool where the agreement's isContractInScope returns true for all N accounts at call time but the agreement is a proxy that can change its scope implementation, causing _replaceScope to validate against the current implementation and succeed, bypassing the existing guard (isContractInScope is called once per account at createPool time), violating the invariant that scope validation is durable, causing scoped impact: medium — a proxy agreement can change its isContractInScope logic after pool creation, making the pool's scope validation stale? Proof idea: Foundry unit test with a proxy MockAgreement; create pool; upgrade agreement to return false for all accounts; assert pool.isAccountInScope still returns true; assert the validation is point-in-time only.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_ebcd2a42-6abd-4f0e-bdd9-7a969d93537a?mode=deep",
+    "timestamp": "2026-07-14 10:10:59.747090",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token) call createPool N times for the same agreement, causing each subsequent createPool to read _poolsByAgreement[agreement].length (O(1) SLOAD) and push to the array (O(1) SSTORE), bypassing the existing guard (no per-agreement pool cap), violating the invariant that createPool gas cost is constant regardless of existing pool count, causing scoped impact: medium — while createPool itself remains O(1) in pool count, the growing array makes getPoolsByAgreement progressively more expensive, creating an asymmetric DoS? Proof idea: Foundry fuzz test; assert createPool gas is constant for N in [1, 1 000]; assert getPoolsByAgreement gas grows linearly with N; document the asymmetry.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_87c3606d-bc87-47b3-bb72-19b69b6a1def?mode=deep",
+    "timestamp": "2026-07-14 10:11:13.041707",
+    "report_generated": false
+  },
+  {
+    "question": "[File: src/ConfidencePoolFactory.sol] [Function: createPool] Can a pool sponsor under preconditions (valid agreement, allowlisted token, accounts[] of length 1) call createPool N times for the same agreement in a loop, causing _poolsByAgreement[agreement] to grow to length N, bypassing the existing guard (no per-agreement pool cap, no rate limiting), violating the invariant that the factory cannot be used to inflate storage arrays without bound, causing scoped impact: medium — the agreement's pool list grows without bound, making getPoolsByAgreement uncallable on-chain and creating unbounded storage growth? Proof idea: Foundry invariant test; assert _poolsByAgreement[agreement].length grows by 1 per createPool; assert no cap exists; assert getPoolsByAgreement OOGs at N = 10 000.",
+    "url": "https://deepwiki.com/search/-security-audit-prompt-questio_40670d67-c686-463c-9643-d07c9879310d?mode=deep",
+    "timestamp": "2026-07-14 10:11:25.898464",
+    "report_generated": false
+  }
+]
