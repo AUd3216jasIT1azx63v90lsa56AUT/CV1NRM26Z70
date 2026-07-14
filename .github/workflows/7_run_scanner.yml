@@ -1,4 +1,5 @@
 name: 7 Run Scanner Automation
+# Reindexed for CV1NRM26Z70 deployment.
 
 on:
   workflow_dispatch:  # allows manual trigger from Actions tab
@@ -173,5 +174,4 @@ jobs:
 #              -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
 #              https://api.github.com/repos/${{ github.repository }}/actions/workflows/7_run_scanner.yml/dispatches \
 #              -d '{"ref":"master"}'
-
 

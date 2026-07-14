@@ -1,4 +1,5 @@
 name: 2  Run Question Generator
+# Reindexed for CV1NRM26Z70 deployment.
 
 on:
   workflow_dispatch:  # allows manual trigger from Actions tab
