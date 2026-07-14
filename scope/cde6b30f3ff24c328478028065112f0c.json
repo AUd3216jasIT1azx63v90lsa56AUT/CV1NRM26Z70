@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: High SURVIVED or EXPIRED claim accounting flaw that overpays one staker, under-reserves others, or makes claims order-dependent'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High SURVIVED or EXPIRED claim accounting flaw that overpays one staker, under-reserves others, or makes claims order-dependent'"
-]
