@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High CORRUPTED good-faith bounty flaw allowing the wrong attacker, repeated claims, renewed deadlines, or excess entitlement'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_46204ade-e97e-46d3-8a47-33cf098bd16f?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High CORRUPTED good-faith bounty flaw allowing the wrong attacker, repeated claims, renewed deadlines, or excess entitlement'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_801e8006-57bc-4891-a113-93cb3eb3864a?mode=deep",
+    "questions_generated": false
+  }
+]
