@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Medium factory configuration or allowlist lifecycle flaw that creates realistically unusable or misconfigured pools without requiring owner compromise'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_83820230-95d0-43de-a6e0-60069501c359?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium factory configuration or allowlist lifecycle flaw that creates realistically unusable or misconfigured pools without requiring owner compromise'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_8d719305-9ce1-432d-bd2e-996531647071?mode=deep",
+    "questions_generated": false
+  }
+]
