@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: High factory deterministic-clone or per-agreement indexing flaw causing address collision, incorrect initialization, or pool substitution'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High factory deterministic-clone or per-agreement indexing flaw causing address collision, incorrect initialization, or pool substitution'"
-]
