@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Critical unauthorized claim, withdrawal, sweep, or bounty payment to an unentitled address'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_145c84b2-458c-4484-ac18-faf79facc4dc?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Critical unauthorized claim, withdrawal, sweep, or bounty payment to an unentitled address'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e86ebc43-d4f8-4db4-8424-e0f92855a97c?mode=deep",
+    "questions_generated": false
+  }
+]
