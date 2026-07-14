@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: Medium event, getter, snapshot, or bookkeeping inconsistency that breaks a security-critical integration or prevents correct settlement'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium event, getter, snapshot, or bookkeeping inconsistency that breaks a security-critical integration or prevents correct settlement'"
+]

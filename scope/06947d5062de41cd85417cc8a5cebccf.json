@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High reentrancy or hostile ERC20 interaction that corrupts stake, bonus, snapshot, reserve, or claim accounting'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High reentrancy or hostile ERC20 interaction that corrupts stake, bonus, snapshot, reserve, or claim accounting'"
+]

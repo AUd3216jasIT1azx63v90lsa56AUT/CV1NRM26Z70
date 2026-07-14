@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High sweepUnclaimedBonus reserve flaw allowing principal or another staker's earned bonus to be swept'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High sweepUnclaimedBonus reserve flaw allowing principal or another staker's earned bonus to be swept'"
+]

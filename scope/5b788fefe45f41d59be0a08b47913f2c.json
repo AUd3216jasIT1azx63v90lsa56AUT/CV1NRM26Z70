@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High donation, balance-difference, fee-on-transfer, rebasing, or token-upgrade interaction that creates exploitable liability mismatch despite the allowlist model'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High donation, balance-difference, fee-on-transfer, rebasing, or token-upgrade interaction that creates exploitable liability mismatch despite the allowlist model'"
+]

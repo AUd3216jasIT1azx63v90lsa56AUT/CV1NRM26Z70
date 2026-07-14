@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: Critical clone initialization or factory upgrade flaw allowing ownership takeover, malicious implementation use, or theft from newly created pools'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Critical clone initialization or factory upgrade flaw allowing ownership takeover, malicious implementation use, or theft from newly created pools'"
+]

@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High registry-state observation flaw that incorrectly opens withdrawals, closes deposits, seals risk timestamps, or selects a resolution branch'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High registry-state observation flaw that incorrectly opens withdrawals, closes deposits, seals risk timestamps, or selects a resolution branch'"
+]
