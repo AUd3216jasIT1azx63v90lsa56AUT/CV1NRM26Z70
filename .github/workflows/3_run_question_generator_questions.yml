@@ -11,6 +11,10 @@ permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: stage-3-question-generator-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   run-deepwiki:
     runs-on: ubuntu-latest
@@ -40,9 +44,10 @@ jobs:
         id: check_questions
         run: |
           # Logic to check if there are files to process
-          if [ -n "$(find scope_questions -name '*.json' | head -n 1)" ]; then
+          if [ -d scope_questions ] && find scope_questions -name '*.json' -print -quit | grep -q .; then
             echo "run_workflow=true" >> $GITHUB_OUTPUT
           else
+            echo "No scope_questions/*.json input found"
             echo "run_workflow=false" >> $GITHUB_OUTPUT
           fi
 
@@ -54,55 +59,8 @@ jobs:
         run: python run_questions_generator_report_generate.py
 
 
-      - name: Commit and push changes
-        if: steps.check_questions.outputs.run_workflow == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .
-          
-          git commit -m "Auto-update: collections and reports"
-          # Retry logic
-          n=0
-          until [ $n -ge 3 ]; do
-            git pull --rebase origin master
-            if git push --force origin master; then
-              echo "Push succeeded"
-              break
-            fi
-            n=$((n+1))
-            echo "Push failed, retrying in 5 seconds..."
-            sleep 5
-          done
-          
-          # Fail the step if all retries are exhausted
-          if [ $n -eq 3 ]; then
-          echo "Failed to push after 3 attempts"
-          exit 1
-          fi
-
-      - name: Trigger next batch after generate
-        if: steps.check_questions.outputs.run_workflow == 'true'
-        uses: nick-fields/retry@v3
-        with:
-          max_attempts: 5
-          timeout_seconds: 60
-          retry_on: 'error'
-          retry_wait_seconds: 300  # 5 minutes between retries
-          command: |
-            #!/bin/bash
-            set -e
-            # Using curl directly with the GitHub API
-            curl -X POST \
-              -H "Accept: application/vnd.github.v3+json" \
-              -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
-              https://api.github.com/repos/${{ github.repository }}/actions/workflows/3_run_question_generator_questions.yml/dispatches \
-              -d '{"ref":"master"}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
-
       - name: Run reports with virtual display
+        if: steps.check_questions.outputs.run_workflow == 'true'
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
@@ -118,13 +76,16 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
-          
+          if git diff --cached --quiet; then
+            echo "Stage 3 produced no durable output"
+            exit 1
+          fi
           git commit -m "Auto-update: collections and reports"
           # Retry logic
           n=0
           until [ $n -ge 3 ]; do
             git pull --rebase origin master
-            if git push --force origin master; then
+            if git push origin master; then
               echo "Push succeeded"
               break
             fi
@@ -138,3 +99,9 @@ jobs:
           echo "Failed to push after 3 attempts"
           exit 1
           fi
+
+      - name: Fail when there was no input
+        if: steps.check_questions.outputs.run_workflow != 'true'
+        run: |
+          echo "Stage 3 requires at least one scope_questions/*.json input"
+          exit 1

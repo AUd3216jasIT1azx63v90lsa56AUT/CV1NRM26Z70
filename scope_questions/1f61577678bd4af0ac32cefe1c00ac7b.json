@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High reentrancy or hostile ERC20 interaction that corrupts stake, bonus, snapshot, reserve, or claim accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_e712ecf8-dc52-4212-8da9-4a229052d3d7?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High reentrancy or hostile ERC20 interaction that corrupts stake, bonus, snapshot, reserve, or claim accounting'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b2e5106a-35b4-411d-950a-7df094cf7df1?mode=deep",
+    "questions_generated": false
+  }
+]

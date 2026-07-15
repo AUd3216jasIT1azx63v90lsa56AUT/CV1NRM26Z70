@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Medium rounding or precision error in quadratic scoring, snapshot math, reserve math, or proportional payout causing repeatable value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c3a3e00a-4174-4e08-b6b5-bec86a854016?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium rounding or precision error in quadratic scoring, snapshot math, reserve math, or proportional payout causing repeatable value leakage'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f0445d21-0664-4e6a-bc0b-50011a814b4c?mode=deep",
+    "questions_generated": false
+  }
+]

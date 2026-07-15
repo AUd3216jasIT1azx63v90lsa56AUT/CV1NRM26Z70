@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Medium gas or array-size denial of service in pool creation, scope replacement, scope validation, or pool enumeration'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_20f2fd8d-7c9f-4bc0-a87d-c68813283507?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium gas or array-size denial of service in pool creation, scope replacement, scope validation, or pool enumeration'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_c2bf7560-d99c-409b-b7e6-39626014bdd5?mode=deep",
+    "questions_generated": false
+  }
+]

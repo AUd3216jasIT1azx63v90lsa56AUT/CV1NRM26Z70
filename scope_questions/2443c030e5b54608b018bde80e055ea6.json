@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High denial of service against a core withdrawal, resolution, claim, bounty, or sweep path at low attacker cost'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f1bfb01c-47d3-4dab-ae76-65cedd97fe9e?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High denial of service against a core withdrawal, resolution, claim, bounty, or sweep path at low attacker cost'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_fbab726a-0ed4-421c-b30e-6ce2017eab9a?mode=deep",
+    "questions_generated": false
+  }
+]

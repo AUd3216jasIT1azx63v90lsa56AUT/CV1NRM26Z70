@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High pause or access-control bypass affecting pool creation, staking, bonus contribution, settlement, withdrawal, claims, sweeps, or UUPS upgrades'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_bd4b10e1-0933-4324-a013-432f19ccbb4c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High pause or access-control bypass affecting pool creation, staking, bonus contribution, settlement, withdrawal, claims, sweeps, or UUPS upgrades'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_f706b06c-7ff1-41a4-a9d3-8c13a4733874?mode=deep",
+    "questions_generated": false
+  }
+]

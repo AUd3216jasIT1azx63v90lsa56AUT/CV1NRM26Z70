@@ -1,4 +1,5 @@
 import json
+import ast
 import os
 import random
 import shutil
@@ -172,65 +173,95 @@ class GetQuestions:
         self.collections_url = []
         super(GetQuestions, self).__init__()
 
-    def get_questions(self, url):
+    def get_questions(self, url, expected_file=None):
+        """Return a completed, validated DeepWiki response without consuming its queue item."""
+        attempts = int(os.environ.get("REPORT_READY_ATTEMPTS", "3"))
+        retry_delay = int(os.environ.get("REPORT_READY_RETRY_SECONDS", "20"))
+        last_error = None
+
+        for attempt in range(1, attempts + 1):
+            try:
+                self.driver.get(url)
+                wait = WebDriverWait(self.driver, 60)
+                copy_button_selector = (By.CSS_SELECTOR, '[aria-label="Copy"]')
+                all_copy_buttons = wait.until(
+                    EC.presence_of_all_elements_located(copy_button_selector)
+                )
+                last_copy_button = all_copy_buttons[-1]
+                wait.until(EC.element_to_be_clickable(last_copy_button)).click()
+
+                xpath = "//div[@role='menuitem' and normalize-space(text())='Copy response']"
+                el = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                el.click()
+
+                all_questions = self.get_question_content(pyperclip.paste())
+                self.validate_questions(all_questions, expected_file)
+                return all_questions
+            except Exception as exc:
+                last_error = exc
+                print(f"Response not ready or invalid (attempt {attempt}/{attempts}): {exc}")
+                if attempt < attempts:
+                    time.sleep(retry_delay)
+
+        raise RuntimeError(f"DeepWiki response did not become usable for {url}: {last_error}")
+
+    def save_questions(self, questions):
         question_directory = os.environ.get('QUESTION_DIR', 'question')
         os.makedirs(question_directory, exist_ok=True)
+        chunk_size = 25
+        saved_paths = []
 
         try:
-            self.driver.get(url)
+            for i in range(0, len(questions), chunk_size):
+                chunk = questions[i:i + chunk_size]
+                filename = f"{str(uuid.uuid4())}.json".replace("-", "")
+                filepath = os.path.join(question_directory, filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(chunk, f, indent=2, ensure_ascii=False)
+                saved_paths.append(filepath)
+                print(f"Saved {len(chunk)} questions to {filepath}")
+        except Exception:
+            for saved_path in saved_paths:
+                Path(saved_path).unlink(missing_ok=True)
+            raise
 
-            wait = WebDriverWait(self.driver, 20)
-            #  this would click the copy button
-            copy_button_selector = (By.CSS_SELECTOR, '[aria-label="Copy"]')
-            all_copy_buttons = wait.until(
-                EC.presence_of_all_elements_located(copy_button_selector)
-            )
-            last_copy_button = all_copy_buttons[-1]
-            wait.until(EC.element_to_be_clickable(last_copy_button)).click()
-
-            xpath = "//div[@role='menuitem' and normalize-space(text())='Copy response']"
-            el = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-            el.click()
-
-            clipboard_content = pyperclip.paste()
-
-            all_questions = self.get_question_content(clipboard_content)
-
-            try:
-                # Split into chunks of 25
-                chunk_size = 25
-                total_questions = len(all_questions)
-
-                for i in range(0, total_questions, chunk_size):
-                    # Get a chunk of 25 questions
-                    chunk = all_questions[i:i + chunk_size]
-
-                    # Generate a unique filename
-                    filename = f"{str(uuid.uuid4())}.json".replace("-", "")
-                    filepath = os.path.join(question_directory, filename)
-
-                    # Save the chunk to a new file
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        json.dump(chunk, f, indent=2, ensure_ascii=False)
-
-                    print(f"Saved {len(chunk)} questions to {filepath}")
-
-                print(
-                    f"\nSuccessfully split {total_questions} questions into {((total_questions - 1) // chunk_size) + 1} files")
-            except Exception as a:
-                print(a)
-
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
+        return saved_paths
 
     def get_question_content(self, clip_board_content: str) -> List[str]:
         """
             Extracts security audit questions from the provided text using regex.
             """
-        pattern = r'"(\[File:.*?)"'
-        questions = re.findall(pattern, clip_board_content, flags=re.DOTALL)
-        # Optional: Clean up whitespace (strip) for each question found
-        return [q.strip() for q in questions]
+        text = clip_board_content.strip()
+        fenced = re.search(r"```(?:python)?\s*(.*?)```", text, flags=re.DOTALL | re.IGNORECASE)
+        if fenced:
+            text = fenced.group(1).strip()
+
+        assignment = re.search(r"questions\s*=\s*(\[.*\])", text, flags=re.DOTALL)
+        candidate = assignment.group(1) if assignment else text
+        try:
+            parsed = ast.literal_eval(candidate)
+            if isinstance(parsed, list) and all(isinstance(item, str) for item in parsed):
+                return [item.strip() for item in parsed]
+        except (SyntaxError, ValueError):
+            pass
+
+        pattern = r'["\'](\[File:.*?Proof idea:.*?)["\'](?=\s*,?\s*(?:\]|\n))'
+        return [q.strip() for q in re.findall(pattern, text, flags=re.DOTALL)]
+
+    @staticmethod
+    def validate_questions(questions, expected_file=None):
+        if not 35 <= len(questions) <= 60:
+            raise ValueError(f"expected 35-60 questions, extracted {len(questions)}")
+
+        required_markers = ("[File:", "[Function:", "Proof idea:")
+        malformed = [q for q in questions if not all(marker in q for marker in required_markers)]
+        if malformed:
+            raise ValueError(f"{len(malformed)} questions are missing required audit fields")
+
+        if expected_file:
+            wrong_file = [q for q in questions if f"[File: {expected_file}]" not in q]
+            if wrong_file:
+                raise ValueError(f"{len(wrong_file)} questions target a file other than {expected_file}")
 
 
 def generate_file_path_for_scope():
@@ -297,7 +328,8 @@ def generate_file_path_get_questions():
     moved_files = []
     counter = 0
 
-    # Move up to 20 files
+    # Stage up to 20 files without deleting the tracked source. The source is
+    # removed only after every URL in that file yields validated output.
     for file_path in questions_files:
         try:
             if counter >= 20:
@@ -314,11 +346,10 @@ def generate_file_path_get_questions():
                 timestamp = int(time.time())
                 dest_path = os.path.join(scope_questions_pending_directory, f"{base_name}_{timestamp}{extension}")
 
-            # Move the file
-            shutil.move(str(file_path), dest_path)
+            shutil.copy2(str(file_path), dest_path)
             moved_files.append(dest_path)
             counter += 1
-            print(f"Moved {file_path} to {dest_path}")
+            print(f"Staged {file_path} at {dest_path}")
 
         except Exception as e:
             print(f"Error moving {file_path}: {e}")
@@ -328,5 +359,5 @@ def generate_file_path_get_questions():
         print("No files were moved")
         return None
 
-    print(f"Successfully moved {len(moved_files)} files to {scope_questions_pending_directory}")
+    print(f"Successfully staged {len(moved_files)} files in {scope_questions_pending_directory}")
     return moved_files

@@ -1,5 +1,3 @@
-import shutil
-import time
 from pathlib import Path
 import sys
 
@@ -9,29 +7,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import json
 import os
+import re
 
 
 def get_scope_questions_pending():
-    """
-    Get all URLs from JSON files in the automation_pending directory.
-
-    Returns:
-        list: A list of URLs found in all JSON files
-    """
+    """Return pending queue files and their entries, preserving file ownership."""
     scope_questions_pending_dir = os.environ.get("SCOPE_QUESTIONS_PENDING_DIR", "scope_questions_pending")
-    urls = []
+    pending = []
 
     # Ensure directory exists
     if not os.path.exists(scope_questions_pending_dir):
         print(f"Directory {scope_questions_pending_dir} does not exist")
-        return urls
+        return pending
 
     # Get all JSON files in the directory
     json_files = list(Path(scope_questions_pending_dir).glob("*.json"))
 
     if not json_files:
         print(f"No JSON files found in {scope_questions_pending_dir}")
-        return urls
+        return pending
 
     # Process each JSON file
     for json_file in json_files:
@@ -39,97 +33,82 @@ def get_scope_questions_pending():
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-                # Handle both list of questions and single question objects
-                if isinstance(data, list):
-                    for item in data:
-                        if isinstance(item, dict) and 'url' in item:
-                            urls.append(item['url'])
-                elif isinstance(data, dict) and 'url' in data:
-                    urls.append(data['url'])
+                entries = data if isinstance(data, list) else [data]
+                entries = [item for item in entries if isinstance(item, dict) and item.get('url')]
+                if not entries:
+                    raise ValueError("queue file has no URL entries")
+                pending.append((json_file, entries))
 
         except json.JSONDecodeError as e:
             print(f"Error parsing {json_file}: {e}")
         except Exception as e:
             print(f"Error processing {json_file}: {e}")
 
-    return urls
-
-
-def move_files_back_to_scope_questions():
-    """Move all files from automation_pending back to automation folder"""
-    scope_questions_dir = os.environ.get("SCOPE_QUESTIONS_DIR", "scope_questions")
-    scope_questions_pending_dir = os.environ.get("SCOPE_QUESTIONS_PENDING_DIR", "scope_questions_pending")
-
-    moved_files = []
-
-    try:
-        # Ensure both directories exist
-        os.makedirs(scope_questions_dir, exist_ok=True)
-        os.makedirs(scope_questions_pending_dir, exist_ok=True)
-
-        # Get all files in automation_pending
-        pending_files = list(Path(scope_questions_pending_dir).glob("*"))
-
-        for file_path in pending_files:
-            try:
-                # Create destination path
-                dest_path = os.path.join(scope_questions_dir, file_path.name)
-
-                # Handle filename conflicts
-                if os.path.exists(dest_path):
-                    # Append a timestamp to make filename unique
-                    base_name = file_path.stem
-                    extension = file_path.suffix
-                    timestamp = int(time.time())
-                    dest_path = os.path.join(scope_questions_dir, f"{base_name}_{timestamp}{extension}")
-
-                # Move the file
-                shutil.move(str(file_path), dest_path)
-                moved_files.append(dest_path)
-
-            except Exception as e:
-                print(f"Error moving {file_path} back to automation: {e}")
-                continue
-
-        if moved_files:
-            print(f"Moved {len(moved_files)} files back to {scope_questions_dir}")
-        return moved_files
-
-    except Exception as e:
-        print(f"Error in move_files_back_to_automation: {e}")
-        return []
-
+    return pending
 
 
 def main():
+    pending_files = get_scope_questions_pending()
+    if not pending_files:
+        raise RuntimeError("No pending reports to generate")
+
+    total_urls = sum(len(entries) for _, entries in pending_files)
+    print(f"Found {total_urls} URLs across {len(pending_files)} recoverable queue files")
+    successful_files = 0
+    saved_questions = 0
+    failures = []
+    report = GetQuestions(teardown=True)
+
     try:
-        pending_urls = get_scope_questions_pending()
-        total = len(pending_urls)
+        for file_index, (pending_file, entries) in enumerate(pending_files, 1):
+            extracted = []
+            saved_paths = []
+            saved_count_for_file = 0
+            try:
+                for entry_index, entry in enumerate(entries, 1):
+                    url = entry['url']
+                    prompt = entry.get('question', '')
+                    match = re.search(r"File Name:\s*([^ ]+)", prompt)
+                    expected_file = match.group(1) if match else None
+                    print(
+                        f"[{file_index}/{len(pending_files)} file, "
+                        f"{entry_index}/{len(entries)} URL] Validating: {url}"
+                    )
+                    extracted.append(report.get_questions(url, expected_file=expected_file))
 
-        if total == 0:
-            print("No pending reports to generate")
-        else:
-            print(f"Found {total} URLs needing reports")
+                for questions in extracted:
+                    saved_paths.extend(report.save_questions(questions))
+                    saved_questions += len(questions)
+                    saved_count_for_file += len(questions)
 
-            counter = 0
-            report = GetQuestions(teardown=True)
-            for i, url in enumerate(pending_urls):
-                print(f"[{i + 1}/{total}] Generating report for: {url}")
-                report.get_questions(url)
-                counter += 1
-                if counter >= 500:
-                    break
+                source_file = Path(os.environ.get("SCOPE_QUESTIONS_DIR", "scope_questions")) / pending_file.name
+                if not source_file.exists():
+                    raise FileNotFoundError(f"tracked queue source disappeared: {source_file}")
+                source_file.unlink()
+                pending_file.unlink(missing_ok=True)
+                successful_files += 1
+                print(f"Completed and consumed {source_file}")
+            except Exception as exc:
+                for saved_path in saved_paths:
+                    Path(saved_path).unlink(missing_ok=True)
+                saved_questions -= saved_count_for_file
+                failures.append(f"{pending_file.name}: {exc}")
+                print(f"Preserved {pending_file.name} for retry: {exc}")
+    finally:
+        if report.teardown:
+            report.driver.quit()
 
-            print(f"\n=== Completed {total} reports ===")
+    print(
+        f"\n=== Saved {saved_questions} validated questions from "
+        f"{successful_files}/{len(pending_files)} queue files ==="
+    )
+    if failures:
+        print("Deferred queue files:")
+        for failure in failures:
+            print(f"- {failure}")
 
-    except Exception as e:
-        print(f"\n!!! ERROR: {e}")
-        print("Attempting to move files back to automation directory...")
-        moved = move_files_back_to_scope_questions()
-        if moved:
-            print(f"Moved {len(moved)} files back to automation directory")
-        else:
-            print("No files were moved back")
+    if saved_questions == 0:
+        raise RuntimeError("Stage 3 produced zero validated questions; all source inputs were preserved")
 
 
 
