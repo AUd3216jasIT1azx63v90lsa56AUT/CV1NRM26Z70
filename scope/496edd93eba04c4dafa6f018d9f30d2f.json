@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: Medium factory configuration or allowlist lifecycle flaw that creates realistically unusable or misconfigured pools without requiring owner compromise'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium factory configuration or allowlist lifecycle flaw that creates realistically unusable or misconfigured pools without requiring owner compromise'"
-]
