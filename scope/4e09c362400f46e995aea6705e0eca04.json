@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: High scope validation or scope-lock bypass that changes a pool's committed covered accounts after risk begins'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High scope validation or scope-lock bypass that changes a pool's committed covered accounts after risk begins'"
-]
