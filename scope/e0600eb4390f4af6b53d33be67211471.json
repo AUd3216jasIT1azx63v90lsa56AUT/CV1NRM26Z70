@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: Medium rounding or precision error in quadratic scoring, snapshot math, reserve math, or proportional payout causing repeatable value leakage'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium rounding or precision error in quadratic scoring, snapshot math, reserve math, or proportional payout causing repeatable value leakage'"
-]
