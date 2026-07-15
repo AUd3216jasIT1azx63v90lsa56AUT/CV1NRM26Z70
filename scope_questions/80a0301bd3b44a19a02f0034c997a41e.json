@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Medium event, getter, snapshot, or bookkeeping inconsistency that breaks a security-critical integration or prevents correct settlement'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_b0a8339b-8751-4df1-8d5b-81b2be0ae030?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium event, getter, snapshot, or bookkeeping inconsistency that breaks a security-critical integration or prevents correct settlement'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_ffa6cb12-b249-48dd-98f3-8ee42a5856d2?mode=deep",
+    "questions_generated": false
+  }
+]
