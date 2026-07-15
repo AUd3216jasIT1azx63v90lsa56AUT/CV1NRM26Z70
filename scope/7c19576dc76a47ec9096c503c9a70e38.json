@@ -1,4 +1,0 @@
-[
-  "'File Name: src/ConfidencePool.sol -> Scope: High withdrawal accounting flaw allowing risk escape after active risk or leaving stale score weight that steals later bonus'",
-  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High withdrawal accounting flaw allowing risk escape after active risk or leaving stale score weight that steals later bonus'"
-]
