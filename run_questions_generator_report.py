@@ -64,6 +64,7 @@ def main():
             extracted = []
             saved_paths = []
             saved_count_for_file = 0
+            source_file = Path(os.environ.get("SCOPE_QUESTIONS_DIR", "scope_questions")) / pending_file.name
             try:
                 for entry_index, entry in enumerate(entries, 1):
                     url = entry['url']
@@ -74,14 +75,27 @@ def main():
                         f"[{file_index}/{len(pending_files)} file, "
                         f"{entry_index}/{len(entries)} URL] Validating: {url}"
                     )
-                    extracted.append(report.get_questions(url, expected_file=expected_file))
+                    questions = report.get_questions(
+                        url,
+                        expected_file=expected_file,
+                        response_text=entry.get("response_text"),
+                        question_prompt=prompt,
+                    )
+                    extracted.append(questions)
+
+                    # Make regenerated legacy responses restart-safe. The
+                    # workflow commits this source even if a later URL fails.
+                    entry["response_text"] = json.dumps(questions, ensure_ascii=False)
+                    durable_queue = json.dumps(entries, indent=2, ensure_ascii=False)
+                    source_file.write_text(durable_queue, encoding="utf-8")
+                    pending_file.write_text(durable_queue, encoding="utf-8")
+                    print(f"Persisted validated response text in {source_file}")
 
                 for questions in extracted:
                     saved_paths.extend(report.save_questions(questions))
                     saved_questions += len(questions)
                     saved_count_for_file += len(questions)
 
-                source_file = Path(os.environ.get("SCOPE_QUESTIONS_DIR", "scope_questions")) / pending_file.name
                 if not source_file.exists():
                     raise FileNotFoundError(f"tracked queue source disappeared: {source_file}")
                 source_file.unlink()

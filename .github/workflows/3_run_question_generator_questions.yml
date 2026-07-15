@@ -67,18 +67,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb
           sudo apt-get install xclip
-          xvfb-run --auto-servernum python run_questions_generator_report.py
+          xvfb-run --auto-servernum python -u run_questions_generator_report.py
 
 
       - name: Commit and push changes
-        if: steps.check_questions.outputs.run_workflow == 'true'
+        if: always() && steps.check_questions.outputs.run_workflow == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
           if git diff --cached --quiet; then
-            echo "Stage 3 produced no durable output"
-            exit 1
+            echo "No durable stage-3 progress to commit"
+            exit 0
           fi
           git commit -m "Auto-update: collections and reports"
           # Retry logic

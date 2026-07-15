@@ -60,33 +60,6 @@ jobs:
         run: python run_questions_generator_generate.py
 
 
-      - name: Commit and push changes
-        if: steps.check_scopes.outputs.run_workflow == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .
-          
-          git commit -m "Auto-update: collections and reports"
-          # Retry logic
-          n=0
-          until [ $n -ge 3 ]; do
-            git pull --rebase origin master
-            if git push --force origin master; then
-              echo "Push succeeded"
-              break
-            fi
-            n=$((n+1))
-            echo "Push failed, retrying in 5 seconds..."
-            sleep 5
-          done
-          
-          # Fail the step if all retries are exhausted
-          if [ $n -eq 3 ]; then
-          echo "Failed to push after 3 attempts"
-          exit 1
-          fi
-
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
         with:
@@ -97,21 +70,25 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
 
         if: steps.check_scopes.outputs.run_workflow == 'true'
-        run: python run_questions_generator.py
+        run: python -u run_questions_generator.py
 
       - name: Commit and push changes
-        if: steps.check_scopes.outputs.run_workflow == 'true'
+        if: always() && steps.check_scopes.outputs.run_workflow == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
-          
-          git commit -m "Auto-update: collections and reports"
+          if git diff --cached --quiet; then
+            echo "No durable stage-2 progress to commit"
+            exit 0
+          fi
+
+          git commit -m "Auto-update: store validated question responses"
           # Retry logic
           n=0
           until [ $n -ge 3 ]; do
             git pull --rebase origin master
-            if git push --force origin master; then
+            if git push origin master; then
               echo "Push succeeded"
               break
             fi

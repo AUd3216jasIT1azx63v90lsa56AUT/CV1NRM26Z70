@@ -1,4 +1,3 @@
-import shutil
 import sys
 from pathlib import Path
 
@@ -16,18 +15,6 @@ def get_pending_scope_file(question_pending_dir="scope_pending"):
     except Exception as e:
         print(f"Error finding pending question file: {e}")
         return None
-
-
-def move_file(src, dest_dir):
-    """Move a file to a destination directory."""
-    try:
-        dest = Path(dest_dir) / src.name
-        shutil.move(str(src), str(dest))
-        print(f"Moved {src} to {dest}")
-        return True
-    except Exception as e:
-        print(f"Error moving file {src}: {e}")
-        return False
 
 
 scope_pending_dir = "scope_pending"
@@ -51,11 +38,27 @@ def main():
         total = len(questions)
         print(f"Found {total} questions in {pending_file}")
 
+        output_file = Path("scope_questions") / pending_file.name
+        completed = set()
+        if output_file.exists():
+            existing = json.loads(output_file.read_text(encoding="utf-8"))
+            completed = {
+                item.get("question")
+                for item in existing
+                if isinstance(item, dict) and item.get("response_text")
+            }
+
         # Process questions
         for i, question in enumerate(questions, 1):
+            if question in completed:
+                print(f"[{i}/{total}] Reusing validated stored response")
+                continue
             print(f"[{i}/{total}] Processing: {question[:50]}...")
             bot = GenerateQuestions(teardown=True)
-            bot.ask_question(question)
+            try:
+                bot.ask_question(question)
+            finally:
+                bot.driver.quit()
 
             if i >= 25:  # Process maximum 25 questions
                 print("Reached the limit of 25 questions")
@@ -66,15 +69,14 @@ def main():
         # Delete the processed file
         pending_file.unlink()
         print(f"Deleted processed file: {pending_file}")
+        source_file = Path(scope_dir) / pending_file.name
+        source_file.unlink()
+        print(f"Deleted completed source file: {source_file}")
 
     except Exception as e:
         print(f"Error during processing: {e}")
-        # Move the file back to questions directory on error
-        if pending_file.exists():
-            if move_file(pending_file, scope_dir):
-                print(f"Moved {pending_file} back to {scope_dir} due to error")
-            else:
-                print(f"Failed to move {pending_file} back to {scope_dir}")
+        print(f"Preserved tracked source and any completed stored responses for retry")
+        raise
 
 
 if __name__ == '__main__':
