@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: High sweepUnclaimedBonus reserve flaw allowing principal or another staker's earned bonus to be swept'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_d192b692-ec22-4a86-ac60-dc51def3a34c?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: High sweepUnclaimedBonus reserve flaw allowing principal or another staker's earned bonus to be swept'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_165876a3-f187-4e88-bf80-52e619220395?mode=deep",
+    "questions_generated": false
+  }
+]
