@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High CORRUPTED bad-faith or post-window sweep flaw that strands funds or sends more than the intended available balance'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High CORRUPTED bad-faith or post-window sweep flaw that strands funds or sends more than the intended available balance'"
+]

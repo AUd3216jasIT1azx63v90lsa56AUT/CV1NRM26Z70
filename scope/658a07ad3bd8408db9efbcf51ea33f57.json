@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: Critical outcome-state confusion allowing the same value to be paid twice or principal to be routed to the wrong resolution beneficiary'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Critical outcome-state confusion allowing the same value to be paid twice or principal to be routed to the wrong resolution beneficiary'"
+]

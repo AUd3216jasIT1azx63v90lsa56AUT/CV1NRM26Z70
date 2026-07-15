@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: Medium gas or array-size denial of service in pool creation, scope replacement, scope validation, or pool enumeration'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium gas or array-size denial of service in pool creation, scope replacement, scope validation, or pool enumeration'"
+]

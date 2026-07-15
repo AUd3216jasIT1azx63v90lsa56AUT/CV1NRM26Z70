@@ -1,0 +1,4 @@
+[
+  "'File Name: src/ConfidencePool.sol -> Scope: High denial of service against a core withdrawal, resolution, claim, bounty, or sweep path at low attacker cost'",
+  "'File Name: src/ConfidencePoolFactory.sol -> Scope: High denial of service against a core withdrawal, resolution, claim, bounty, or sweep path at low attacker cost'"
+]
