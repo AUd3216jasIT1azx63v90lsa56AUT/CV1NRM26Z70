@@ -1,0 +1,12 @@
+[
+  {
+    "question": "'File Name: src/ConfidencePool.sol -> Scope: Medium incorrect no-observed-risk or zero-global-score branch behavior outside the explicitly accepted design'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_57dea328-d0c6-46ba-bf78-07174ca85434?mode=deep",
+    "questions_generated": false
+  },
+  {
+    "question": "'File Name: src/ConfidencePoolFactory.sol -> Scope: Medium incorrect no-observed-risk or zero-global-score branch behavior outside the explicitly accepted design'",
+    "url": "https://deepwiki.com/search/-generate-exploitfocused-secur_51ca25ef-d8a8-4755-98ea-d488289c3e8e?mode=deep",
+    "questions_generated": false
+  }
+]
